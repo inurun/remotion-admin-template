@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "title": "Sample\\nProject",
+    "description": "Admin + Remotion stub template",
+    "width": 1920,
+    "height": 1080
+  },
+  "pages": [
+    {
+      "id": "intro-sample",
+      "title": "Intro",
+      "type": "intro",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "durationSec": 3,
+      "richText": null,
+      "tts": []
+    },
+    {
+      "id": "main-sample",
+      "title": "Main",
+      "type": "main",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "durationSec": 3,
+      "richText": null,
+      "tts": []
+    },
+    {
+      "id": "outro-sample",
+      "title": "Outro",
+      "type": "outro",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "durationSec": 3,
+      "richText": null,
+      "tts": []
+    }
+  ],
+  "bgm": []
+}

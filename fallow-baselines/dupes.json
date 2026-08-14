@@ -1,0 +1,7 @@
+{
+  "clone_groups": [
+    "src/app/components/app-sidebar/add-dialog/use-add-project-dialog.ts:14-21|src/app/components/app-sidebar/duplicate-dialog/use-duplicate-project-dialog.ts:17-24",
+    "src/remotion/pages/intro/layer-tts/use-layer-tts.ts:7-28|src/remotion/pages/main/layer-tts/use-layer-tts.ts:7-28|src/remotion/pages/outro/layer-tts/use-layer-tts.ts:7-28",
+    "src/server/features/voicevox/use-case.ts:232-251|src/server/features/voisona/use-case.ts:74-93"
+  ]
+}

@@ -1,0 +1,16 @@
+pre-commit:
+  commands:
+    format:
+      glob:
+        - "*.{js,jsx,ts,tsx}"
+        - "*.{json,jsonc,json5}"
+        - "*.{css,scss,less}"
+        - "*.{md,mdx}"
+        - "*.{html,yaml,yml,toml}"
+      run: ./node_modules/.bin/oxfmt {staged_files}
+      stage_fixed: true
+    lint:
+      glob:
+        - "*.{js,jsx,ts,tsx}"
+      run: ./node_modules/.bin/oxlint --fix {staged_files}
+      stage_fixed: true

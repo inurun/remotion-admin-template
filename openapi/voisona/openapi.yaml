@@ -1,0 +1,1212 @@
+openapi: "3.0.3"
+info:
+  title: VoiSona Talk API
+  version: "0.9.1"
+  description: "\
+    This is a text-to-speech API set to use a speech synthesizer embedded in
+    VoiSona Talk editor. For simple text-to-speech, use
+    [POST /speech-syntheses]\
+    (#tag/Speech-Synthesis/operation/requestSpeechSynthesis) API with
+    *language* and *text* properties."
+servers:
+  - url: "/api/talk/v1"
+security:
+  - basic: []
+tags:
+  - name: Speech Synthesis
+    description: Speech synthesis APIs
+  - name: Text Analysis
+    description: Text Analysis APIs
+components:
+  parameters:
+    uuid:
+      in: path
+      name: uuid
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: UUID for the request
+      example: "01234567-89ab-4def-8123-456789abcdef"
+    voice_name:
+      in: path
+      name: voice_name
+      required: true
+      schema:
+        type: string
+      description: Name of the voice library
+      example: "tanaka-san_ja_JP"
+    voice_version:
+      in: path
+      name: voice_version
+      required: true
+      schema:
+        type: string
+      description: Version string of the voice library
+      example: "2.0.1"
+  responses:
+    bad_request:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                description: HTTP status code
+                example: 400
+              title:
+                type: string
+                example: Bad Request
+              detail:
+                type: string
+                example: Bad Request
+              meta:
+                $ref: "#/components/schemas/meta_information"
+    unauthorized:
+      description: Unauthorized
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+    forbidden:
+      description: Forbidden
+    conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/conflict"
+              - type: object
+                properties:
+                  detail:
+                    example: Not enough memory for a new request. Remove
+                      existing request entries.
+    no_default_audio_device:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/content_not_found"
+              - type: object
+                properties:
+                  detail:
+                    example: No audio device is selected.
+    internal_server_error:
+      description: Internal Server Error
+    service_unavailable:
+      description: Service Unavailable
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                description: HTTP status code
+                example: 503
+              title:
+                type: string
+                example: Service Unavailable
+              detail:
+                type: string
+                example: Service unavailable
+              meta:
+                $ref: "#/components/schemas/meta_information"
+    speech_syntheses_not_found:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/content_not_found"
+              - type: object
+                properties:
+                  detail:
+                    example: Speech synthesis request
+                      "01234567-89ab-4def-8123-456789abcdef" was not found.
+    speech_syntheses_or_wav_not_found:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/content_not_found"
+              - type: object
+                properties:
+                  detail:
+                    example: Speech synthesis request
+                      "01234567-89ab-4def-8123-456789abcdef" or its WAV
+                      endpoint was not found.
+    wav_unavailable:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/conflict"
+              - type: object
+                required:
+                  - state
+                properties:
+                  detail:
+                    example: WAV endpoint for request
+                      "01234567-89ab-4def-8123-456789abcdef" is currently
+                      unavailable. The request is not in the "succeeded" state.
+                  state:
+                    type: string
+                    enum: ["queued", "running", "failed"]
+                    example: "queued"
+    text_analyses_not_found:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/content_not_found"
+              - type: object
+                properties:
+                  detail:
+                    example: Text analysis request
+                      "01234567-89ab-4def-8123-456789abcdef" was not found.
+  securitySchemes:
+    basic:
+      type: http
+      scheme: basic
+  schemas:
+    analyzed_text:
+      type: string
+      description: Linguistic and prosodic data analyzed from text
+      example: "<tsml><acoustic_phrase><wordchain=\"0\" hl=\"lhhhh\" \
+        original=\"こんにちは\" phoneme=\"k,o|N|n,i|ch,i|w,a\" pos=\"感動詞\" \
+        pronunciation=\"コンニチワ\">こんにちは</word></acoustic_phrase>\
+        </tsml>"
+    speech_synthesis_global_parameters:
+      type: object
+      properties:
+        alp:
+          type: number
+          default: 0
+          description: Age-like parameter. In many voice libraries, this
+            corresponds to the coefficient for frequency warping defined by a
+            bilinear transformation, where the coefficient is often described
+            as *alpha*.
+          maximum: 1
+          minimum: -1
+        huskiness:
+          type: number
+          default: 0
+          description: Huskiness control parameter. The definition of this
+            parameter is dependent on the voice library.
+          maximum: 20
+          minimum: -20
+        intonation:
+          type: number
+          default: 1
+          description: Scale factor for pitch contour variation
+          maximum: 2
+          minimum: 0
+        pitch:
+          type: number
+          default: 0
+          description: Pitch shift coefficient described in cents (1 cent =
+            0.01 semitones)
+          minimum: -600
+          maximum: 600
+        speed:
+          type: number
+          description: speed (i.e. speech rate) parameter. For example, when
+            this parameter is 2, the duration of the synthetic sound becomes a
+            half.
+          default: 1
+          minimum: 0.2
+          maximum: 5
+        style_weights:
+          type: array
+          description: Array of style weight coefficients
+          items:
+            type: number
+          example: [1.0, 0.0, 0.0, 0.0, 0.0]
+        volume:
+          type: number
+          default: 0
+          description: Amplitude multiplier described in decibels.
+          maximum: 8
+          minimum: -8
+    speech_synthesis_base_information:
+      type: object
+      required:
+        - destination
+        - progress_percentage
+        - state
+        - text
+        - uuid
+      properties:
+        destination:
+          type: string
+          description: Destination of the synthesized speech
+          enum: ["audio_device", "file", "memory"]
+        language:
+          type: string
+          description: Language (e.g. "ja_JP")
+          example: "ja_JP"
+        output_file_path:
+          type: string
+          description: Absolute path to the output WAV file. This is
+            meaningful only when the `destination` is `file`.
+          example: "C:\\output.wav"
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 100
+        state:
+          type: string
+          enum: ["queued", "running", "succeeded", "failed"]
+          example: "queued"
+        text:
+          type: string
+          example: "こんにちは"
+        uuid:
+          type: string
+          format: uuid
+          description: UUID for the request
+          example: "01234567-89ab-4def-8123-456789abcdef"
+    text_analysis_base_information:
+      type: object
+      required:
+        - progress_percentage
+        - state
+        - text
+        - uuid
+      properties:
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 100
+        state:
+          type: string
+          enum: ["queued", "running", "succeeded", "failed"]
+          example: "queued"
+        text:
+          type: string
+          example: "こんにちは"
+        uuid:
+          type: string
+          format: uuid
+          description: UUID for the request
+          example: "01234567-89ab-4def-8123-456789abcdef"
+    voice_base_information:
+      type: object
+      required:
+        - languages
+        - voice_name
+        - voice_version
+      properties:
+        display_names:
+          type: array
+          items:
+            type: object
+            required:
+              - language
+              - name
+            properties:
+              language:
+                type: string
+                example: "ja_JP"
+              name:
+                type: string
+                example: "田中傘"
+          example:
+            [
+              { "language": "ja_JP", "name": "田中傘" },
+              { "language": "en_US", "name": "Tanaka San" },
+            ]
+        languages:
+          type: array
+          items:
+            type: string
+            example: "ja_JP"
+        voice_name:
+          type: string
+          example: "tanaka-san_ja_JP"
+        voice_version:
+          type: string
+          example: "2.0.1"
+    meta_information:
+      type: object
+      properties:
+        warnings:
+          type: array
+          items:
+            type: object
+      example: {}
+    content_created:
+      type: object
+      required:
+        - uuid
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: UUID for the request
+          example: "01234567-89ab-4def-8123-456789abcdef"
+        meta:
+          $ref: "#/components/schemas/meta_information"
+    content_not_found:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 404
+        title:
+          type: string
+          example: Not Found
+        detail:
+          type: string
+          example: Not found
+        meta:
+          $ref: "#/components/schemas/meta_information"
+    conflict:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 409
+        title:
+          type: string
+          example: Conflict
+        detail:
+          type: string
+          example: Conflict
+        meta:
+          $ref: "#/components/schemas/meta_information"
+paths:
+  /audio-devices/default:
+    get:
+      tags:
+        - Speech Synthesis
+      summary: Get Information about the audio device
+      description: "\
+        Returns information about the audio output device that will be used
+        when *destination* in [POST /speech-syntheses]\
+        (#tag/Speech-Synthesis/operation/requestSpeechSynthesis) is
+        *audio_device*. When no audio device is selected, this API fails with a
+        404 (Not Found) error.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/audio-devices/default\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/audio-devices/default\n
+        ```"
+      operationId: getDefaultAudioDevice
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  device_name:
+                    type: string
+                    description: Device name
+                    example: Speakers (High Definition Audio Device)
+                  device_type:
+                    type: string
+                    description: Device type (e.g. "Windows Audio",
+                      "CoreAudio", "ASIO")
+                    example: "Windows Audio"
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/no_default_audio_device"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /languages:
+    get:
+      tags:
+        - Speech Synthesis
+      summary: List supported languages
+      description: "\
+        Lists supported languages.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/languages\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/languages\n
+        ```"
+      operationId: listLanguages
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        language:
+                          type: string
+                    example: [{ "language": "ja_JP" }, { "language": "en_US" }]
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /speech-syntheses:
+    get:
+      tags:
+        - Speech Synthesis
+      summary: List speech synthesis requests
+      description: "\
+        Lists speech synthesis requests.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses\n
+        ```"
+      operationId: listSpeechSynthesisRequests
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/speech_synthesis_base_information"
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+    post:
+      tags:
+        - Speech Synthesis
+      summary: Request speech synthesis
+      description: "\
+        Requests speech synthesis. This API only adds the request to the queue.
+        To wait for the speech synthesis process to complete, periodically
+        check the state returned by [GET /speech-syntheses/{uuid}]\
+        (#tag/Speech-Synthesis/operation/getSpeechSynthesisRequest).\n
+        \n
+        The voice library for speech synthesis is selected with the following
+        order of priority:  \n
+        - The voice library that matches all of *language*, *voice_name*, and
+        *voice_version*  \n
+        - The last voice library in the voice library list that matches both
+        the *language* and *voice_name*  \n
+        - The most recently used voice library for the *language*  \n
+        - The first voice library in the voice library list that matches the
+        *language*\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        -H \"Content-Type: application/json\" -X POST
+        -d \"{\\\"force_enqueue\\\":true,\\\"language\\\":\\\"ja_JP\\\",\
+        \\\"text\\\":\\\"こんにちは\\\"}\"
+        http://localhost:32766/api/talk/v1/speech-syntheses\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        -H 'Content-Type: application/json' -X POST
+        -d '{\"force_enqueue\":true,\"language\":\"ja_JP\",\
+        \"text\":\"こんにちは\"}'
+        http://localhost:32766/api/talk/v1/speech-syntheses\n
+        ```"
+      operationId: requestSpeechSynthesis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required:
+                    - language
+                  properties:
+                    analyzed_text:
+                      type: string
+                      description: "\
+                        Analyzed text generated by [POST /text-analyses]\
+                        (#tag/Text-Analysis/operation/requestTextAnalysis). If
+                        this property is omitted, it will be automatically
+                        generated from the string of *text* property. If
+                        non-empty string sets, the *text* property will be
+                        ignored in speech synthesis."
+                      maxLength: 50000
+                    can_overwrite_file:
+                      type: boolean
+                      description: Flag for whether the output file can be
+                        overwritten. This flag is valid only when *destination*
+                        is *file*.
+                      default: false
+                    destination:
+                      type: string
+                      description: "\
+                        Destination of the synthesized speech. If
+                        *audio_device* is specified, the synthesized speech
+                        will be output through the default audio device. If
+                        *file* is specified, a WAV file with the name specified
+                        by the *output_file_path* property will be written. If
+                        *memory* is specified, the WAV data will be stored in
+                        memory and can be retrieved with
+                        [GET /speech-syntheses/{uuid}/wav]\
+                        (#tag/Speech-Synthesis/operation/getSynthesizedWav)
+                        API."
+                      enum: ["audio_device", "file", "memory"]
+                      default: "audio_device"
+                    force_enqueue:
+                      type: boolean
+                      description: Flag for whether existing speech synthesis
+                        and/or text analysis requests can be removed to enqueue
+                        this request. If true, the oldest requests, except
+                        those that are in "queued" or "running" states, may be
+                        automatically removed to enqueue this request. If the
+                        request queue of the system is still full, this API
+                        fails with a 409 (Conflict) error.
+                      default: false
+                    global_parameters:
+                      $ref: "#/components/schemas/speech_synthesis_global_parameters"
+                    language:
+                      type: string
+                      description: Language (e.g. "ja_JP")
+                      example: "ja_JP"
+                    output_file_path:
+                      type: string
+                      description: Absolute path to the output WAV file on the
+                        local filesystem. This parameter is required when
+                        *destination* is *file*.
+                      example: "C:\\output.wav"
+                    phoneme_durations:
+                      type: array
+                      items:
+                        type: number
+                        maximum: 10
+                        minimum: -1
+                      description: "\
+                        Requested phoneme durations in seconds, aligned with
+                        the phoneme sequence used for speech synthesis. Any
+                        negative values mean *automatic* (let the synthesizer
+                        decide); use -1 as the canonical value. If the array is
+                        longer than the phoneme sequence, extra elements are
+                        ignored; if shorter, missing elements are treated as
+                        automatic. Requested durations may be adjusted to
+                        values the synthesizer can generate. To retrieve the
+                        phoneme sequence, the requested durations, and the
+                        actual durations, call
+                        [GET /speech-syntheses/{uuid}]\
+                        (#tag/Speech-Synthesis/operation/getSpeechSynthesisRequest)
+                        API (see *phonemes*,
+                        *requested_phoneme_durations*, and
+                        *phoneme_durations* properties).\n
+                        \n
+                        **NOTE**: This property is intended for advanced use.
+                        The phoneme sequence may change depending on text
+                        normalization, dictionary updates, or model/version
+                        changes. For reproducible alignment, also provide
+                        *analyzed_text* property."
+                      example: [-1, -1, -1, -1, -1, -1, -1, -1, -1, 0.5]
+                    text:
+                      type: string
+                      description: Text for speech synthesis. Unless a valid
+                        string is set to *analyzed_text* property, empty string
+                        as this property can cause 400 (Bad Request) error.
+                      example: "こんにちは"
+                      maxLength: 500
+                    voice_name:
+                      type: string
+                      description: >-
+                        Voice library name for voice library selection.
+                      example: "tanaka-san_ja_JP"
+                    voice_version:
+                      description: Voice Library version name for voice library
+                        selection.
+                      type: string
+                      example: "2.0.1"
+                - anyOf:
+                    - type: object
+                      required:
+                        - analyzed_text
+                      properties:
+                        analyzed_text:
+                          type: string
+                          minLength: 1
+                        text:
+                          type: string
+                          default: ""
+                    - type: object
+                      required:
+                        - text
+                      properties:
+                        text:
+                          type: string
+                          minLength: 1
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              description: Created request location
+              schema:
+                type: string
+                example: "\
+                  /api/talk/v1/speech-syntheses/\
+                  01234567-89ab-4def-8123-456789abcdef"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/content_created"
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "409":
+          $ref: "#/components/responses/conflict"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /speech-syntheses/{uuid}:
+    parameters:
+      - $ref: "#/components/parameters/uuid"
+    delete:
+      tags:
+        - Speech Synthesis
+      summary: Delete a speech synthesis request
+      description: "\
+        Deletes a speech synthesis request.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password -X DELETE
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password -X DELETE
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```"
+      operationId: deleteSpeechSynthesisRequest
+      responses:
+        "200":
+          description: OK. The speech synthesis request was successfully
+            deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/speech_syntheses_not_found"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+    get:
+      tags:
+        - Speech Synthesis
+      summary: Get information about a speech synthesis request
+      description: "\
+        Gets information about a synthesis request.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```"
+      operationId: getSpeechSynthesisRequest
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/speech_synthesis_base_information"
+                  - type: object
+                    properties:
+                      analyzed_text:
+                        $ref: "#/components/schemas/analyzed_text"
+                      duration:
+                        type: number
+                        example: 0.885
+                      global_parameters:
+                        $ref: "#/components/schemas/speech_synthesis_global_parameters"
+                      phonemes:
+                        type: array
+                        items:
+                          type: string
+                        example: ["sil", "k", "o", "N", "n", "i", "ch", "i", "w", "a", "sil"]
+                      requested_phoneme_durations:
+                        type: array
+                        items:
+                          type: number
+                        description: "\
+                          Requested phoneme durations in seconds. This
+                          property is returned only when the request included
+                          *phoneme_durations*. Negative values mean
+                          *automatic*."
+                        example: [-1, -1, -1, -1, -1, -1, -1, -1, -1, 0.5]
+                      phoneme_durations:
+                        type: array
+                        items:
+                          type: number
+                        description: Actual phoneme durations in seconds.
+                          This property is returned only after the phoneme
+                          durations have been determined.
+                        example:
+                          [
+                            0.005,
+                            0.125,
+                            0.100,
+                            0.055,
+                            0.040,
+                            0.075,
+                            0.120,
+                            0.055,
+                            0.060,
+                            0.500,
+                            0.125,
+                          ]
+                      voice_name:
+                        type: string
+                        example: "tanaka-san_ja_JP"
+                      voice_version:
+                        type: string
+                        example: "2.0.1"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/speech_syntheses_not_found"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /speech-syntheses/{uuid}/wav:
+    parameters:
+      - $ref: "#/components/parameters/uuid"
+    get:
+      tags:
+        - Speech Synthesis
+      summary: Get WAV data of synthesized speech
+      description: "\
+        Gets the WAV data of synthesized speech.\n
+        \n
+        **NOTE:**  This API endpoint is available only when *destination* is
+        *memory* and the *state* is *succeeded* in the response of
+        [GET /speech-syntheses/{uuid}]\
+        (#tag/Speech-Synthesis/operation/getSpeechSynthesisRequest). If the
+        request exists but is not in the *succeeded* state, this endpoint
+        returns a 409 (Conflict) error.\n\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -o output.wav -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef/wav\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -o output.wav -u user@example.com:password
+        http://localhost:32766/api/talk/v1/speech-syntheses/\
+        01234567-89ab-4def-8123-456789abcdef/wav\n
+        ```"
+      operationId: getSynthesizedWav
+      responses:
+        "200":
+          description: OK
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/speech_syntheses_or_wav_not_found"
+        "409":
+          $ref: "#/components/responses/wav_unavailable"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /text-analyses:
+    get:
+      tags:
+        - Text Analysis
+      summary: List text analysis requests
+      description: "\
+        Lists text analysis requests.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/text-analyses\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/text-analyses\n
+        ```"
+      operationId: listTextAnalysisRequests
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/text_analysis_base_information"
+                      meta:
+                        $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+    post:
+      tags:
+        - Text Analysis
+      summary: Request text analysis for speech synthesis
+      description: "\
+        Requests text analysis for speech synthesis. This API only add the
+        request to the queue. To wait for the text analysis process to
+        complete, periodically check the state returned by
+        [GET /text-analyses/{uuid}]\
+        (#tag/Text-Analysis/operation/getTextAnalysisRequest).\n
+        \n
+        **NOTE:** [POST /speech-syntheses]\
+        (#tag/Speech-Synthesis/operation/requestSpeechSynthesis) performs text
+        analysis with the *text* property included in the its request body.
+        Therefore, this API is not required for simple text-to-speech.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        -H \"Content-Type: application/json\" -X POST
+        -d \"{\\\"force_enqueue\\\":true,\\\"language\\\":\\\"ja_JP\\\",\
+        \\\"text\\\":\\\"こんにちは\\\"}\"
+        http://localhost:32766/api/talk/v1/text-analyses\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        -H 'Content-Type: application/json' -X POST
+        -d '{\"force_enqueue\":true,\"language\":\"ja_JP\",\
+        \"text\":\"こんにちは\"}'
+        http://localhost:32766/api/talk/v1/text-analyses\n
+        ```"
+      operationId: requestTextAnalysis
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Data for text analysis
+              required:
+                - language
+                - text
+              properties:
+                force_enqueue:
+                  type: boolean
+                  description: Flag for whether existing speech synthesis
+                    and/or text analysis requests can be removed to enqueue
+                    this request. If true, the oldest requests, except those
+                    that are in "queued" or "running" states, may be
+                    automatically removed to enqueue this request. If the
+                    request queue of the system still is full, this API fails
+                    with a 409 (Conflict) error.
+                  default: false
+                language:
+                  type: string
+                  description: Language (e.g. "ja_JP")
+                  example: "ja_JP"
+                text:
+                  type: string
+                  description: Non-empty text to analyze
+                  example: "こんにちは"
+                  maxLength: 500
+                  minLength: 1
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              description: Created object path
+              schema:
+                type: string
+                example: "\
+                  /api/talk/v1/text-analyses/\
+                  01234567-89ab-4def-8123-456789abcdef"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/content_created"
+        "400":
+          $ref: "#/components/responses/bad_request"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "409":
+          $ref: "#/components/responses/conflict"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /text-analyses/{uuid}:
+    parameters:
+      - $ref: "#/components/parameters/uuid"
+    delete:
+      tags:
+        - Text Analysis
+      summary: Delete a text analysis request
+      description: "\
+        Deletes a text analysis request.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password -X DELETE
+        http://localhost:32766/api/talk/v1/text-analyses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password -X DELETE
+        http://localhost:32766/api/talk/v1/text-analyses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```"
+      operationId: deleteTextAnalysisRequest
+      responses:
+        "200":
+          description: OK. The text analysis request was successfully deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/text_analyses_not_found"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+    get:
+      tags:
+        - Text Analysis
+      summary: Get information and result of a text analysis request
+      description: "\
+        Gets information and result of a text analysis request.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/text-analyses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/text-analyses/\
+        01234567-89ab-4def-8123-456789abcdef\n
+        ```"
+      operationId: getTextAnalysisRequest
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/text_analysis_base_information"
+                  - type: object
+                    properties:
+                      analyzed_text:
+                        $ref: "#/components/schemas/analyzed_text"
+                      meta:
+                        $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/text_analyses_not_found"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /voices:
+    get:
+      tags:
+        - Speech Synthesis
+      summary: List voice libraries
+      description: "\
+        Lists available voice libraries.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/voices\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/voices\n
+        ```"
+      operationId: listVoices
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/voice_base_information"
+                  meta:
+                    $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"
+  /voices/{voice_name}/{voice_version}:
+    parameters:
+      - $ref: "#/components/parameters/voice_name"
+      - $ref: "#/components/parameters/voice_version"
+    get:
+      tags:
+        - Speech Synthesis
+      summary: Get information about a voice library
+      description: "\
+        Gets information about a voice library.\n
+        ### Example (Windows)\n
+        ```text\n
+        curl.exe -u user@example.com:password
+        http://localhost:32766/api/talk/v1/voices/tanaka-san_ja_JP/2.0.1\n
+        ```\n
+        ### Example (macOS)\n
+        ```text\n
+        curl -u user@example.com:password
+        http://localhost:32766/api/talk/v1/voices/tanaka-san_ja_JP/2.0.1\n
+        ```"
+      operationId: getVoiceInformation
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/voice_base_information"
+                  - type: object
+                    properties:
+                      default_style_weights:
+                        type: array
+                        items:
+                          type: number
+                        example: [1.0, 0.0, 0.0, 0.0, 0.0]
+                      style_names:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Normal", "Happy", "Bashful", "Angry", "Sad"]
+                      meta:
+                        $ref: "#/components/schemas/meta_information"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/content_not_found"
+                  - type: object
+                    properties:
+                      detail:
+                        example: Voice library "tanaka-san_ja_JP/2.0.1" was not
+                          found.
+        "500":
+          $ref: "#/components/responses/internal_server_error"
+        "503":
+          $ref: "#/components/responses/service_unavailable"

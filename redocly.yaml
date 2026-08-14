@@ -1,0 +1,9 @@
+apis:
+  voicevox@v1:
+    root: ./openapi/voicevox/openapi.json
+    x-openapi-ts:
+      output: ./src/server/generated/voicevox/schema.ts
+  voisona@v1:
+    root: ./openapi/voisona/openapi.yaml
+    x-openapi-ts:
+      output: ./src/server/generated/voisona/schema.ts

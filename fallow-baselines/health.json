@@ -1,0 +1,14 @@
+{
+  "finding_counts": {
+    "scripts/fetch-openapi-schemas.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": [
+    "src/remotion/utils/timing/timing-helpers.ts:dead code",
+    "src/remotion/utils/timing/frame-utils.ts:dead code"
+  ]
+}

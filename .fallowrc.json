@@ -1,0 +1,22 @@
+{
+  "audit": {
+    "deadCodeBaseline": "fallow-baselines/dead-code.json",
+    "healthBaseline": "fallow-baselines/health.json",
+    "dupesBaseline": "fallow-baselines/dupes.json"
+  },
+  "health": {
+    "coverage": "coverage/coverage-final.json"
+  },
+  "duplicates": {
+    "ignore": ["**/*.tsx", "src/server/generated/**", "scripts/**"]
+  },
+  "dynamicallyLoaded": ["src/app/core/client.tsx"],
+  "ignorePatterns": ["**/*.test.*", "**/__test__/**", "**/__tests__/**", "src/server/generated/**"],
+  "ignoreDependencies": [
+    "@hono/node-server",
+    "@remotion/cli",
+    "@remotion/studio",
+    "@remotion/tailwind-v4",
+    "agent-browser"
+  ]
+}

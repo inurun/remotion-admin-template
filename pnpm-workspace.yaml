@@ -1,0 +1,11 @@
+allowBuilds:
+  agent-browser: true
+  esbuild: true
+  fallow: true
+  lefthook: true
+  re2: set this to true or false
+  sharp: true
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+savePrefix: ""
