@@ -38,9 +38,6 @@ importers:
       '@ikg-systems/moyo':
         specifier: 0.1.2
         version: 0.1.2
-      '@inurun/remotion-animation':
-        specifier: 0.5.0
-        version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(remotion@4.0.483(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@lezer/highlight':
         specifier: 1.2.3
         version: 1.2.3
@@ -870,13 +867,6 @@ packages:
 
   '@ikg-systems/moyo@0.1.2':
     resolution: {integrity: sha512-ot0btpLoUxxNtM70Lh+6pe8xBlUXE/EIXT41rp4kkW/nvSK+KysBZgSngSWQ19P+oj9cT6zLSSJ/JG67EKyX+g==}
-
-  '@inurun/remotion-animation@0.5.0':
-    resolution: {integrity: sha512-hLt/sXh/9hv/53VIMjgDXNMYEh9/bAn+FfaOcHKiSiz8bUaeA5e111HocV+1lVZGV+GkbfU7E8UkYnk7RoZzmw==}
-    peerDependencies:
-      react: ^19.0.0
-      react-dom: ^19.0.0
-      remotion: ^4.0.0
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
@@ -5523,12 +5513,6 @@ snapshots:
       react-hook-form: 7.79.0(react@19.2.7)
 
   '@ikg-systems/moyo@0.1.2': {}
-
-  '@inurun/remotion-animation@0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(remotion@4.0.483(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
-    dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      remotion: 4.0.483(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:

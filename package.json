@@ -40,7 +40,6 @@
     "@dnd-kit/react": "0.5.0",
     "@hookform/resolvers": "5.4.0",
     "@ikg-systems/moyo": "0.1.2",
-    "@inurun/remotion-animation": "0.5.0",
     "@lezer/highlight": "1.2.3",
     "@opencode-ai/sdk": "^1.18.15",
     "@remotion/cli": "4.0.483",
