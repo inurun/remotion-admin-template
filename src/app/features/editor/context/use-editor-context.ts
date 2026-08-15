@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import type { DraftProject } from "@/_schemas";
 import { saveProject } from "@/app/features/project/api/project-api";
 import { useProject } from "@/app/features/project";
-import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
 
 type EditorContextValue = {
   isPending: boolean;
@@ -26,10 +25,7 @@ export function useEditorProviderValue(): EditorContextValue {
         setSaving(true);
 
         try {
-          const savedProject = await saveProject(
-            projectPath,
-            resolveProjectSynthesisSettings(draftProject),
-          );
+          const savedProject = await saveProject(projectPath, draftProject);
           await mutateProject(savedProject);
         } finally {
           setSaving(false);

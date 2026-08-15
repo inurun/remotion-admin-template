@@ -77,18 +77,11 @@ function useTtsCommands() {
         throw new Error("Project path is required");
       }
       const resolvedItem = resolveTtsSynthesisSettings(item, getValues("voicePresets"));
-      setValue(
-        `pages.${pageIndex}.tts.${ttsIndex}.synthesisSettings`,
-        resolvedItem.synthesisSettings,
-        {
-          shouldDirty: true,
-        },
-      );
       const audioSrc = await requestPreviewSynthesis(resolvedItem, projectPath);
       await playPreview(audioSrc);
       toast.success("Preview を再生した。");
     },
-    [canRunTts, getValues, playPreview, projectPath, setValue],
+    [canRunTts, getValues, playPreview, projectPath],
   );
 
   return {

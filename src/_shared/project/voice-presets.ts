@@ -1,4 +1,4 @@
-import type { DraftProject, DraftTts, VoiceOption, VoicePreset } from "@/_schemas";
+import type { DraftTts, VoiceOption, VoicePreset } from "@/_schemas";
 
 export {
   DEFAULT_KASANE_TETO_EMOTION,
@@ -85,7 +85,10 @@ export function upsertVoicePreset(
   return presets.map((preset, itemIndex) => (itemIndex === existingIndex ? nextPreset : preset));
 }
 
-function getTtsPresetSettings(item: DraftTts, presets: VoicePreset[]) {
+function getTtsPresetSettings(
+  item: Pick<DraftTts, "provider" | "voiceName" | "voiceVersion">,
+  presets: VoicePreset[],
+) {
   return getVoicePresetSettings(presets, {
     provider: item.provider,
     voiceName: item.voiceName ?? "",
@@ -93,28 +96,20 @@ function getTtsPresetSettings(item: DraftTts, presets: VoicePreset[]) {
   });
 }
 
-export function resolveTtsSynthesisSettings(item: DraftTts, presets: VoicePreset[]): DraftTts {
-  const synthesisSettings =
+export function getEffectiveTtsSynthesisSettings(
+  item: Pick<DraftTts, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+  presets: VoicePreset[],
+) {
+  return (
     getConcreteSynthesisSettings(item.synthesisSettings) ??
-    getConcreteSynthesisSettings(getTtsPresetSettings(item, presets));
+    getConcreteSynthesisSettings(getTtsPresetSettings(item, presets))
+  );
+}
+
+export function resolveTtsSynthesisSettings(item: DraftTts, presets: VoicePreset[]): DraftTts {
+  const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
   return {
     ...item,
     ...(synthesisSettings ? { synthesisSettings } : { synthesisSettings: undefined }),
   } as DraftTts;
-}
-
-export function resolveProjectSynthesisSettings(project: DraftProject): DraftProject {
-  return {
-    ...project,
-    pages: project.pages.map((page) => {
-      if (page.type === "transition") {
-        return page;
-      }
-
-      return {
-        ...page,
-        tts: page.tts.map((item) => resolveTtsSynthesisSettings(item, project.voicePresets)),
-      };
-    }),
-  };
 }

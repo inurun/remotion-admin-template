@@ -34,7 +34,7 @@ export function TtsSettingsDialog() {
           </Button>
           <SynthesisSettingsFields
             provider={dialog.item.provider}
-            value={dialog.item.synthesisSettings}
+            value={dialog.displayedSynthesisSettings}
             onChange={dialog.setSynthesisSettings}
           />
         </div>

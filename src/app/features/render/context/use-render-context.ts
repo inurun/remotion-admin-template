@@ -9,7 +9,6 @@ import { useProject } from "@/app/features/project";
 import { usePublish } from "@/app/features/publish";
 import { startRender, type RenderState } from "@/app/features/render/api/render-api";
 import { useRenderStateQuery } from "@/app/features/render/swr/use-render-query";
-import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
 import { useSettings } from "@/app/features/settings";
 
 export type { RenderState };
@@ -129,14 +128,11 @@ export function useRenderProviderValue(): RenderContextValue {
           throw new Error("Project path is required");
         }
 
-        await toast.promise(
-          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject)),
-          {
-            loading: "保存中...",
-            success: "保存して音声を更新した。",
-            error: "Save failed",
-          },
-        );
+        await toast.promise(saveProject(projectPath, draftProject), {
+          loading: "保存中...",
+          success: "保存して音声を更新した。",
+          error: "Save failed",
+        });
       } catch (error) {
         setRenderError(JSON.stringify(error));
         return;

@@ -10,6 +10,7 @@ import {
   type SavedProject,
   type SavedSequenceItem,
   type SavedTts,
+  type VoicePreset,
   isDraftContentPage,
   isDraftTransition,
   isSavedContentPage,
@@ -18,6 +19,7 @@ import {
 } from "@/_schemas";
 import { nowIso } from "@/_shared/lib/date";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
+import { getEffectiveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
 import { VIDEO_FPS } from "@/constants";
 import { getTransitionDurationSec } from "@/remotion/transitions/variants";
@@ -168,7 +170,23 @@ async function audioFileExists(src: string) {
   }
 }
 
-async function shouldReusePreviousTts(item: DraftTts, projectPath: string, previous?: SavedTts) {
+function withEffectiveSynthesisSettings<
+  T extends Pick<DraftTts, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+>(item: T, presets: VoicePreset[]): T {
+  const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
+  return {
+    ...item,
+    synthesisSettings: synthesisSettings ?? undefined,
+  };
+}
+
+async function shouldReusePreviousTts(
+  item: DraftTts,
+  projectPath: string,
+  previous: SavedTts | undefined,
+  nextPresets: VoicePreset[],
+  previousPresets: VoicePreset[],
+) {
   if (!previous) {
     return false;
   }
@@ -182,8 +200,10 @@ async function shouldReusePreviousTts(item: DraftTts, projectPath: string, previ
   }
 
   return (
-    JSON.stringify(createPreviousTtsComparisonInput(previous)) ===
-    JSON.stringify(createTtsComparisonInput(item))
+    JSON.stringify(
+      createPreviousTtsComparisonInput(withEffectiveSynthesisSettings(previous, previousPresets)),
+    ) ===
+    JSON.stringify(createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets)))
   );
 }
 
@@ -223,7 +243,7 @@ function createReusedSavedTts(item: DraftTts, previous: SavedTts) {
     voiceName: previous.voiceName,
     ...(previous.voiceVersion ? { voiceVersion: previous.voiceVersion } : {}),
     ...getTtsPlaybackSettings(item),
-    ...(previous.synthesisSettings ? { synthesisSettings: previous.synthesisSettings } : {}),
+    ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
     durationSec: previous.durationSec,
     audio: previous.audio,
@@ -235,14 +255,16 @@ async function buildSavedTts(
   serverEnv: ServerEnv,
   projectPath: string,
   item: DraftTts,
-  previous?: SavedTts,
+  previous: SavedTts | undefined,
+  nextPresets: VoicePreset[],
+  previousPresets: VoicePreset[],
 ) {
   validateTts(item);
-  if (await shouldReusePreviousTts(item, projectPath, previous)) {
+  if (await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets)) {
     return createReusedSavedTts(item, previous!);
   }
 
-  const nextInput = createTtsComparisonInput(item);
+  const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
   const analysis = await resolveAnalysis(serverEnv, nextInput, {
     forceAnalyze: hasReadTextChanged(nextInput, previous) || hasProviderChanged(item, previous),
   });
@@ -277,7 +299,7 @@ function createSavedTts(
     voiceName: nextInput.voiceName,
     ...(voiceVersion ? { voiceVersion } : {}),
     ...getTtsPlaybackSettings(item),
-    ...(nextInput.synthesisSettings ? { synthesisSettings: nextInput.synthesisSettings } : {}),
+    ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
     durationSec: audio.durationSec + AUDIO_PADDING_SECONDS,
     audio: {
@@ -294,11 +316,20 @@ async function buildSavedPage(
   projectPath: string,
   page: DraftPage,
   previousTtsById: Map<string, SavedTts>,
+  nextPresets: VoicePreset[],
+  previousPresets: VoicePreset[],
 ): Promise<SavedPage> {
   validatePage(page);
   const tts = (await Promise.all(
     page.tts.map((item) =>
-      buildSavedTts(serverEnv, projectPath, item, previousTtsById.get(item.id)),
+      buildSavedTts(
+        serverEnv,
+        projectPath,
+        item,
+        previousTtsById.get(item.id),
+        nextPresets,
+        previousPresets,
+      ),
     ),
   )) as SavedTts[];
 
@@ -383,7 +414,14 @@ async function buildSavedProject(
       if (isDraftTransition(item)) {
         return buildSavedTransition(item);
       }
-      return buildSavedPage(serverEnv, projectPath, item, previousTtsById);
+      return buildSavedPage(
+        serverEnv,
+        projectPath,
+        item,
+        previousTtsById,
+        draft.voicePresets ?? [],
+        previousProject?.voicePresets ?? [],
+      );
     }),
   );
   validateTransitionSequenceDurations(pages);

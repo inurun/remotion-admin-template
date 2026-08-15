@@ -360,6 +360,321 @@ describe("project use-case", () => {
     });
   });
 
+  it("synthesizes null tts with the project preset without baking it onto saved tts", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeVoicevoxTextMock.mockResolvedValueOnce({ analysis: '{"accent_phrases":[]}' });
+    synthesizeVoicevoxMock.mockResolvedValueOnce({
+      audioSrc: "/tts/voicevox.wav",
+      outputPath: "/tmp/voicevox.wav",
+      durationSec: 1,
+    });
+
+    const serverEnv = {};
+    const voicePresets = [
+      {
+        provider: "voicevox" as const,
+        voiceName: "3",
+        synthesisSettings: { speedScale: 1.2 },
+      },
+    ];
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject(serverEnv, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              synthesisSettings: null,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(synthesizeVoicevoxMock).toHaveBeenCalledWith({
+      serverEnv,
+      projectPath: "project",
+      text: "Hello",
+      analysis: '{"accent_phrases":[]}',
+      voiceName: "3",
+      synthesisSettings: { speedScale: 1.2 },
+    });
+    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
+    expect(saved.voicePresets).toEqual(voicePresets);
+  });
+
+  it("resynthesizes null tts when the project preset changes", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.2 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1.1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              durationSec: 1.1,
+              audio: { src: "/tts/project/old.wav" },
+              speech: { analysis: '{"accent_phrases":[]}' },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoicevoxMock.mockResolvedValueOnce({
+      audioSrc: "/tts/voicevox.wav",
+      outputPath: "/tmp/voicevox.wav",
+      durationSec: 1,
+    });
+
+    const serverEnv = {};
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject(serverEnv, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.5 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              synthesisSettings: null,
+              speech: { analysis: '{"accent_phrases":[]}' },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeVoicevoxTextMock).not.toHaveBeenCalled();
+    expect(synthesizeVoicevoxMock).toHaveBeenCalledWith({
+      serverEnv,
+      projectPath: "project",
+      text: "Hello",
+      analysis: '{"accent_phrases":[]}',
+      voiceName: "3",
+      synthesisSettings: { speedScale: 1.5 },
+    });
+    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
+    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/voicevox.wav");
+  });
+
+  it("reuses an explicit tts override when the project preset changes", async () => {
+    const previousTts = {
+      id: "tts-1",
+      provider: "voicevox" as const,
+      text: "Hello",
+      readText: "Hello",
+      voiceName: "3",
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      volume: 1,
+      durationSec: 1.1,
+      synthesisSettings: { speedScale: 1.3 },
+      audio: { src: "/tts/project/old.wav" },
+      speech: { analysis: '{"accent_phrases":[]}' },
+    };
+    readSavedProjectMock.mockResolvedValueOnce({
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.2 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1.1,
+          richText: "<p>Hello</p>",
+          tts: [previousTts],
+        },
+      ],
+    });
+
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.5 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              synthesisSettings: { speedScale: 1.3 },
+              speech: { analysis: '{"accent_phrases":[]}' },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeVoicevoxTextMock).not.toHaveBeenCalled();
+    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
+    expect(saved.pages[0]?.tts[0]).toMatchObject({
+      audio: { src: "/tts/project/old.wav" },
+      synthesisSettings: { speedScale: 1.3 },
+    });
+  });
+
+  it("keeps reused audio when an override is cleared back to the current preset", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.2 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1.1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              durationSec: 1.1,
+              synthesisSettings: { speedScale: 1.2 },
+              audio: { src: "/tts/project/old.wav" },
+              speech: { analysis: '{"accent_phrases":[]}' },
+            },
+          ],
+        },
+      ],
+    });
+
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [
+        {
+          provider: "voicevox",
+          voiceName: "3",
+          synthesisSettings: { speedScale: 1.2 },
+        },
+      ],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              synthesisSettings: null,
+              speech: { analysis: '{"accent_phrases":[]}' },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
+    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/project/old.wav");
+    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
+  });
+
   it("saves a freshly synthesized VoicePeak project", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     analyzeVoicepeakTextMock.mockResolvedValueOnce({ analysis: "direct" });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DraftTts } from "@/_schemas";
 import { getPreviewPayload } from "@/app/features/tts/lib/tts-preview-payload";
+import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 
 type VoisonaDraftTts = Extract<DraftTts, { provider: "voisona" }>;
 
@@ -46,6 +47,34 @@ describe("getPreviewPayload", () => {
       voiceName: "voice",
       voiceVersion: "version",
     });
+  });
+
+  it("includes synthesis settings without mutating the source tts", () => {
+    const item = createTts({
+      synthesisSettings: { speed: 1.2 },
+    });
+
+    expect(getPreviewPayload(item, "project")).toMatchObject({
+      synthesisSettings: { speed: 1.2 },
+    });
+    expect(item.synthesisSettings).toEqual({ speed: 1.2 });
+  });
+
+  it("resolves preset settings for preview without writing them onto the tts", () => {
+    const item = createTts({
+      voiceName: "a",
+      synthesisSettings: null,
+    });
+
+    const payload = getPreviewPayload(
+      resolveTtsSynthesisSettings(item, [
+        { provider: "voisona", voiceName: "a", synthesisSettings: { speed: 1.2 } },
+      ]),
+      "project",
+    );
+
+    expect(payload.synthesisSettings).toEqual({ speed: 1.2 });
+    expect(item.synthesisSettings).toBeNull();
   });
 
   it("requires a voice name", () => {

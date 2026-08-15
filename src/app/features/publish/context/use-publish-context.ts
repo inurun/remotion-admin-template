@@ -9,7 +9,6 @@ import { useProject } from "@/app/features/project";
 import { startPublish } from "@/app/features/publish/api/publish-api";
 import { usePublishStateQuery } from "@/app/features/publish/swr/use-publish-query";
 import type { RenderState } from "@/app/features/render/api/render-api";
-import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
 import { useSettings } from "@/app/features/settings";
 
 export type PublishContextValue = {
@@ -130,14 +129,11 @@ export function usePublishProviderValue(): PublishContextValue {
           throw new Error("Project path is required");
         }
 
-        await toast.promise(
-          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject)),
-          {
-            loading: "保存中...",
-            success: "保存して音声を更新した。",
-            error: "Save failed",
-          },
-        );
+        await toast.promise(saveProject(projectPath, draftProject), {
+          loading: "保存中...",
+          success: "保存して音声を更新した。",
+          error: "Save failed",
+        });
       } catch (error) {
         setPublishError(JSON.stringify(error));
         return;
