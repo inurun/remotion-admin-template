@@ -15,6 +15,7 @@ import {
   isDraftTransition,
   isSavedContentPage,
   isSavedTransition,
+  pageTypeRequiresTts,
   savedProjectSchema,
 } from "@/_schemas";
 import { nowIso } from "@/_shared/lib/date";
@@ -30,6 +31,7 @@ import {
   OUTRO_PAPER_HOLD_AFTER_PAGE_SEC,
   OUTRO_PAGE_DURATION_SEC,
 } from "@/_shared/lib/outro/outro-timing";
+import { ENDCARD_DURATION_SEC } from "@/_shared/lib/endcard/endcard-timing";
 import { secondsToFrames } from "@/remotion/utils/timing";
 import { createTtsTimingSegments, getTtsTimingEndSec } from "@/_shared/lib/tts/tts-timing";
 import {
@@ -138,7 +140,7 @@ function validateTransitionSequenceDurations(pages: SavedSequenceItem[]) {
 }
 
 function validatePage(page: DraftPage) {
-  if (page.type === "outro") {
+  if (!pageTypeRequiresTts(page.type)) {
     return;
   }
 
@@ -345,6 +347,23 @@ async function buildSavedPage(
       durationSec: Math.max(
         MIN_TTS_DURATION_SECONDS,
         contentDurationSec + page.padBeforeSec + page.padAfterSec,
+      ),
+      richText: page.richText,
+      tts,
+    };
+  }
+
+  if (page.type === "endcard") {
+    return {
+      id: page.id,
+      title: page.title,
+      type: page.type,
+      meta: page.meta,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      durationSec: Math.max(
+        MIN_TTS_DURATION_SECONDS,
+        ENDCARD_DURATION_SEC + page.padBeforeSec + page.padAfterSec,
       ),
       richText: page.richText,
       tts,

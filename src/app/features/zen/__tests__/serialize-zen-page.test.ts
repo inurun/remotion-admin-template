@@ -225,4 +225,38 @@ hello
     expect(result.richText).toBe("<p>keep</p>");
     expect(result.tts[0]?.id).toBe("a");
   });
+
+  it("keeps endcard lists when updating tags", () => {
+    const existing: DraftPage = {
+      id: "endcard-1",
+      title: "Endcard",
+      type: "endcard",
+      meta: {
+        tags: ["old"],
+        nicoadSource: "sm9",
+        credits: [{ id: "c1", title: "BGM", url: "https://example.com" }],
+        advertisers: [{ id: "a1", name: "Ada", message: "hi" }],
+        messages: [{ id: "m1", text: "Thanks" }],
+      },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    };
+
+    const result = applyZenPage(
+      existing,
+      mainPage({ title: "Next", meta: { tags: ["tag2"] } }),
+      aliasMap,
+    );
+    expect(result).toMatchObject({
+      type: "endcard",
+      title: "Next",
+      meta: {
+        tags: ["tag2"],
+        nicoadSource: "sm9",
+        credits: [{ id: "c1", title: "BGM", url: "https://example.com" }],
+      },
+    });
+  });
 });

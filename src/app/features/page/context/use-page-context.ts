@@ -1,17 +1,14 @@
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftPage, DraftProject, DraftSequenceItem, PageType } from "@/_schemas";
+import type { DraftProject, DraftSequenceItem } from "@/_schemas";
 import { useForm as useEditorForm } from "@/app/features/editor";
 import { resolvePageIndexFromFieldCount } from "@/app/features/page/lib/page-selection";
+import {
+  resolveSelectedPageSummary,
+  type SelectedPageSummary,
+} from "@/app/features/page/lib/page-summary";
 
-/** Fields that PageContext exposes for the selected page. Excludes richText on purpose. */
-export type SelectedPageSummary = {
-  id: string;
-  title: string;
-  type: PageType | "transition";
-  variant?: string;
-  meta: DraftPage["meta"];
-};
+export type { SelectedPageSummary };
 
 type PageContextValue = {
   pageFields: Array<DraftSequenceItem & { fieldKey: string }>;
@@ -24,27 +21,6 @@ type PageContextValue = {
   syncPageIndexFromFields: (pageCount: number) => void;
 };
 
-function resolveSelectedPageSummary(
-  selectedPageIndex: number | null,
-  id: string | undefined,
-  title: string | undefined,
-  type: SelectedPageSummary["type"] | undefined,
-  variant: string | undefined,
-  meta: DraftPage["meta"] | undefined,
-): SelectedPageSummary | null {
-  if (selectedPageIndex === null || id === undefined || type === undefined) {
-    return null;
-  }
-
-  return {
-    id,
-    title: title ?? "",
-    type,
-    ...(type === "transition" && variant ? { variant } : {}),
-    meta: meta ?? { tags: [] },
-  };
-}
-
 export function usePageProviderValue(): PageContextValue {
   const { pageFields, movePage, removePage, appendPage } = useEditorForm();
   const { control } = useFormContext<DraftProject>();
@@ -52,7 +28,7 @@ export function usePageProviderValue(): PageContextValue {
   const pageIndex = selectedPageIndex ?? 0;
   const watchDisabled = selectedPageIndex === null;
 
-  // Watch only identity/settings fields. Do not watch pages[n] (includes richText/tts) or richText alone.
+  // Watch only identity/settings fields. Do not watch pages[n], meta, richText, or tts.
   const selectedPageId = useWatch({
     control,
     disabled: watchDisabled,
@@ -73,10 +49,10 @@ export function usePageProviderValue(): PageContextValue {
     disabled: watchDisabled,
     name: `pages.${pageIndex}.variant`,
   });
-  const selectedPageMeta = useWatch({
+  const selectedPageTags = useWatch({
     control,
     disabled: watchDisabled,
-    name: `pages.${pageIndex}.meta`,
+    name: `pages.${pageIndex}.meta.tags`,
   });
 
   const syncPageIndexFromFields = useCallback((pageCount: number) => {
@@ -91,12 +67,12 @@ export function usePageProviderValue(): PageContextValue {
         selectedPageTitle,
         selectedPageType,
         selectedPageVariant,
-        selectedPageMeta,
+        selectedPageTags,
       ),
     [
       selectedPageId,
       selectedPageIndex,
-      selectedPageMeta,
+      selectedPageTags,
       selectedPageTitle,
       selectedPageType,
       selectedPageVariant,

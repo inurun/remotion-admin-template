@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { isContentPage } from "../guards";
 import { draftProjectSchema, savedProjectSchema } from "../project";
+import type { DraftPage, SavedPage } from "../project";
+
+function firstContentPage(
+  pages: Array<DraftPage | SavedPage | { type: string }>,
+): DraftPage | SavedPage {
+  const page = pages[0];
+  if (!page || !isContentPage(page as DraftPage | SavedPage)) {
+    throw new Error("expected content page");
+  }
+  return page as DraftPage | SavedPage;
+}
 
 describe("project frame schema", () => {
   it("defaults frame metadata for projects and pages", () => {
@@ -26,7 +38,7 @@ describe("project frame schema", () => {
     });
 
     expect(project.meta.weather).toEqual({});
-    expect(project.pages[0]?.meta).toEqual({ tags: [] });
+    expect(firstContentPage(project.pages).meta).toEqual({ tags: [] });
     expect(project.voicePresets).toHaveLength(7);
   });
 
@@ -97,11 +109,13 @@ describe("project frame schema", () => {
     } as const;
 
     expect(
-      draftProjectSchema.parse({
-        meta: {},
-        bgm: [],
-        pages: [{ ...page, meta: { tags: ["  tag  "] } }],
-      }).pages[0]?.meta.tags,
+      firstContentPage(
+        draftProjectSchema.parse({
+          meta: {},
+          bgm: [],
+          pages: [{ ...page, meta: { tags: ["  tag  "] } }],
+        }).pages,
+      ).meta.tags,
     ).toEqual(["tag"]);
 
     expect(() =>
@@ -111,5 +125,35 @@ describe("project frame schema", () => {
         pages: [{ ...page, meta: { tags: [" "] } }],
       }),
     ).toThrow();
+  });
+
+  it("defaults endcard meta lists", () => {
+    const project = savedProjectSchema.parse({
+      meta: { title: "project", description: "", width: 1920, height: 1080 },
+      bgm: [],
+      pages: [
+        {
+          id: "endcard",
+          title: "Endcard",
+          type: "endcard",
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 8,
+          richText: null,
+          tts: [],
+        },
+      ],
+    });
+
+    expect(project.pages[0]).toMatchObject({
+      type: "endcard",
+      meta: {
+        tags: [],
+        nicoadSource: "",
+        credits: [],
+        advertisers: [],
+        messages: [],
+      },
+    });
   });
 });

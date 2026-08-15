@@ -1,0 +1,1 @@
+export { nicoadApp } from "./route";

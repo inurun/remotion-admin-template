@@ -22,6 +22,25 @@ export function createBlankDraftPage({
     };
   }
 
+  if (type === "endcard") {
+    return {
+      id,
+      title,
+      type,
+      meta: {
+        tags: [],
+        nicoadSource: "",
+        credits: [],
+        advertisers: [],
+        messages: [],
+      },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    };
+  }
+
   return {
     id,
     title,

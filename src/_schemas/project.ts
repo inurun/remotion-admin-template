@@ -132,7 +132,7 @@ export const savedTtsSchema = z.discriminatedUnion("provider", [
   }),
 ]);
 
-export const pageTypeSchema = z.enum(["intro", "main", "outro"]);
+export const pageTypeSchema = z.enum(["intro", "main", "outro", "endcard"]);
 export const transitionVariantSchema = z.enum(["slide"]);
 
 const weatherLocationSchema = z.enum(WEATHER_LOCATION_IDS);
@@ -204,6 +204,39 @@ const outroPageMetaSchema = z
   })
   .default({ tags: [], blocks: [] });
 
+export const endcardCreditSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().default(""),
+  url: z.string().default(""),
+});
+
+export const endcardAdvertiserSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().default(""),
+  message: z.string().default(""),
+});
+
+export const endcardMessageSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().default(""),
+});
+
+const endcardPageMetaSchema = z
+  .object({
+    tags: z.array(z.string().trim().min(1)).default([]),
+    nicoadSource: z.string().default(""),
+    credits: z.array(endcardCreditSchema).default([]),
+    advertisers: z.array(endcardAdvertiserSchema).default([]),
+    messages: z.array(endcardMessageSchema).default([]),
+  })
+  .default({
+    tags: [],
+    nicoadSource: "",
+    credits: [],
+    advertisers: [],
+    messages: [],
+  });
+
 const draftPageSharedSchema = {
   id: z.string().min(1),
   title: z.string(),
@@ -228,6 +261,11 @@ export const draftPageSchema = z.discriminatedUnion("type", [
     ...draftPageSharedSchema,
     type: z.literal("outro"),
     meta: outroPageMetaSchema,
+  }),
+  z.object({
+    ...draftPageSharedSchema,
+    type: z.literal("endcard"),
+    meta: endcardPageMetaSchema,
   }),
 ]);
 
@@ -308,6 +346,11 @@ export const savedPageSchema = z.discriminatedUnion("type", [
     type: z.literal("outro"),
     meta: outroPageMetaSchema,
   }),
+  z.object({
+    ...savedPageSharedSchema,
+    type: z.literal("endcard"),
+    meta: endcardPageMetaSchema,
+  }),
 ]);
 
 export const savedTransitionSchema = z.object({
@@ -354,6 +397,9 @@ export type PageType = z.infer<typeof pageTypeSchema>;
 export type TransitionVariant = z.infer<typeof transitionVariantSchema>;
 export type OgpMetadata = z.infer<typeof ogpMetadataSchema>;
 export type OutroBlock = z.infer<typeof outroBlockSchema>;
+export type EndcardCredit = z.infer<typeof endcardCreditSchema>;
+export type EndcardAdvertiser = z.infer<typeof endcardAdvertiserSchema>;
+export type EndcardMessage = z.infer<typeof endcardMessageSchema>;
 export type WeatherLocation = z.infer<typeof weatherLocationSchema>;
 export type WeatherCondition = z.infer<typeof weatherConditionSchema>;
 export type WeatherForecast = z.infer<typeof weatherForecastSchema>;
@@ -366,6 +412,8 @@ export type SavedTransition = z.infer<typeof savedTransitionSchema>;
 export type SavedSequenceItem = z.infer<typeof savedSequenceItemSchema>;
 export type DraftOutroPage = Extract<DraftPage, { type: "outro" }>;
 export type SavedOutroPage = Extract<SavedPage, { type: "outro" }>;
+export type DraftEndcardPage = Extract<DraftPage, { type: "endcard" }>;
+export type SavedEndcardPage = Extract<SavedPage, { type: "endcard" }>;
 export type DraftProject = z.infer<typeof draftProjectSchema>;
 export type DraftProjectInput = z.input<typeof draftProjectSchema>;
 export type SavedProject = z.infer<typeof savedProjectSchema>;

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { DraftPage } from "@/_schemas";
 
 export const pageSettingsFormSchema = z.object({
   title: z.string(),
@@ -26,7 +25,7 @@ export function toPageSettingsFormValues({
 }
 
 export function getSelectedPageSettingsFormValues(
-  page: Pick<DraftPage, "title" | "meta"> | null,
+  page: { title: string; meta: { tags: readonly string[] } } | null,
 ): PageSettingsFormValues {
   if (!page) {
     return toPageSettingsFormValues({ title: "", tags: [] });

@@ -21,6 +21,31 @@ describe("page draft", () => {
     });
   });
 
+  it("creates a blank endcard page without tts", () => {
+    expect(
+      createBlankDraftPage({
+        id: "endcard-id",
+        title: "Endcard",
+        type: "endcard",
+      }),
+    ).toEqual({
+      id: "endcard-id",
+      title: "Endcard",
+      type: "endcard",
+      meta: {
+        tags: [],
+        nicoadSource: "",
+        credits: [],
+        advertisers: [],
+        messages: [],
+      },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    });
+  });
+
   it("keeps blank titles unchanged", () => {
     expect(
       createBlankDraftPage({

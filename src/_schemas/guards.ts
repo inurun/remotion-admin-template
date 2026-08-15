@@ -2,6 +2,7 @@ import type {
   DraftPage,
   DraftSequenceItem,
   DraftTransition,
+  PageType,
   SavedPage,
   SavedSequenceItem,
   SavedTransition,
@@ -33,4 +34,8 @@ export function isDraftTransition(item: DraftSequenceItem): item is DraftTransit
 
 export function isDraftContentPage(item: DraftSequenceItem): item is DraftPage {
   return item.type !== "transition";
+}
+
+export function pageTypeRequiresTts(type: PageType): boolean {
+  return type === "intro" || type === "main";
 }

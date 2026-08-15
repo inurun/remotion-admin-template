@@ -18,7 +18,11 @@ function contentPage(tts: string[]): DraftSequenceItem {
       id: `t${index}`,
       provider: "voisona" as const,
       text,
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      volume: 1,
     })),
+    meta: { tags: [] },
   };
 }
 

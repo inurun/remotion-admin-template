@@ -1,5 +1,5 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import type { PageType } from "@/_schemas";
+import type { DraftSequenceItem } from "@/_schemas";
 import type { PageThumbnailProps } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-thumbnail/use-page-thumbnail";
 
 export type PageListItemProps = {
@@ -8,7 +8,7 @@ export type PageListItemProps = {
   onRemove: () => void;
   onSelect: () => void;
   pageId: string;
-  pageType: PageType;
+  pageType: DraftSequenceItem["type"];
   thumbnail: PageThumbnailProps;
 };
 

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
+import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
 
 const accessMock = vi.fn();
 const readSavedProjectMock = vi.fn();
@@ -50,6 +51,14 @@ vi.mock("@/server/features/voicepeak/use-case", () => ({
   analyzeVoicepeakText: analyzeVoicepeakTextMock,
   synthesizeVoicepeak: synthesizeVoicepeakMock,
 }));
+
+function contentPage(pages: SavedSequenceItem[] | undefined, index = 0): SavedPage {
+  const page = pages?.[index];
+  if (!page || !isSavedContentPage(page)) {
+    throw new Error("expected content page");
+  }
+  return page;
+}
 
 describe("project use-case", () => {
   const now = "2026-07-27T09:40:00.000Z";
@@ -224,7 +233,7 @@ describe("project use-case", () => {
       ],
     });
 
-    expect(result.pages[0]?.tts[0]).toEqual({
+    expect(contentPage(result.pages).tts[0]).toEqual({
       ...previous.pages[0]?.tts[0],
       padBeforeSec: 0,
       padAfterSec: 0,
@@ -294,9 +303,9 @@ describe("project use-case", () => {
     });
 
     expect(saved.meta).toEqual({ ...defaultMeta, updatedAt: now });
-    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/generated.wav");
-    expect(saved.pages[0]?.tts[0]?.avatar).toEqual(avatar);
-    expect(saved.pages[0]?.durationSec).toBe(2.85);
+    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/generated.wav");
+    expect(contentPage(saved.pages).tts[0]?.avatar).toEqual(avatar);
+    expect(contentPage(saved.pages).durationSec).toBe(2.85);
     expect(writeSavedProjectMock).toHaveBeenCalledWith("project", saved);
   });
 
@@ -352,7 +361,7 @@ describe("project use-case", () => {
       voiceName: "3",
       synthesisSettings: { speedScale: 1.3 },
     });
-    expect(saved.pages[0]?.tts[0]).toMatchObject({
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicevox",
       durationSec: 1.1,
       audio: { src: "/tts/voicevox.wav" },
@@ -416,7 +425,7 @@ describe("project use-case", () => {
       voiceName: "3",
       synthesisSettings: { speedScale: 1.2 },
     });
-    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
+    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
     expect(saved.voicePresets).toEqual(voicePresets);
   });
 
@@ -508,8 +517,8 @@ describe("project use-case", () => {
       voiceName: "3",
       synthesisSettings: { speedScale: 1.5 },
     });
-    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
-    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/voicevox.wav");
+    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
+    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/voicevox.wav");
   });
 
   it("reuses an explicit tts override when the project preset changes", async () => {
@@ -590,7 +599,7 @@ describe("project use-case", () => {
 
     expect(analyzeVoicevoxTextMock).not.toHaveBeenCalled();
     expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
-    expect(saved.pages[0]?.tts[0]).toMatchObject({
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
       audio: { src: "/tts/project/old.wav" },
       synthesisSettings: { speedScale: 1.3 },
     });
@@ -671,8 +680,8 @@ describe("project use-case", () => {
     });
 
     expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
-    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/project/old.wav");
-    expect(saved.pages[0]?.tts[0]?.synthesisSettings).toBeUndefined();
+    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/project/old.wav");
+    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
   });
 
   it("saves a freshly synthesized VoicePeak project", async () => {
@@ -724,7 +733,7 @@ describe("project use-case", () => {
       analysis: "direct",
       voiceName: "Kasane Teto",
     });
-    expect(saved.pages[0]?.tts[0]).toMatchObject({
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicepeak",
       durationSec: 1.3,
       audio: { src: "/tts/voicepeak.wav" },
@@ -843,7 +852,7 @@ describe("project use-case", () => {
       voiceName: "voice",
       voiceVersion: "1",
     });
-    expect(saved.pages[0]?.tts[0]).toMatchObject({
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
       readText: "new read",
       durationSec: 1.6,
       audio: { src: "/tts/new.wav" },
@@ -928,7 +937,7 @@ describe("project use-case", () => {
       voiceName: "voice",
       voiceVersion: "1",
     });
-    expect(saved.pages[0]?.tts[0]).toMatchObject({
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voisona",
       speech: { analysis: "<tsml>Hello</tsml>" },
       audio: { src: "/tts/new.wav" },
@@ -996,7 +1005,7 @@ describe("project use-case", () => {
       ],
     });
 
-    expect(result.pages[0]).toMatchObject({
+    expect(contentPage(result.pages)).toMatchObject({
       title: "Renamed",
       type: "intro",
       meta: { tags: ["updated"] },
@@ -1004,7 +1013,7 @@ describe("project use-case", () => {
       padAfterSec: 0.5,
       durationSec: 3.5,
     });
-    expect(result.pages[0]?.tts[0]).toEqual({
+    expect(contentPage(result.pages).tts[0]).toEqual({
       ...previous.pages[0]?.tts[0],
       padBeforeSec: 0,
       padAfterSec: 0,
@@ -1090,7 +1099,7 @@ describe("project use-case", () => {
       voiceName: "voice",
       voiceVersion: "1",
     });
-    expect(saved.pages[0]?.tts[0]?.audio.src).toBe("/tts/project/new.wav");
+    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/project/new.wav");
   });
 
   it("resynthesizes when previous audio src is not project-scoped", async () => {
@@ -1286,5 +1295,44 @@ describe("project use-case", () => {
       ...project,
       meta: { ...defaultMeta, updatedAt: now },
     });
+  });
+
+  it("saves an endcard page without tts using the fixed duration", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "endcard-1",
+          title: "Endcard",
+          type: "endcard",
+          meta: {
+            tags: [],
+            nicoadSource: "sm46665240",
+            credits: [{ id: "credit-1", title: "BGM", url: "https://example.com" }],
+            advertisers: [{ id: "ad-1", name: "Ada", message: "hello" }],
+            messages: [{ id: "msg-1", text: "Thank you for watching!" }],
+          },
+          padBeforeSec: 0.5,
+          padAfterSec: 0.25,
+          richText: null,
+          tts: [],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages)).toMatchObject({
+      type: "endcard",
+      durationSec: 8.75,
+      tts: [],
+      meta: {
+        nicoadSource: "sm46665240",
+        credits: [{ id: "credit-1", title: "BGM", url: "https://example.com" }],
+      },
+    });
+    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
   });
 });

@@ -2,12 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/_shared/components/u
 import { PageList } from "@/app/components/app-editor/editor-card/page-list/page-list";
 import { PageContent } from "@/app/components/app-editor/editor-card/page-content/page-content";
 import { PageHeader } from "@/app/components/app-editor/editor-card/page-header/page-header";
+import { EndcardEditor } from "@/app/components/app-editor/editor-card/endcard-editor/endcard-editor";
 import { OutroBlocks } from "@/app/components/app-editor/editor-card/outro-blocks/outro-blocks";
 import { TtsList } from "@/app/components/app-editor/editor-card/tts-list/tts-list";
 import { ZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/zen-dialog";
 import { SelectedPageContextProvider, usePage } from "@/app/features/page";
+import type { PageType } from "@/_schemas";
 
-function SelectedPageEditor({ type }: { type: "intro" | "main" | "outro" }) {
+function SelectedPageEditor({ type }: { type: PageType }) {
   if (type === "intro") {
     return (
       <>
@@ -22,6 +24,15 @@ function SelectedPageEditor({ type }: { type: "intro" | "main" | "outro" }) {
       <>
         <PageHeader />
         <OutroBlocks />
+      </>
+    );
+  }
+
+  if (type === "endcard") {
+    return (
+      <>
+        <PageHeader />
+        <EndcardEditor />
       </>
     );
   }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Resolver, useFieldArray, useForm } from "react-hook-form";
 import {
@@ -31,6 +31,19 @@ function toDraftPages(project: SavedProject): DraftSequenceItem[] {
         id: item.id,
         title: item.title,
         type: "outro" as const,
+        meta: item.meta,
+        padBeforeSec: item.padBeforeSec,
+        padAfterSec: item.padAfterSec,
+        richText: item.richText,
+        tts,
+      };
+    }
+
+    if (item.type === "endcard") {
+      return {
+        id: item.id,
+        title: item.title,
+        type: "endcard" as const,
         meta: item.meta,
         padBeforeSec: item.padBeforeSec,
         padAfterSec: item.padAfterSec,
@@ -178,13 +191,16 @@ export function useFormProviderValue({
     [form],
   );
 
-  const value: FormContextValue = {
-    pageFields: pageFieldArray.fields,
-    appendPage,
-    movePage,
-    removePage,
-    appendTtsToPage,
-  };
+  const value = useMemo<FormContextValue>(
+    () => ({
+      pageFields: pageFieldArray.fields,
+      appendPage,
+      movePage,
+      removePage,
+      appendTtsToPage,
+    }),
+    [appendPage, appendTtsToPage, movePage, pageFieldArray.fields, removePage],
+  );
 
   return {
     form,
