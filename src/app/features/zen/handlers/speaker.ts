@@ -1,3 +1,4 @@
+import { ensureZenPage } from "@/app/features/zen/handlers/page-state";
 import { normalizeEyesToken } from "@/app/features/zen/normalize-eyes";
 import type { ZenLineHandler } from "@/app/features/zen/types";
 
@@ -6,11 +7,7 @@ export const speakerHandler: ZenLineHandler = {
   priority: 80,
   match: (line) => /^@\S/.test(line),
   apply: ({ line, lineNumber, state }) => {
-    if (!state.currentPage) {
-      state.errors.push({ line: lineNumber, message: "Speaker requires a page heading first." });
-      return;
-    }
-
+    const page = ensureZenPage(state, lineNumber);
     const tokens = line.trim().split(/\s+/);
     const alias = tokens[0]?.slice(1) ?? "";
     const eyesToken = tokens[1];
@@ -53,7 +50,7 @@ export const speakerHandler: ZenLineHandler = {
       lines: [],
       lineNumber,
     };
-    state.currentPage.speakers.push(speaker);
+    page.speakers.push(speaker);
     state.currentSpeaker = speaker;
   },
 };

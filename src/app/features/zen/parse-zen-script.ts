@@ -1,4 +1,5 @@
 import { buildDraftPages } from "@/app/features/zen/build-draft-pages";
+import { dropEmptyZenPages } from "@/app/features/zen/handlers/page-state";
 import { createZenLineHandlers } from "@/app/features/zen/handlers/registry";
 import type {
   ParseZenScriptOptions,
@@ -35,6 +36,8 @@ export function parseZenScript(
 
     handler.apply({ line, lineNumber, state });
   }
+
+  dropEmptyZenPages(state);
 
   if (state.pages.length === 0 && state.errors.length === 0) {
     state.errors.push({ line: 0, message: "No pages found." });

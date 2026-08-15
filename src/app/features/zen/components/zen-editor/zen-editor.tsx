@@ -1,17 +1,20 @@
 import CodeMirror from "@uiw/react-codemirror";
-import type { ZenCompletionAlias } from "@/app/components/app-editor/editor-card/zen-dialog/zen-editor/zen-completion";
-import { useZenEditor } from "@/app/components/app-editor/editor-card/zen-dialog/zen-editor/use-zen-editor";
+import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-editor/zen-completion";
+import { useZenEditor } from "@/app/features/zen/components/zen-editor/use-zen-editor";
+import type { ZenAliasTarget } from "@/app/features/zen/types";
 
 export function ZenEditor({
   aliases,
+  lintAliases,
   value,
   onChange,
 }: {
   aliases: ZenCompletionAlias[];
+  lintAliases: Map<string, ZenAliasTarget>;
   value: string;
   onChange: (value: string) => void;
 }) {
-  const editor = useZenEditor(aliases);
+  const editor = useZenEditor(aliases, lintAliases);
 
   return (
     <CodeMirror

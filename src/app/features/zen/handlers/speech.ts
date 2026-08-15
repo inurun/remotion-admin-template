@@ -1,3 +1,4 @@
+import { ensureZenPage } from "@/app/features/zen/handlers/page-state";
 import type { ZenLineHandler } from "@/app/features/zen/types";
 
 /** Half-width double space becomes an in-TTS newline. */
@@ -10,10 +11,7 @@ export const speechHandler: ZenLineHandler = {
   priority: 0,
   match: (line) => line.length > 0,
   apply: ({ line, lineNumber, state }) => {
-    if (!state.currentPage) {
-      state.errors.push({ line: lineNumber, message: "Speech requires a page heading first." });
-      return;
-    }
+    ensureZenPage(state, lineNumber);
 
     if (!state.currentSpeaker) {
       state.errors.push({ line: lineNumber, message: "Speech requires a @speaker first." });

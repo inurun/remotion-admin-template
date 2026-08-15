@@ -1,5 +1,15 @@
-import type { ZenLineHandler } from "@/app/features/zen/types";
+import { startZenPage } from "@/app/features/zen/handlers/page-state";
 import { extractInlineTags, uniqueTags } from "@/app/features/zen/tag-utils";
+import type { ZenLineHandler, ZenParseState } from "@/app/features/zen/types";
+
+function shouldStartNewPageFromHeading(state: ZenParseState) {
+  const page = state.currentPage;
+  if (!page) {
+    return true;
+  }
+
+  return page.speakers.length > 0 || page.title !== "";
+}
 
 export const pageHeadingHandler: ZenLineHandler = {
   id: "page-heading",
@@ -8,19 +18,17 @@ export const pageHeadingHandler: ZenLineHandler = {
   apply: ({ line, lineNumber, state }) => {
     const rest = line.replace(/^#\s+/, "");
     const { title, tags } = extractInlineTags(rest);
-    if (!title) {
-      state.errors.push({ line: lineNumber, message: "Page title is required." });
+    const page = shouldStartNewPageFromHeading(state)
+      ? startZenPage(state, lineNumber, title)
+      : state.currentPage;
+
+    if (!page) {
       return;
     }
 
-    const page = {
-      title,
-      tags: uniqueTags(tags),
-      speakers: [],
-      lineNumber,
-    };
-    state.pages.push(page);
-    state.currentPage = page;
+    page.title = title;
+    page.tags = uniqueTags([...page.tags, ...tags]);
+    page.lineNumber = lineNumber;
     state.currentSpeaker = null;
   },
 };

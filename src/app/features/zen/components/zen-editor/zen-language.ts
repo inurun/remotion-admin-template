@@ -8,6 +8,10 @@ export const zenLanguage = StreamLanguage.define({
       return null;
     }
 
+    if (stream.sol() && stream.match(/^---\s*$/)) {
+      return "zenSeparator";
+    }
+
     if (stream.match(/^#\s+/)) {
       return "zenHeading";
     }
@@ -24,6 +28,7 @@ export const zenLanguage = StreamLanguage.define({
     return null;
   },
   tokenTable: {
+    zenSeparator: t.separator,
     zenHeading: t.heading1,
     zenTag: t.meta,
     zenSpeaker: t.keyword,

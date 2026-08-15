@@ -231,6 +231,12 @@
     font-feature-settings: "palt";
   }
 
+  .cm-editor .cm-content {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-feature-settings: "palt";
+  }
+
   .rich-text-editor mark {
     background-color: transparent;
     background-image:

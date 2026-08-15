@@ -9,6 +9,8 @@ export {
   useTtsTextFocusRef,
 } from "@/app/features/tts/context/tts-text-focus-context";
 export { createDraftTts } from "@/app/features/tts/lib/create-draft-tts";
+export { applyTtsTextChange } from "@/app/features/tts/lib/apply-tts-text-change";
+export { applyTtsVoiceChange } from "@/app/features/tts/lib/apply-tts-voice-change";
 export {
   getTtsMoveState,
   resolveTtsIndexAfterInsert,

@@ -1,7 +1,7 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import type { DraftProject } from "@/_schemas";
 import { useSelectedPage } from "@/app/features/page";
-import { useTtsTextFocusRef } from "@/app/features/tts";
+import { applyTtsTextChange, useTtsTextFocusRef } from "@/app/features/tts";
 import { useTtsTextFieldKeyDown } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-text-field/tts-text-field.hotkeys";
 
 export function useTtsTextField({
@@ -39,15 +39,9 @@ export function useTtsTextField({
       return;
     }
 
-    setValue(
-      `pages.${selectedPageIndex}.tts.${index}`,
-      {
-        ...ttsItem,
-        text: nextText,
-        readText: nextText,
-      },
-      { shouldDirty: true },
-    );
+    setValue(`pages.${selectedPageIndex}.tts.${index}`, applyTtsTextChange(ttsItem, nextText), {
+      shouldDirty: true,
+    });
   };
 
   return {

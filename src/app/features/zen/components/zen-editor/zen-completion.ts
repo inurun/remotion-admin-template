@@ -1,6 +1,6 @@
 import { type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import type { AvatarType } from "@/_schemas";
-import { getEyesOptions } from "@/app/features/zen";
+import { getEyesOptions } from "@/app/features/zen/normalize-eyes";
 
 export type ZenCompletionAlias = {
   alias: string;

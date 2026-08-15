@@ -42,3 +42,11 @@ export function createAliasMap(
 
   return { aliases, errors };
 }
+
+export function createVoiceAliasMap(aliases: Map<string, ZenAliasTarget>) {
+  const voiceAliases = new Map<string, string>();
+  for (const [alias, target] of aliases) {
+    voiceAliases.set(getVoiceId(target.voice), alias);
+  }
+  return voiceAliases;
+}

@@ -3,6 +3,7 @@ import { voiceProviderSchema, type DraftProject } from "@/_schemas";
 import { useSelectedPage } from "@/app/features/page";
 import { useSettings } from "@/app/features/settings";
 import { getVoiceValue } from "@/app/features/editor";
+import { applyTtsVoiceChange } from "@/app/features/tts";
 
 export function useTtsVoiceField(index: number, onSelect: (index: number) => void) {
   const { control, getFieldState, formState, setValue } = useFormContext<DraftProject>();
@@ -33,20 +34,13 @@ export function useTtsVoiceField(index: number, onSelect: (index: number) => voi
 
     const [nextProvider, nextVoiceName, nextVoiceVersion] = value.split("::");
     const parsedProvider = voiceProviderSchema.catch("voisona").parse(nextProvider);
-    const providerChanged = ttsItem.provider !== parsedProvider;
     setValue(
       `pages.${selectedPageIndex}.tts.${index}`,
-      {
-        ...ttsItem,
+      applyTtsVoiceChange(ttsItem, {
         provider: parsedProvider,
         voiceName: nextVoiceName ?? "",
         voiceVersion: nextVoiceVersion ?? "",
-        synthesisSettings: null,
-        speech: {
-          ...ttsItem.speech,
-          analysis: providerChanged ? "" : (ttsItem.speech?.analysis ?? ""),
-        },
-      },
+      }),
       { shouldDirty: true },
     );
     onSelect(index);

@@ -1,14 +1,22 @@
 import { useMemo } from "react";
 import { autocompletion } from "@codemirror/autocomplete";
+import { lintGutter } from "@codemirror/lint";
 import { EditorView } from "@codemirror/view";
 import { useTheme } from "next-themes";
 import {
   createZenCompletionSource,
   type ZenCompletionAlias,
-} from "@/app/components/app-editor/editor-card/zen-dialog/zen-editor/zen-completion";
-import { zenLanguage } from "@/app/components/app-editor/editor-card/zen-dialog/zen-editor/zen-language";
+} from "@/app/features/zen/components/zen-editor/zen-completion";
+import { createZenLinter } from "@/app/features/zen/components/zen-editor/zen-lint";
+import { zenLanguage } from "@/app/features/zen/components/zen-editor/zen-language";
+import type { ZenAliasTarget } from "@/app/features/zen/types";
 
-export function useZenEditor(aliases: ZenCompletionAlias[]) {
+const WRAP_GUIDE_PX = 180;
+
+export function useZenEditor(
+  aliases: ZenCompletionAlias[],
+  lintAliases: Map<string, ZenAliasTarget>,
+) {
   const { resolvedTheme } = useTheme();
   const theme = resolvedTheme === "dark" ? ("dark" as const) : ("light" as const);
 
@@ -18,6 +26,8 @@ export function useZenEditor(aliases: ZenCompletionAlias[]) {
       autocompletion({
         override: [createZenCompletionSource(aliases)],
       }),
+      createZenLinter(lintAliases),
+      lintGutter(),
       EditorView.lineWrapping,
       EditorView.theme({
         "&": {
@@ -31,6 +41,9 @@ export function useZenEditor(aliases: ZenCompletionAlias[]) {
         },
         ".cm-content": {
           padding: "12px 0",
+          backgroundImage: `linear-gradient(to right, transparent ${WRAP_GUIDE_PX - 1}px, color-mix(in oklab, var(--foreground) 16%, transparent) ${WRAP_GUIDE_PX - 1}px, color-mix(in oklab, var(--foreground) 16%, transparent) ${WRAP_GUIDE_PX}px, transparent ${WRAP_GUIDE_PX}px)`,
+          backgroundRepeat: "no-repeat",
+          backgroundAttachment: "local",
         },
         ".cm-gutters": {
           backgroundColor: "transparent",
@@ -38,7 +51,7 @@ export function useZenEditor(aliases: ZenCompletionAlias[]) {
         },
       }),
     ],
-    [aliases],
+    [aliases, lintAliases],
   );
 
   return {

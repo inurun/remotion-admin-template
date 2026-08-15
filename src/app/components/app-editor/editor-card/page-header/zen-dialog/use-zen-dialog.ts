@@ -1,16 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { usePage } from "@/app/features/page";
+import { useFormContext } from "react-hook-form";
+import { isDraftContentPage, type DraftProject } from "@/_schemas";
+import { useSelectedPage } from "@/app/features/page";
 import { useSettings } from "@/app/features/settings";
-import { useTts } from "@/app/features/tts";
-import { createAliasMap, parseZenScript } from "@/app/features/zen";
+import { applyZenPage, createAliasMap, parseZenScript, serializeZenPage } from "@/app/features/zen";
 import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-editor/zen-completion";
 
 const EMPTY_SOURCE = "";
 
 export function useZenDialog() {
-  const { pageFields, appendPage, setSelectedPageIndex } = usePage();
-  const { clearSelection } = useTts();
+  const { getValues, setValue } = useFormContext<DraftProject>();
+  const { selectedPageIndex } = useSelectedPage();
   const { voices, voiceSettings } = useSettings();
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState(EMPTY_SOURCE);
@@ -55,32 +56,44 @@ export function useZenDialog() {
         return;
       }
 
+      if (nextOpen) {
+        const page = getValues(`pages.${selectedPageIndex}`);
+        if (page && isDraftContentPage(page) && page.type === "main") {
+          setSource(serializeZenPage(page, aliases));
+        }
+      }
+
       setOpen(nextOpen);
     },
-    [],
+    [aliases, getValues, selectedPageIndex],
   );
 
-  const insert = useCallback(() => {
-    if (parsed.errors.length > 0 || parsed.pages.length === 0) {
+  const apply = useCallback(() => {
+    if (parsed.errors.length > 0 || parsed.pages.length !== 1) {
       return;
     }
 
-    const startIndex = pageFields.length;
-    setSelectedPageIndex(startIndex);
-    clearSelection();
-    for (const page of parsed.pages) {
-      appendPage(page);
+    const nextPage = parsed.pages[0];
+    const current = getValues(`pages.${selectedPageIndex}`);
+    if (!nextPage || !current || !isDraftContentPage(current) || current.type !== "main") {
+      return;
     }
-    setSource(EMPTY_SOURCE);
+
+    const next = applyZenPage(current, nextPage, aliases);
+    setValue(`pages.${selectedPageIndex}.title`, next.title, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(`pages.${selectedPageIndex}.meta.tags`, next.meta.tags, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(`pages.${selectedPageIndex}.tts`, next.tts, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     setOpen(false);
-  }, [
-    appendPage,
-    clearSelection,
-    pageFields.length,
-    parsed.errors.length,
-    parsed.pages,
-    setSelectedPageIndex,
-  ]);
+  }, [aliases, getValues, parsed.errors.length, parsed.pages, selectedPageIndex, setValue]);
 
   return {
     open,
@@ -91,9 +104,9 @@ export function useZenDialog() {
     errors: parsed.errors,
     pageCount: parsed.pages.length,
     ttsCount: parsed.pages.reduce((count, page) => count + page.tts.length, 0),
-    canInsert: parsed.errors.length === 0 && parsed.pages.length > 0,
+    canApply: parsed.errors.length === 0 && parsed.pages.length === 1,
     close,
     handleOpenChange,
-    insert,
+    apply,
   };
 }

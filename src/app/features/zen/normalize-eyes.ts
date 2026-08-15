@@ -13,3 +13,7 @@ export function normalizeEyesToken(token: string, avatarType: AvatarType): strin
 export function getEyesOptions(avatarType: AvatarType): readonly string[] {
   return avatarOptions[avatarType].eyes;
 }
+
+export function getDefaultEyes(avatarType: AvatarType) {
+  return avatarOptions[avatarType].eyes[0];
+}

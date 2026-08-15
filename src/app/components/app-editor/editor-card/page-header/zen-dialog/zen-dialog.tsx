@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
 import { ZenEditor } from "@/app/features/zen/components/zen-editor/zen-editor";
-import { useZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/use-zen-dialog";
+import { useZenDialog } from "@/app/components/app-editor/editor-card/page-header/zen-dialog/use-zen-dialog";
 
 export function ZenDialog() {
   const dialog = useZenDialog();
@@ -17,7 +17,7 @@ export function ZenDialog() {
 
   return (
     <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
-      <DialogTrigger render={<Button type="button" size="sm" variant="outline" />}>
+      <DialogTrigger render={<Button type="button" size="icon-sm" variant="ghost" />}>
         <PocketKnife className="size-4 -rotate-90" />
       </DialogTrigger>
       <DialogContent
@@ -56,8 +56,8 @@ export function ZenDialog() {
           <Button type="button" variant="outline" onClick={dialog.close}>
             Close
           </Button>
-          <Button type="button" disabled={!dialog.canInsert} onClick={dialog.insert}>
-            Insert
+          <Button type="button" disabled={!dialog.canApply} onClick={dialog.apply}>
+            Apply
           </Button>
         </DialogFooter>
       </DialogContent>

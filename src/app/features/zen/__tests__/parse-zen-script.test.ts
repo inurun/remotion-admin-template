@@ -90,6 +90,75 @@ avatar指定行でeyesの指定だけ可能に
     expect(page2.tts[0]?.voiceName).toBe("futaba-minato_ja_JP");
   });
 
+  it("parses untitled pages separated by ---", () => {
+    const result = parseZenScript(
+      `---
+# タイトルあり
+#tag1 #tag2
+
+@zunda
+本文1
+---
+#tag1 #tag2
+
+@himari
+本文2
+---
+`,
+      { aliases: aliasMap },
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.pages).toHaveLength(2);
+    expect(result.pages[0]?.title).toBe("タイトルあり");
+    expect(result.pages[0]?.meta.tags).toEqual(["tag1", "tag2"]);
+    expect(result.pages[0]?.tts[0]?.text).toBe("本文1");
+    expect(result.pages[1]?.title).toBe("");
+    expect(result.pages[1]?.meta.tags).toEqual(["tag1", "tag2"]);
+    expect(result.pages[1]?.tts[0]?.text).toBe("本文2");
+  });
+
+  it("starts an untitled page from the first speaker", () => {
+    const result = parseZenScript(
+      `@zunda
+hello
+`,
+      { aliases: aliasMap },
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.pages).toHaveLength(1);
+    expect(result.pages[0]?.title).toBe("");
+    expect(result.pages[0]?.tts[0]?.text).toBe("hello");
+  });
+
+  it("skips consecutive and trailing separators", () => {
+    const result = parseZenScript(
+      `---
+---
+# ページ
+@zunda
+hello
+---
+---
+`,
+      { aliases: aliasMap },
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.pages).toHaveLength(1);
+    expect(result.pages[0]?.title).toBe("ページ");
+  });
+
+  it("reports speech without a speaker", () => {
+    const result = parseZenScript("hello\n", { aliases: aliasMap });
+
+    expect(result.errors).toContainEqual({
+      line: 1,
+      message: "Speech requires a @speaker first.",
+    });
+  });
+
   it("reports unknown aliases and eyes", () => {
     const result = parseZenScript(
       `# Page
@@ -111,18 +180,20 @@ hi
     });
   });
 
-  it("requires a page heading before speech", () => {
+  it("treats a later heading as a new page after speech", () => {
     const result = parseZenScript(
-      `@zunda
+      `# ページ1
+@zunda
 hello
+# ページ2
+@himari
+world
 `,
       { aliases: aliasMap },
     );
 
-    expect(result.errors).toContainEqual({
-      line: 1,
-      message: "Speaker requires a page heading first.",
-    });
+    expect(result.errors).toEqual([]);
+    expect(result.pages.map((page) => page.title)).toEqual(["ページ1", "ページ2"]);
   });
 });
 
