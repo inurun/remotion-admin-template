@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getLandingPageTtsCount,
+  resolveInsertPageIndex,
   resolvePageIndexFromFieldCount,
   resolveSelectedPageIndexAfterRemove,
 } from "@/app/features/page/lib/page-selection";
@@ -40,6 +41,14 @@ describe("page selection", () => {
     expect(resolvePageIndexFromFieldCount(1, 3)).toBe(1);
     expect(resolvePageIndexFromFieldCount(4, 3)).toBe(2);
     expect(resolvePageIndexFromFieldCount(0, 0)).toBeNull();
+  });
+
+  it("inserts after the selected page, or at the end when none is selected", () => {
+    expect(resolveInsertPageIndex(1, 3)).toBe(2);
+    expect(resolveInsertPageIndex(2, 3)).toBe(3);
+    expect(resolveInsertPageIndex(0, 3)).toBe(1);
+    expect(resolveInsertPageIndex(null, 3)).toBe(3);
+    expect(resolveInsertPageIndex(null, 0)).toBe(0);
   });
 
   it("resolves the selected page after removing a page", () => {

@@ -5,6 +5,7 @@ export {
 } from "@/app/features/page/context/selected-page-context";
 export {
   getLandingPageTtsCount,
+  resolveInsertPageIndex,
   resolvePageIndexFromFieldCount,
   resolveSelectedPageIndexAfterRemove,
 } from "@/app/features/page/lib/page-selection";

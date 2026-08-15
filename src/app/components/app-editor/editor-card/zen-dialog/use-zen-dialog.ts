@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { usePage } from "@/app/features/page";
+import { resolveInsertPageIndex, usePage } from "@/app/features/page";
 import { useSettings } from "@/app/features/settings";
 import { useTts } from "@/app/features/tts";
 import { createAliasMap, parseZenScript } from "@/app/features/zen";
@@ -9,7 +9,7 @@ import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-edito
 const EMPTY_SOURCE = "";
 
 export function useZenDialog() {
-  const { pageFields, appendPage, setSelectedPageIndex } = usePage();
+  const { pageFields, insertPage, selectedPageIndex, setSelectedPageIndex } = usePage();
   const { clearSelection } = useTts();
   const { voices, voiceSettings } = useSettings();
   const [open, setOpen] = useState(false);
@@ -65,20 +65,21 @@ export function useZenDialog() {
       return;
     }
 
-    const startIndex = pageFields.length;
+    const startIndex = resolveInsertPageIndex(selectedPageIndex, pageFields.length);
     setSelectedPageIndex(startIndex);
     clearSelection();
-    for (const page of parsed.pages) {
-      appendPage(page);
-    }
+    parsed.pages.forEach((page, index) => {
+      insertPage(startIndex + index, page);
+    });
     setSource(EMPTY_SOURCE);
     setOpen(false);
   }, [
-    appendPage,
     clearSelection,
+    insertPage,
     pageFields.length,
     parsed.errors.length,
     parsed.pages,
+    selectedPageIndex,
     setSelectedPageIndex,
   ]);
 

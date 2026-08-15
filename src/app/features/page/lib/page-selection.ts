@@ -40,6 +40,14 @@ export function resolvePageIndexFromFieldCount(
   return current < pageCount ? current : pageCount - 1;
 }
 
+export function resolveInsertPageIndex(selectedPageIndex: number | null, pageCount: number) {
+  if (selectedPageIndex === null) {
+    return pageCount;
+  }
+
+  return selectedPageIndex + 1;
+}
+
 export function getLandingPageTtsCount(
   pageFields: DraftSequenceItem[],
   removedPageIndex: number,

@@ -76,6 +76,7 @@ export function getVoiceValue(item: {
 type FormContextValue = {
   pageFields: Array<DraftSequenceItem & { fieldKey: string }>;
   appendPage: (page: DraftSequenceItem) => void;
+  insertPage: (index: number, page: DraftSequenceItem) => void;
   movePage: (fromIndex: number, toIndex: number) => void;
   removePage: (index: number) => void;
   appendTtsToPage: (pageIndex: number, tts: DraftTts) => number | null;
@@ -103,7 +104,7 @@ export function useFormProviderValue({
     keyName: "fieldKey",
     name: "pages",
   });
-  const { append, move, remove } = pageFieldArray;
+  const { append, insert, move, remove } = pageFieldArray;
 
   useEffect(() => {
     form.reset({
@@ -161,6 +162,13 @@ export function useFormProviderValue({
     [append],
   );
 
+  const insertPage = useCallback(
+    (index: number, page: DraftSequenceItem) => {
+      insert(index, page);
+    },
+    [insert],
+  );
+
   const movePage = useCallback(
     (fromIndex: number, toIndex: number) => {
       move(fromIndex, toIndex);
@@ -195,11 +203,12 @@ export function useFormProviderValue({
     () => ({
       pageFields: pageFieldArray.fields,
       appendPage,
+      insertPage,
       movePage,
       removePage,
       appendTtsToPage,
     }),
-    [appendPage, appendTtsToPage, movePage, pageFieldArray.fields, removePage],
+    [appendPage, appendTtsToPage, insertPage, movePage, pageFieldArray.fields, removePage],
   );
 
   return {

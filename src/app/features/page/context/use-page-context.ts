@@ -18,11 +18,12 @@ type PageContextValue = {
   movePage: (fromIndex: number, toIndex: number) => void;
   removePage: (index: number) => void;
   appendPage: (page: DraftSequenceItem) => void;
+  insertPage: (index: number, page: DraftSequenceItem) => void;
   syncPageIndexFromFields: (pageCount: number) => void;
 };
 
 export function usePageProviderValue(): PageContextValue {
-  const { pageFields, movePage, removePage, appendPage } = useEditorForm();
+  const { pageFields, movePage, removePage, appendPage, insertPage } = useEditorForm();
   const { control } = useFormContext<DraftProject>();
   const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(null);
   const pageIndex = selectedPageIndex ?? 0;
@@ -88,10 +89,12 @@ export function usePageProviderValue(): PageContextValue {
       movePage,
       removePage,
       appendPage,
+      insertPage,
       syncPageIndexFromFields,
     }),
     [
       appendPage,
+      insertPage,
       movePage,
       pageFields,
       removePage,
