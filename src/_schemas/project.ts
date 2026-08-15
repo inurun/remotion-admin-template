@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
 import { WEATHER_LOCATION_IDS } from "@/features/weather/weather-locations";
 
@@ -13,6 +14,7 @@ export const voisonaSynthesisSettingsSchema = z.object({
   pitch: z.number().optional(),
   speed: z.number().optional(),
   volume: z.number().optional(),
+  style_weights: z.array(z.number()).optional(),
 });
 
 export const voicevoxSynthesisSettingsSchema = z.object({
@@ -48,6 +50,29 @@ export const voiceOptionSchema = z.object({
   voiceVersion: z.string().optional(),
   displayName: z.string().min(1),
 });
+
+const voicePresetBaseSchema = {
+  voiceName: z.string().min(1),
+  voiceVersion: z.string().optional(),
+};
+
+export const voicePresetSchema = z.discriminatedUnion("provider", [
+  z.object({
+    ...voicePresetBaseSchema,
+    provider: z.literal("voisona"),
+    synthesisSettings: voisonaSynthesisSettingsSchema,
+  }),
+  z.object({
+    ...voicePresetBaseSchema,
+    provider: z.literal("voicevox"),
+    synthesisSettings: voicevoxSynthesisSettingsSchema,
+  }),
+  z.object({
+    ...voicePresetBaseSchema,
+    provider: z.literal("voicepeak"),
+    synthesisSettings: voicepeakSynthesisSettingsSchema,
+  }),
+]);
 
 const ttsBaseSchema = z.object({
   id: z.string().min(1),
@@ -254,6 +279,7 @@ export const draftProjectSchema = z.object({
   meta: projectMetaSchema,
   pages: z.array(draftSequenceItemSchema),
   bgm: z.array(bgmTrackSchema).default([]),
+  voicePresets: z.array(voicePresetSchema).default(getDefaultVoicePresets),
 });
 
 const savedPageSharedSchema = {
@@ -296,6 +322,7 @@ export const savedProjectSchema = z.object({
   meta: projectMetaSchema,
   pages: z.array(savedSequenceItemSchema),
   bgm: z.array(bgmTrackSchema).default([]),
+  voicePresets: z.array(voicePresetSchema).default(getDefaultVoicePresets),
 });
 
 export const createProjectRequestSchema = z.object({
@@ -320,6 +347,7 @@ export type VoicevoxSynthesisSettings = z.infer<typeof voicevoxSynthesisSettings
 export type VoicepeakSynthesisSettings = z.infer<typeof voicepeakSynthesisSettingsSchema>;
 export type AvatarSettings = z.infer<typeof avatarSettingsSchema>;
 export type VoiceOption = z.infer<typeof voiceOptionSchema>;
+export type VoicePreset = z.infer<typeof voicePresetSchema>;
 export type DraftTts = z.infer<typeof draftTtsSchema>;
 export type SavedTts = z.infer<typeof savedTtsSchema>;
 export type PageType = z.infer<typeof pageTypeSchema>;
@@ -339,6 +367,7 @@ export type SavedSequenceItem = z.infer<typeof savedSequenceItemSchema>;
 export type DraftOutroPage = Extract<DraftPage, { type: "outro" }>;
 export type SavedOutroPage = Extract<SavedPage, { type: "outro" }>;
 export type DraftProject = z.infer<typeof draftProjectSchema>;
+export type DraftProjectInput = z.input<typeof draftProjectSchema>;
 export type SavedProject = z.infer<typeof savedProjectSchema>;
 export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;
 export type CopyProjectRequest = z.infer<typeof copyProjectRequestSchema>;

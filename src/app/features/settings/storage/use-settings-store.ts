@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
 import {
   DEFAULT_HOTKEYS,
   normalizeHotkey,
@@ -16,7 +16,6 @@ export type VoiceSettings = {
   label: string;
   alias: string;
   hotkey: string;
-  synthesisSettings?: DraftTts["synthesisSettings"];
 };
 
 export type SettingsSnapshot = {
@@ -61,7 +60,6 @@ export function normalizeSettings(settings: SettingsSnapshot): SettingsSnapshot 
           label: value.label,
           alias: value.alias?.trim() ?? "",
           hotkey: normalizeHotkey(value.hotkey),
-          synthesisSettings: value.synthesisSettings ?? undefined,
         },
       ]),
     ),

@@ -9,7 +9,8 @@ import { useProject } from "@/app/features/project";
 import { usePublish } from "@/app/features/publish";
 import { startRender, type RenderState } from "@/app/features/render/api/render-api";
 import { useRenderStateQuery } from "@/app/features/render/swr/use-render-query";
-import { resolveProjectSynthesisSettings, useSettings } from "@/app/features/settings";
+import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
+import { useSettings } from "@/app/features/settings";
 
 export type { RenderState };
 
@@ -58,7 +59,7 @@ export type RenderContextValue = {
 export function useRenderProviderValue(): RenderContextValue {
   const { handleSubmit } = useFormContext<DraftProject>();
   const { isPending: saving } = useEditor();
-  const { options, voiceSettings } = useSettings();
+  const { options } = useSettings();
   const { pageFields } = usePage();
   const { projectPath } = useProject();
   const { renderState, reloadRenderState } = useRenderStateQuery();
@@ -129,7 +130,7 @@ export function useRenderProviderValue(): RenderContextValue {
         }
 
         await toast.promise(
-          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject, voiceSettings)),
+          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject)),
           {
             loading: "保存中...",
             success: "保存して音声を更新した。",
@@ -148,14 +149,7 @@ export function useRenderProviderValue(): RenderContextValue {
         setRenderError(JSON.stringify(error));
       }
     })();
-  }, [
-    armPublishAfterRender,
-    handleSubmit,
-    projectPath,
-    resetPublishWatch,
-    startRenderJob,
-    voiceSettings,
-  ]);
+  }, [armPublishAfterRender, handleSubmit, projectPath, resetPublishWatch, startRenderJob]);
 
   const handlePublishExecute = useCallback(() => {
     setDialogJobPhase("publish");

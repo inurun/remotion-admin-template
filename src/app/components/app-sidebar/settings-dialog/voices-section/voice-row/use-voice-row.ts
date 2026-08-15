@@ -1,9 +1,11 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { UseFormReturn } from "react-hook-form";
-import { useFormState, useWatch } from "react-hook-form";
-import type { VoiceOption } from "@/_schemas";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import type { DraftProject, VoiceOption } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
+import { getVoicePresetSettings, upsertVoicePreset } from "@/_shared/project/voice-presets";
+import { useProject } from "@/app/features/project";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
 import type { useVoicesSection } from "@/app/components/app-sidebar/settings-dialog/voices-section/use-voices-section";
 
@@ -22,6 +24,8 @@ export function useVoiceRow({
   voice: VoiceOption;
   voices: VoicesSectionState;
 }) {
+  const { projectPath } = useProject();
+  const projectForm = useFormContext<DraftProject>();
   const label =
     useWatch({
       control: form.control,
@@ -40,10 +44,11 @@ export function useVoiceRow({
       name: `voiceSettings.${settingIndex}.hotkey`,
       defaultValue: "",
     }) ?? "";
-  const synthesisSettings = useWatch({
-    control: form.control,
-    name: `voiceSettings.${settingIndex}.synthesisSettings`,
-  });
+  const voicePresets =
+    useWatch({
+      control: projectForm.control,
+      name: "voicePresets",
+    }) ?? [];
   useFormState({
     control: form.control,
     name: `voiceSettings.${settingIndex}.hotkey`,
@@ -64,21 +69,24 @@ export function useVoiceRow({
 
   return {
     alias,
+    canEditPreset: Boolean(projectPath),
     error,
     handleRef,
     hotkey,
     isDragging,
     label,
     ref,
-    synthesisSettings,
+    synthesisSettings: getVoicePresetSettings(voicePresets, voice),
     voice,
     onAliasChange: (value: string) => voices.setVoiceAlias(voice, value),
     onHotkeyChange: (value: string) => voices.setVoiceHotkey(voice, value),
     onLabelChange: (value: string) => voices.setVoiceLabel(voice, value),
     onRemove: () => voices.removeVoice(voice),
-    onSynthesisSettingsChange: ((value) =>
-      voices.setVoiceSynthesisSettings(voice, value)) as Parameters<
-      typeof SynthesisSettingsFields
-    >[0]["onChange"],
+    onSynthesisSettingsChange: ((value) => {
+      projectForm.setValue("voicePresets", upsertVoicePreset(voicePresets, voice, value), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }) as Parameters<typeof SynthesisSettingsFields>[0]["onChange"],
   };
 }

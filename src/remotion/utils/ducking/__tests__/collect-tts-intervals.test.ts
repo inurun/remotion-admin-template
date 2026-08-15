@@ -56,6 +56,7 @@ function project(pages: SavedProject["pages"]): SavedProject {
     },
     bgm: [],
     pages,
+    voicePresets: [],
   };
 }
 

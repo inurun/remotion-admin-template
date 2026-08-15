@@ -27,6 +27,18 @@ describe("project frame schema", () => {
 
     expect(project.meta.weather).toEqual({});
     expect(project.pages[0]?.meta).toEqual({ tags: [] });
+    expect(project.voicePresets).toHaveLength(7);
+  });
+
+  it("keeps an explicit empty voicePresets list", () => {
+    expect(
+      savedProjectSchema.parse({
+        meta: { title: "project", description: "", width: 1920, height: 1080 },
+        bgm: [],
+        pages: [],
+        voicePresets: [],
+      }).voicePresets,
+    ).toEqual([]);
   });
 
   it("accepts configured weather and rejects invalid precipitation", () => {

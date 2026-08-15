@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { DraftProject } from "@/_schemas";
 import { saveProject } from "@/app/features/project/api/project-api";
 import { useProject } from "@/app/features/project";
-import { resolveProjectSynthesisSettings, useSettings } from "@/app/features/settings";
+import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
 
 type EditorContextValue = {
   isPending: boolean;
@@ -14,7 +14,6 @@ type EditorContextValue = {
 export function useEditorProviderValue(): EditorContextValue {
   const form = useFormContext<DraftProject>();
   const { projectPath, mutateProject } = useProject();
-  const { voiceSettings } = useSettings();
   const [isPending, setSaving] = useState(false);
 
   const saveCurrentProject = useCallback(
@@ -29,7 +28,7 @@ export function useEditorProviderValue(): EditorContextValue {
         try {
           const savedProject = await saveProject(
             projectPath,
-            resolveProjectSynthesisSettings(draftProject, voiceSettings),
+            resolveProjectSynthesisSettings(draftProject),
           );
           await mutateProject(savedProject);
         } finally {
@@ -43,7 +42,7 @@ export function useEditorProviderValue(): EditorContextValue {
         error: "Save failed",
       });
     },
-    [mutateProject, projectPath, voiceSettings],
+    [mutateProject, projectPath],
   );
 
   return {

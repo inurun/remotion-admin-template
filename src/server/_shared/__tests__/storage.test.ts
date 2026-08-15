@@ -81,6 +81,7 @@ describe("storage", () => {
       },
       pages: [],
       bgm: [],
+      voicePresets: [],
     });
 
     expect(summary).toEqual({
@@ -108,6 +109,7 @@ describe("storage", () => {
         },
         pages: [],
         bgm: [],
+        voicePresets: [],
       }),
     ).rejects.toBeInstanceOf(ProjectAlreadyExistsError);
     expect(writeFileMock).not.toHaveBeenCalled();

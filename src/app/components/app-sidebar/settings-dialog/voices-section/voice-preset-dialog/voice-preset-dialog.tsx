@@ -11,10 +11,12 @@ import {
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 
 export function VoicePresetDialog({
+  disabled,
   onChange,
   value,
   voice,
 }: {
+  disabled?: boolean;
   onChange: Parameters<typeof SynthesisSettingsFields>[0]["onChange"];
   value: Parameters<typeof SynthesisSettingsFields>[0]["value"];
   voice: VoiceOption;
@@ -22,7 +24,15 @@ export function VoicePresetDialog({
   return (
     <Dialog>
       <DialogTrigger
-        render={<Button type="button" size="icon-sm" variant="outline" title="Voice settings" />}
+        render={
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            title="Voice settings"
+            disabled={disabled}
+          />
+        }
       >
         <SlidersHorizontal />
       </DialogTrigger>

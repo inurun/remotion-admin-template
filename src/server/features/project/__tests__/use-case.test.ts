@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 
 const accessMock = vi.fn();
 const readSavedProjectMock = vi.fn();
@@ -149,6 +150,7 @@ describe("project use-case", () => {
         },
       ],
       bgm: [],
+      voicePresets: getDefaultVoicePresets(),
     });
     expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
     expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
@@ -443,6 +445,7 @@ describe("project use-case", () => {
       },
       bgm: [],
       pages: [],
+      voicePresets: getDefaultVoicePresets(),
     });
   });
 
@@ -946,6 +949,7 @@ describe("project use-case", () => {
       },
       pages: [],
       bgm: [],
+      voicePresets: getDefaultVoicePresets(),
     });
   });
 

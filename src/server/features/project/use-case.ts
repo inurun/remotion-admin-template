@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import {
   type ProjectFileSummary,
   type DraftPage,
-  type DraftProject,
+  type DraftProjectInput,
   type DraftSequenceItem,
   type DraftTransition,
   type DraftTts,
@@ -17,6 +17,7 @@ import {
   savedProjectSchema,
 } from "@/_schemas";
 import { nowIso } from "@/_shared/lib/date";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
 import { VIDEO_FPS } from "@/constants";
 import { getTransitionDurationSec } from "@/remotion/transitions/variants";
@@ -387,7 +388,12 @@ async function buildSavedProject(
   );
   validateTransitionSequenceDurations(pages);
 
-  return savedProjectSchema.parse({ meta, bgm: draft.bgm, pages });
+  return savedProjectSchema.parse({
+    meta,
+    bgm: draft.bgm,
+    pages,
+    voicePresets: draft.voicePresets,
+  });
 }
 
 export async function listProjects(): Promise<ProjectFileSummary[]> {
@@ -404,6 +410,7 @@ export async function createProject(projectPath: string) {
       },
       bgm: [],
       pages: [],
+      voicePresets: getDefaultVoicePresets(),
     }),
   );
 }
@@ -426,7 +433,7 @@ export async function loadProject(projectPath: string) {
 export async function saveProject(
   serverEnv: ServerEnv,
   projectPath: string,
-  payload: DraftProject,
+  payload: DraftProjectInput,
 ) {
   const previousProject = await readSavedProject(projectPath);
   const project = await buildSavedProject(serverEnv, payload, projectPath, previousProject);

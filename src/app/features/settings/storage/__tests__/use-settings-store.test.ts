@@ -74,8 +74,10 @@ describe("useSettingsStore", () => {
     );
 
     expect(useSettingsStore.getState().voiceSettings["voisona::a::"]?.hotkey).toBe("ctrl+1");
-    expect(useSettingsStore.getState().voiceSettings["voisona::a::"]?.synthesisSettings).toEqual({
-      speed: 1.2,
+    expect(useSettingsStore.getState().voiceSettings["voisona::a::"]).toEqual({
+      label: "Actor A",
+      alias: "",
+      hotkey: "ctrl+1",
     });
     expect(useSettingsStore.getState().hotkeys.save).toBe("ctrl+s");
     expect(useSettingsStore.getState().hotkeys.deleteTts).toBe(DEFAULT_HOTKEYS.deleteTts);

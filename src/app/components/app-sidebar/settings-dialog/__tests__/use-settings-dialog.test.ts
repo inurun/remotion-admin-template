@@ -39,7 +39,6 @@ describe("useSettingsDialog helpers", () => {
         label: "Kept",
         alias: "",
         hotkey: "ctrl+2",
-        synthesisSettings: undefined,
       },
       { voiceId: "voisona::a::", label: "", alias: "", hotkey: "" },
     ]);
@@ -65,13 +64,11 @@ describe("useSettingsDialog helpers", () => {
           label: "Actor A",
           alias: "zunda",
           hotkey: "ctrl+1",
-          synthesisSettings: undefined,
         },
         "voisona::b::": {
           label: "Actor B",
           alias: "",
           hotkey: "ctrl+2",
-          synthesisSettings: undefined,
         },
       },
       hotkeys: DEFAULT_HOTKEYS,

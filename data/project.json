@@ -3,39 +3,266 @@
     "title": "Sample\\nProject",
     "description": "Admin + Remotion stub template",
     "width": 1920,
-    "height": 1080
+    "height": 1080,
+    "updatedAt": "2026-08-15T08:05:48.909Z",
+    "weather": {},
+    "niconico": {
+      "title": "",
+      "description": "",
+      "thumbnailTime": "00:00.000",
+      "parentWorkIds": []
+    }
   },
   "pages": [
     {
-      "id": "intro-sample",
-      "title": "Intro",
-      "type": "intro",
+      "id": "4fefb322-99a7-4b25-a677-43744c8265c8",
+      "title": "最初のページ",
       "padBeforeSec": 0,
       "padAfterSec": 0,
-      "durationSec": 3,
+      "durationSec": 4.033333333333333,
       "richText": null,
-      "tts": []
-    },
-    {
-      "id": "main-sample",
-      "title": "Main",
+      "tts": [
+        {
+          "id": "23ca525b-46ca-4cff-95d9-4a0474f920ca",
+          "text": "禅モードのテストなのだ",
+          "readText": "禅モードのテストなのだ",
+          "voiceName": "3",
+          "voiceVersion": "0.16.1",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "analysis": "{\"accent_phrases\":[{\"accent\":3,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"z\",\"consonant_length\":0.10952388495206833,\"pitch\":5.691833972930908,\"text\":\"ゼ\",\"vowel\":\"e\",\"vowel_length\":0.14525902271270752},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.9530415534973145,\"text\":\"ン\",\"vowel\":\"N\",\"vowel_length\":0.08020244538784027},{\"consonant\":\"m\",\"consonant_length\":0.06484396010637283,\"pitch\":6.101534843444824,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.08562007546424866},{\"consonant\":null,\"consonant_length\":null,\"pitch\":6.145688056945801,\"text\":\"オ\",\"vowel\":\"o\",\"vowel_length\":0.09068834781646729},{\"consonant\":\"d\",\"consonant_length\":0.051425084471702576,\"pitch\":5.964138507843018,\"text\":\"ド\",\"vowel\":\"o\",\"vowel_length\":0.06988900154829025},{\"consonant\":\"n\",\"consonant_length\":0.04658261314034462,\"pitch\":5.581577301025391,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.08463367074728012}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.06700892746448517,\"pitch\":5.852756500244141,\"text\":\"テ\",\"vowel\":\"e\",\"vowel_length\":0.09413492679595947},{\"consonant\":\"s\",\"consonant_length\":0.028937822207808495,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.0590314120054245},{\"consonant\":\"t\",\"consonant_length\":0.07032480090856552,\"pitch\":6.120085716247559,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.0786793902516365},{\"consonant\":\"n\",\"consonant_length\":0.0505339652299881,\"pitch\":5.985074520111084,\"text\":\"ナ\",\"vowel\":\"a\",\"vowel_length\":0.08062905818223953}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"n\",\"consonant_length\":0.05647306144237518,\"pitch\":5.770269870758057,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.09237337112426758},{\"consonant\":\"d\",\"consonant_length\":0.048554543405771255,\"pitch\":5.668534755706787,\"text\":\"ダ\",\"vowel\":\"a\",\"vowel_length\":0.20502811670303345}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"ゼンモ'オドノ/テ'_ストナ/ノダ'\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "synthesisSettings": {
+            "speedScale": 1.4,
+            "pitchScale": -0.01,
+            "intonationScale": 0.9,
+            "prePhonemeLength": 0,
+            "postPhonemeLength": 0,
+            "pauseLengthScale": 0.5
+          },
+          "durationSec": 1.4120000000000001,
+          "audio": {
+            "src": "/tts/project/d6a1f0475f7dc145fc07b713b81fd94d.wav"
+          }
+        },
+        {
+          "id": "d2546794-cbbb-4550-90e9-34375422f834",
+          "text": "escでクリアされる問題はもう",
+          "readText": "escでクリアされる問題はもう",
+          "voiceName": "14",
+          "voiceVersion": "0.16.1",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "analysis": "{\"accent_phrases\":[{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.63716983795166,\"text\":\"エ\",\"vowel\":\"e\",\"vowel_length\":0.07010091841220856},{\"consonant\":\"s\",\"consonant_length\":0.10308042168617249,\"pitch\":5.696926116943359,\"text\":\"ス\",\"vowel\":\"u\",\"vowel_length\":0.04660531133413315},{\"consonant\":\"k\",\"consonant_length\":0.06246747449040413,\"pitch\":5.583845615386963,\"text\":\"ク\",\"vowel\":\"u\",\"vowel_length\":0.043316178023815155},{\"consonant\":\"d\",\"consonant_length\":0.048491548746824265,\"pitch\":5.452491760253906,\"text\":\"デ\",\"vowel\":\"e\",\"vowel_length\":0.08218111097812653}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"k\",\"consonant_length\":0.08591164648532867,\"pitch\":5.455361843109131,\"text\":\"ク\",\"vowel\":\"u\",\"vowel_length\":0.03992143273353577},{\"consonant\":\"r\",\"consonant_length\":0.043837156146764755,\"pitch\":5.522129058837891,\"text\":\"リ\",\"vowel\":\"i\",\"vowel_length\":0.0818188264966011},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.560856342315674,\"text\":\"ア\",\"vowel\":\"a\",\"vowel_length\":0.05733562633395195}],\"pause_mora\":null},{\"accent\":3,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"s\",\"consonant_length\":0.10177364945411682,\"pitch\":5.420030117034912,\"text\":\"サ\",\"vowel\":\"a\",\"vowel_length\":0.04723631590604782},{\"consonant\":\"r\",\"consonant_length\":0.04009567201137543,\"pitch\":5.384862899780273,\"text\":\"レ\",\"vowel\":\"e\",\"vowel_length\":0.06447560340166092},{\"consonant\":\"r\",\"consonant_length\":0.047304101288318634,\"pitch\":5.359927654266357,\"text\":\"ル\",\"vowel\":\"u\",\"vowel_length\":0.033172596246004105}],\"pause_mora\":null},{\"accent\":5,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"m\",\"consonant_length\":0.0902896523475647,\"pitch\":5.3588175773620605,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.058722689747810364},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.386782646179199,\"text\":\"ン\",\"vowel\":\"N\",\"vowel_length\":0.1309577375650406},{\"consonant\":\"d\",\"consonant_length\":0.030356325209140778,\"pitch\":5.3681817054748535,\"text\":\"ダ\",\"vowel\":\"a\",\"vowel_length\":0.0705634355545044},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.3410162925720215,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.09099168330430984},{\"consonant\":\"w\",\"consonant_length\":0.06770258396863937,\"pitch\":5.337899208068848,\"text\":\"ワ\",\"vowel\":\"a\",\"vowel_length\":0.05059283599257469}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"m\",\"consonant_length\":0.11620567739009857,\"pitch\":5.283936023712158,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.10863259434700012},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.26222562789917,\"text\":\"オ\",\"vowel\":\"o\",\"vowel_length\":0.06831556558609009}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"エ'スクデ/クリ'ア/サレル'/モンダイワ'/モ'オ\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "synthesisSettings": {
+            "speedScale": 1.3,
+            "pitchScale": -0.02,
+            "intonationScale": 1,
+            "prePhonemeLength": 0,
+            "postPhonemeLength": 0,
+            "pauseLengthScale": 0.5
+          },
+          "durationSec": 1.6786666666666668,
+          "audio": {
+            "src": "/tts/project/28667d337bc389341019d97a21a10883.wav"
+          }
+        },
+        {
+          "id": "a9461dc8-acfe-4eec-b3cb-9dbcafbe5e31",
+          "text": "解決したはず",
+          "readText": "解決したはず",
+          "voiceName": "14",
+          "voiceVersion": "0.16.1",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "analysis": "{\"accent_phrases\":[{\"accent\":4,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"k\",\"consonant_length\":0.07602378726005554,\"pitch\":5.540694713592529,\"text\":\"カ\",\"vowel\":\"a\",\"vowel_length\":0.08600978553295135},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.5624566078186035,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.09172378480434418},{\"consonant\":\"k\",\"consonant_length\":0.0630517527461052,\"pitch\":5.647857189178467,\"text\":\"ケ\",\"vowel\":\"e\",\"vowel_length\":0.07532139122486115},{\"consonant\":\"ts\",\"consonant_length\":0.08589307963848114,\"pitch\":5.606997966766357,\"text\":\"ツ\",\"vowel\":\"u\",\"vowel_length\":0.03164859861135483}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"sh\",\"consonant_length\":0.08205920457839966,\"pitch\":0,\"text\":\"シ\",\"vowel\":\"I\",\"vowel_length\":0.029940985143184662},{\"consonant\":\"t\",\"consonant_length\":0.058137331157922745,\"pitch\":5.5087971687316895,\"text\":\"タ\",\"vowel\":\"a\",\"vowel_length\":0.04265671223402023}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"h\",\"consonant_length\":0.11452630907297134,\"pitch\":5.426747798919678,\"text\":\"ハ\",\"vowel\":\"a\",\"vowel_length\":0.04643256589770317},{\"consonant\":\"z\",\"consonant_length\":0.10307106375694275,\"pitch\":5.398947715759277,\"text\":\"ズ\",\"vowel\":\"u\",\"vowel_length\":0.04468541219830513}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"カイケツ'/_シタ'/ハズ'\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "synthesisSettings": {
+            "speedScale": 1.3,
+            "pitchScale": -0.02,
+            "intonationScale": 1,
+            "prePhonemeLength": 0,
+            "postPhonemeLength": 0,
+            "pauseLengthScale": 0.5
+          },
+          "durationSec": 0.9426666666666667,
+          "audio": {
+            "src": "/tts/project/b807d98e575ca111d72f4ee9037935b2.wav"
+          }
+        }
+      ],
       "type": "main",
-      "padBeforeSec": 0,
-      "padAfterSec": 0,
-      "durationSec": 3,
-      "richText": null,
-      "tts": []
+      "meta": {
+        "tags": [
+          "タグ1",
+          "タグ2"
+        ]
+      }
     },
     {
-      "id": "outro-sample",
-      "title": "Outro",
-      "type": "outro",
+      "id": "49be1e01-a008-44a3-897e-3b05fe8f375b",
+      "title": "",
       "padBeforeSec": 0,
       "padAfterSec": 0,
-      "durationSec": 3,
+      "durationSec": 1.7746666666666668,
       "richText": null,
-      "tts": []
+      "tts": [
+        {
+          "id": "2d1423bb-f3b0-4a3f-a0fd-53c34429a6eb",
+          "text": "タイトルなしの場合のテストです",
+          "readText": "タイトルなしの場合のテストです",
+          "voiceName": "3",
+          "voiceVersion": "0.16.1",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "analysis": "{\"accent_phrases\":[{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.0862908661365509,\"pitch\":5.921106815338135,\"text\":\"タ\",\"vowel\":\"a\",\"vowel_length\":0.1294858455657959},{\"consonant\":null,\"consonant_length\":null,\"pitch\":6.02793025970459,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.09018822014331818},{\"consonant\":\"t\",\"consonant_length\":0.06185600161552429,\"pitch\":5.983234882354736,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.08122077584266663},{\"consonant\":\"r\",\"consonant_length\":0.03995969891548157,\"pitch\":5.768601417541504,\"text\":\"ル\",\"vowel\":\"u\",\"vowel_length\":0.05937335640192032}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"n\",\"consonant_length\":0.05408979952335358,\"pitch\":5.704990863800049,\"text\":\"ナ\",\"vowel\":\"a\",\"vowel_length\":0.09355417639017105},{\"consonant\":\"sh\",\"consonant_length\":0.05536087602376938,\"pitch\":5.822041034698486,\"text\":\"シ\",\"vowel\":\"i\",\"vowel_length\":0.06844384223222733},{\"consonant\":\"n\",\"consonant_length\":0.057843729853630066,\"pitch\":5.620969772338867,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.09501279145479202}],\"pause_mora\":null},{\"accent\":4,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"b\",\"consonant_length\":0.06420035660266876,\"pitch\":5.467573165893555,\"text\":\"バ\",\"vowel\":\"a\",\"vowel_length\":0.10612122714519501},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.743624687194824,\"text\":\"ア\",\"vowel\":\"a\",\"vowel_length\":0.11330811679363251},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.857382297515869,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.07362841069698334},{\"consonant\":\"n\",\"consonant_length\":0.05757109820842743,\"pitch\":5.93748140335083,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.08812879025936127}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.06289692223072052,\"pitch\":6.094906330108643,\"text\":\"テ\",\"vowel\":\"e\",\"vowel_length\":0.09217653423547745},{\"consonant\":\"s\",\"consonant_length\":0.02543114684522152,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.05904516577720642},{\"consonant\":\"t\",\"consonant_length\":0.07062052935361862,\"pitch\":6.040781021118164,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.07634864002466202},{\"consonant\":\"d\",\"consonant_length\":0.05658373981714249,\"pitch\":5.79233980178833,\"text\":\"デ\",\"vowel\":\"e\",\"vowel_length\":0.1166546419262886},{\"consonant\":\"s\",\"consonant_length\":0.07438915222883224,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.10296463221311569}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"タ'イトル/ナ'シノ/バアイノ'/テ'_ストデ_ス\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "synthesisSettings": {
+            "speedScale": 1.4,
+            "pitchScale": -0.01,
+            "intonationScale": 0.9,
+            "prePhonemeLength": 0,
+            "postPhonemeLength": 0,
+            "pauseLengthScale": 0.5
+          },
+          "durationSec": 1.7746666666666668,
+          "audio": {
+            "src": "/tts/project/3ba8d49a79431a93ac3578b4bc6a87ab.wav"
+          }
+        }
+      ],
+      "type": "main",
+      "meta": {
+        "tags": [
+          "タグ1"
+        ]
+      }
     }
   ],
-  "bgm": []
+  "bgm": [],
+  "voicePresets": [
+    {
+      "voiceName": "3",
+      "provider": "voicevox",
+      "synthesisSettings": {
+        "speedScale": 1.4,
+        "pitchScale": -0.01,
+        "intonationScale": 0.9,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0,
+        "pauseLengthScale": 0.5
+      }
+    },
+    {
+      "voiceName": "46",
+      "provider": "voicevox",
+      "synthesisSettings": {
+        "speedScale": 1.3,
+        "pitchScale": -0.02,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0,
+        "pauseLengthScale": 0.5
+      }
+    },
+    {
+      "voiceName": "43",
+      "provider": "voicevox",
+      "synthesisSettings": {
+        "speedScale": 1.3,
+        "intonationScale": 1.2,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0,
+        "pauseLengthScale": 0.5
+      }
+    },
+    {
+      "voiceName": "14",
+      "provider": "voicevox",
+      "synthesisSettings": {
+        "speedScale": 1.3,
+        "pitchScale": -0.02,
+        "intonationScale": 1,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0,
+        "pauseLengthScale": 0.5
+      }
+    },
+    {
+      "voiceName": "113",
+      "provider": "voicevox",
+      "synthesisSettings": {
+        "speedScale": 1.3,
+        "pitchScale": 0.01,
+        "intonationScale": 0.95,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0,
+        "pauseLengthScale": 0.5
+      }
+    },
+    {
+      "voiceName": "Kasane Teto",
+      "provider": "voicepeak",
+      "synthesisSettings": {
+        "speed": 90,
+        "pitch": 0,
+        "emotion": {
+          "teto-overactive": 10,
+          "teto-low-key": 20,
+          "teto-whisper": 20,
+          "teto-powerful": 10,
+          "teto-sweet": 30
+        }
+      }
+    },
+    {
+      "voiceName": "futaba-minato_ja_JP",
+      "voiceVersion": "2.0.2",
+      "provider": "voisona",
+      "synthesisSettings": {
+        "huskiness": 0.7,
+        "speed": 1.4,
+        "style_weights": [
+          0,
+          1,
+          0,
+          0.2,
+          0,
+          1
+        ]
+      }
+    }
+  ]
 }

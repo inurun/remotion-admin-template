@@ -12,6 +12,7 @@ import {
   type VoiceOption,
 } from "@/_schemas";
 import { toDraftTts } from "@/app/features/editor/lib/project-draft-conversion";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { normalizeProjectMeta } from "@/_shared/project/project-meta";
 
 function toDraftPages(project: SavedProject): DraftSequenceItem[] {
@@ -80,6 +81,7 @@ export function useFormProviderValue({
       meta: normalizeProjectMeta(initialProject.meta),
       pages: toDraftPages(initialProject),
       bgm: initialProject.bgm,
+      voicePresets: initialProject.voicePresets ?? getDefaultVoicePresets(),
     },
   });
 
@@ -95,6 +97,7 @@ export function useFormProviderValue({
       meta: normalizeProjectMeta(initialProject.meta),
       pages: toDraftPages(initialProject),
       bgm: initialProject.bgm,
+      voicePresets: initialProject.voicePresets ?? getDefaultVoicePresets(),
     });
   }, [form, initialProject]);
 

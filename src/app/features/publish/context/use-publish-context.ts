@@ -9,7 +9,8 @@ import { useProject } from "@/app/features/project";
 import { startPublish } from "@/app/features/publish/api/publish-api";
 import { usePublishStateQuery } from "@/app/features/publish/swr/use-publish-query";
 import type { RenderState } from "@/app/features/render/api/render-api";
-import { resolveProjectSynthesisSettings, useSettings } from "@/app/features/settings";
+import { resolveProjectSynthesisSettings } from "@/_shared/project/voice-presets";
+import { useSettings } from "@/app/features/settings";
 
 export type PublishContextValue = {
   alsoPublish: boolean;
@@ -42,7 +43,7 @@ function getPublishExecuteLabel(
 export function usePublishProviderValue(): PublishContextValue {
   const { handleSubmit } = useFormContext<DraftProject>();
   const { isPending: saving } = useEditor();
-  const { options, voiceSettings } = useSettings();
+  const { options } = useSettings();
   const { pageFields } = usePage();
   const { projectPath } = useProject();
   const { publishState, reloadPublishState } = usePublishStateQuery();
@@ -130,7 +131,7 @@ export function usePublishProviderValue(): PublishContextValue {
         }
 
         await toast.promise(
-          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject, voiceSettings)),
+          saveProject(projectPath, resolveProjectSynthesisSettings(draftProject)),
           {
             loading: "保存中...",
             success: "保存して音声を更新した。",
@@ -149,7 +150,7 @@ export function usePublishProviderValue(): PublishContextValue {
         setPublishError(error instanceof Error ? error.message : JSON.stringify(error));
       }
     })();
-  }, [handleSubmit, projectPath, resetPublishWatch, startPublishJob, voiceSettings]);
+  }, [handleSubmit, projectPath, resetPublishWatch, startPublishJob]);
 
   return {
     alsoPublish,

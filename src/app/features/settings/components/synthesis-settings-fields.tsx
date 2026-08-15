@@ -46,6 +46,28 @@ function parseNumberInput(value: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseStyleWeightsInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parts = trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map(Number);
+  if (parts.length === 0 || parts.some((entry) => !Number.isFinite(entry))) {
+    return undefined;
+  }
+
+  return parts;
+}
+
+function formatStyleWeights(value: number[] | undefined) {
+  return value?.join(", ") ?? "";
+}
+
 function normalizeEmotion(
   emotion: VoicepeakSynthesisSettings["emotion"],
 ): Record<string, number> | undefined {
@@ -81,9 +103,15 @@ function normalizeSynthesisSettingsDraft(value: DraftTts["synthesisSettings"]) {
     return next as SynthesisSettings;
   }
 
-  const entries = Object.entries(value).filter(
-    ([, entry]) => entry !== undefined && entry !== null,
-  );
+  const entries = Object.entries(value).filter(([key, entry]) => {
+    if (entry === undefined || entry === null) {
+      return false;
+    }
+    if (key === "style_weights" && Array.isArray(entry) && entry.length === 0) {
+      return false;
+    }
+    return true;
+  });
   if (entries.length === 0) {
     return undefined;
   }
@@ -168,6 +196,8 @@ export function SynthesisSettingsFields({
   }
 
   const settings = normalizeSynthesisSettingsDraft(value) ?? {};
+  const styleWeights =
+    provider === "voisona" && "style_weights" in settings ? settings.style_weights : undefined;
 
   return (
     <div className="grid gap-2">
@@ -191,6 +221,22 @@ export function SynthesisSettingsFields({
           />
         </label>
       ))}
+      {provider === "voisona" ? (
+        <label className="grid grid-cols-[minmax(0,1fr)_140px] items-center gap-3 text-sm">
+          <span className="truncate">style_weights</span>
+          <Input
+            value={formatStyleWeights(styleWeights)}
+            placeholder="0, 1, 0"
+            onChange={(event) => {
+              const next = {
+                ...settings,
+                style_weights: parseStyleWeightsInput(event.target.value),
+              };
+              onChange(normalizeSynthesisSettingsDraft(next));
+            }}
+          />
+        </label>
+      ) : null}
     </div>
   );
 }

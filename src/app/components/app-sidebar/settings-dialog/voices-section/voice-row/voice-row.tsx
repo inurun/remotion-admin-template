@@ -58,6 +58,7 @@ export function VoiceRow({
           onValueChange={row.onHotkeyChange}
         />
         <VoicePresetDialog
+          disabled={!row.canEditPreset}
           onChange={row.onSynthesisSettingsChange}
           value={row.synthesisSettings}
           voice={voice}

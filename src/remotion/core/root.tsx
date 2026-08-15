@@ -2,6 +2,7 @@ import { Composition } from "remotion";
 import { savedProjectSchema, type SavedProject } from "@/_schemas";
 import { calculateProjectDurationSec } from "@/_shared/project/project-timing";
 import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { COMP_NAME, VIDEO_FPS } from "@/constants";
 import projectJson from "../../../data/project.json";
 import { Composition as RemotionVideo } from "./composition";
@@ -24,6 +25,7 @@ export function RemotionRoot() {
           meta: getDefaultProjectMeta(),
           pages: [],
           bgm: [],
+          voicePresets: getDefaultVoicePresets(),
         },
       }}
       calculateMetadata={({ props }) => {

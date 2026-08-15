@@ -4,12 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import type { DraftTts, VoiceOption } from "@/_schemas";
-import {
-  voiceOptionSchema,
-  voisonaSynthesisSettingsSchema,
-  voicevoxSynthesisSettingsSchema,
-} from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import { voiceOptionSchema } from "@/_schemas";
 import {
   APP_HOTKEY_LABELS,
   type AppHotkeyAction,
@@ -24,7 +20,6 @@ export type VoiceSettingFormValue = {
   label: string;
   alias: string;
   hotkey: string;
-  synthesisSettings?: NonNullable<DraftTts["synthesisSettings"]>;
 };
 
 export type SettingsFormValues = {
@@ -39,9 +34,6 @@ const voiceSettingFormSchema = z.object({
   label: z.string(),
   alias: z.string(),
   hotkey: z.string(),
-  synthesisSettings: z
-    .union([voisonaSynthesisSettingsSchema, voicevoxSynthesisSettingsSchema])
-    .optional(),
 });
 
 const settingsFormSchema = z
@@ -89,7 +81,6 @@ export function createFormValues(settings: SettingsSnapshot): SettingsFormValues
     label: value.label,
     alias: value.alias ?? "",
     hotkey: value.hotkey,
-    synthesisSettings: value.synthesisSettings ?? undefined,
   }));
   const existingIds = new Set(existing.map((setting) => setting.voiceId));
   const missing = settings.voiceOrder
@@ -115,7 +106,6 @@ export function toSettingsSnapshot(values: SettingsFormValues): SettingsSnapshot
           label: setting.label,
           alias: setting.alias.trim(),
           hotkey: setting.hotkey,
-          synthesisSettings: setting.synthesisSettings,
         },
       ]),
     ),

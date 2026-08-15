@@ -30,6 +30,7 @@ describe("page list", () => {
           niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
         },
         bgm: [],
+        voicePresets: [],
         pages: [
           {
             id: "page-1",
@@ -73,6 +74,7 @@ describe("page list", () => {
           niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
         },
         bgm: [],
+        voicePresets: [],
         pages: [
           {
             id: "page-1",

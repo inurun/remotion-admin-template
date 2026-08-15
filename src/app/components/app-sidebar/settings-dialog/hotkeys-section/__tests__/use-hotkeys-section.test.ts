@@ -18,7 +18,6 @@ describe("useHotkeysSection helpers", () => {
           label: "Actor A",
           alias: "zunda",
           hotkey: "ctrl+1",
-          synthesisSettings: { speed: 1.2 },
         },
       },
       hotkeys: {
@@ -39,7 +38,6 @@ describe("useHotkeysSection helpers", () => {
           label: "Actor A",
           alias: "zunda",
           hotkey: "",
-          synthesisSettings: { speed: 1.2 },
         },
       ],
     });

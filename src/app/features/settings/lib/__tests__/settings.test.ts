@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { DraftPage, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
 import { eventMatchesHotkey, findDuplicateHotkeys } from "@/app/features/settings/lib/hotkeys";
 import {
   getDefaultVoice,
   getVisibleVoiceOptions,
   mergeVoiceOrder,
-  resolveTtsSynthesisSettings,
-  resolveProjectSynthesisSettings,
 } from "@/app/features/settings/lib/settings";
 
 function voice(voiceName: string, displayName: string, voiceVersion = ""): VoiceOption {
@@ -69,104 +67,6 @@ describe("settings voices", () => {
     });
 
     expect(getDefaultVoice(options)?.voiceName).toBe("b");
-  });
-
-  it("resolves missing tts synthesis settings from the voice preset", () => {
-    expect(
-      resolveTtsSynthesisSettings(
-        {
-          id: "tts-1",
-          provider: "voisona",
-          text: "Hello",
-          voiceName: "a",
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          volume: 1,
-          synthesisSettings: null,
-        },
-        {
-          "voisona::a::": {
-            label: "Actor A",
-            alias: "",
-            hotkey: "",
-            synthesisSettings: { speed: 1.2 },
-          },
-        },
-      ).synthesisSettings,
-    ).toEqual({ speed: 1.2 });
-  });
-
-  it("keeps concrete tts synthesis settings over the voice preset", () => {
-    expect(
-      resolveTtsSynthesisSettings(
-        {
-          id: "tts-1",
-          provider: "voicevox",
-          text: "Hello",
-          voiceName: "3",
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          volume: 1,
-          synthesisSettings: { speedScale: 1.4 },
-        },
-        {
-          "voicevox::3::": {
-            label: "Actor A",
-            alias: "",
-            hotkey: "",
-            synthesisSettings: { speedScale: 1.2 },
-          },
-        },
-      ).synthesisSettings,
-    ).toEqual({ speedScale: 1.4 });
-  });
-
-  it("resolves a project before synthesis", () => {
-    const project = resolveProjectSynthesisSettings(
-      {
-        meta: {
-          title: "project",
-          description: "",
-          width: 1920,
-          height: 1080,
-          weather: {},
-          niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
-        },
-        bgm: [],
-        pages: [
-          {
-            id: "page-1",
-            title: "Page",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            richText: "<p>Hello</p>",
-            tts: [
-              {
-                id: "tts-1",
-                provider: "voisona",
-                text: "Hello",
-                voiceName: "a",
-                padBeforeSec: 0,
-                padAfterSec: 0,
-                volume: 1,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        "voisona::a::": {
-          label: "Actor A",
-          alias: "",
-          hotkey: "",
-          synthesisSettings: { volume: 0.8 },
-        },
-      },
-    );
-
-    expect((project.pages[0] as DraftPage).tts[0]?.synthesisSettings).toEqual({ volume: 0.8 });
   });
 });
 

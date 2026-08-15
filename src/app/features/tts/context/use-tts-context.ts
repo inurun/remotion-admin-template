@@ -8,7 +8,8 @@ import { requestPreviewSynthesis } from "@/app/features/tts/api/tts-api";
 import { isTtsActionReady } from "@/app/features/tts/lib/tts-action";
 import { resolveTtsIndexForPage } from "@/app/features/tts/lib/tts-selection";
 import { useAnalyzeTextMutation } from "@/app/features/tts/swr/use-tts-mutations";
-import { resolveTtsSynthesisSettings, useSettings } from "@/app/features/settings";
+import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
+import { useSettings } from "@/app/features/settings";
 
 function useTtsSelection() {
   const [selectedTtsIndex, setSelectedTtsIndex] = useState<number | null>(null);
@@ -38,7 +39,7 @@ function useTtsCommands() {
   const { getValues, setValue } = useFormContext<DraftProject>();
   const { isPending: saving } = useEditor();
   const { projectPath } = useProject();
-  const { options, voiceSettings } = useSettings();
+  const { options } = useSettings();
   const { trigger: analyzeText, isMutating: isAnalyzing } = useAnalyzeTextMutation();
 
   const canRunTts = options.length > 0 && !saving;
@@ -75,7 +76,7 @@ function useTtsCommands() {
       if (!projectPath) {
         throw new Error("Project path is required");
       }
-      const resolvedItem = resolveTtsSynthesisSettings(item, voiceSettings);
+      const resolvedItem = resolveTtsSynthesisSettings(item, getValues("voicePresets"));
       setValue(
         `pages.${pageIndex}.tts.${ttsIndex}.synthesisSettings`,
         resolvedItem.synthesisSettings,
@@ -87,7 +88,7 @@ function useTtsCommands() {
       await playPreview(audioSrc);
       toast.success("Preview を再生した。");
     },
-    [canRunTts, getValues, playPreview, projectPath, setValue, voiceSettings],
+    [canRunTts, getValues, playPreview, projectPath, setValue],
   );
 
   return {

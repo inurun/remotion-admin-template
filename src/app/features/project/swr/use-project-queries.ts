@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import useSWR from "swr";
 import type { SavedProject } from "@/_schemas";
+import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
 import { fetchProject, fetchProjects, projectKeys } from "@/app/features/project/api/project-api";
 
@@ -52,7 +53,12 @@ export function useSelectedProjectQuery(projectPath: string | null) {
   );
 
   return {
-    project: data ?? { meta: getDefaultProjectMeta(), pages: [], bgm: [] },
+    project: data ?? {
+      meta: getDefaultProjectMeta(),
+      pages: [],
+      bgm: [],
+      voicePresets: getDefaultVoicePresets(),
+    },
     mutateProject: async (project: SavedProject) => {
       await mutateProjectIfPresent(projectPath, mutate, project);
     },

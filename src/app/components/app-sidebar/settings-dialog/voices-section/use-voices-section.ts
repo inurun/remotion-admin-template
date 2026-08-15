@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import type { DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
 import { fetchVoices } from "@/app/features/settings/api/settings-api";
 import { getVoiceId } from "@/app/features/settings";
 import { mergeVoiceOrder } from "@/app/features/settings/lib/settings";
@@ -129,8 +129,8 @@ function commitSelectedVoices(
 function setVoiceFieldValue(
   form: UseFormReturn<SettingsFormValues>,
   voice: VoiceOption,
-  field: "label" | "alias" | "hotkey" | "synthesisSettings",
-  value: string | NonNullable<DraftTts["synthesisSettings"]> | undefined,
+  field: "label" | "alias" | "hotkey",
+  value: string,
   options?: { shouldValidate?: boolean },
 ) {
   const index = getVoiceSettingIndex(form.getValues(), getVoiceId(voice));
@@ -138,7 +138,7 @@ function setVoiceFieldValue(
     return;
   }
 
-  form.setValue(`voiceSettings.${index}.${field}`, value as never, {
+  form.setValue(`voiceSettings.${index}.${field}`, value, {
     shouldDirty: true,
     shouldValidate: options?.shouldValidate,
   });
@@ -303,13 +303,6 @@ export function useVoicesSection(form: UseFormReturn<SettingsFormValues>, settin
       setVoiceFieldValue(form, voice, "label", label),
     setVoiceAlias: (voice: VoiceOption, alias: string) =>
       setVoiceFieldValue(form, voice, "alias", alias),
-    setVoiceSynthesisSettings: (
-      voice: VoiceOption,
-      synthesisSettings: NonNullable<DraftTts["synthesisSettings"]> | undefined,
-    ) =>
-      setVoiceFieldValue(form, voice, "synthesisSettings", synthesisSettings, {
-        shouldValidate: true,
-      }),
     toggleSelectedVoice: (voiceId: string, checked: boolean) => {
       setSelectedVoiceIds((current) => nextSelectedVoiceIds(current, voiceId, checked));
     },

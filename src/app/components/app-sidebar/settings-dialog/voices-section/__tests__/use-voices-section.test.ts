@@ -73,7 +73,6 @@ describe("useVoicesSection helpers", () => {
         label: "Actor B",
         alias: "",
         hotkey: "ctrl+2",
-        synthesisSettings: undefined,
       },
       { voiceId: "voisona::a::", label: "", alias: "", hotkey: "" },
     ]);
@@ -95,7 +94,6 @@ describe("useVoicesSection helpers", () => {
             label: "Actor A",
             alias: "zunda",
             hotkey: "ctrl+1",
-            synthesisSettings: { speed: 1.1 },
           },
         },
       }),
@@ -108,7 +106,6 @@ describe("useVoicesSection helpers", () => {
       label: "Actor A",
       alias: "zunda",
       hotkey: "ctrl+1",
-      synthesisSettings: { speed: 1.1 },
     });
     expect(getVoiceSetting(values, "missing")).toEqual({
       voiceId: "missing",
