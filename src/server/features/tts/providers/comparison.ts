@@ -1,3 +1,4 @@
+import { g2pItemSchema, type DraftTts, type G2pItem } from "@/_schemas";
 import type {
   DraftTtsForProvider,
   SavedTtsForProvider,
@@ -5,8 +6,8 @@ import type {
   TtsProvider,
 } from "@/server/features/tts/providers/types";
 
-function normalizeAnalysis(value?: string) {
-  return value?.trim() || "";
+export function getEffectiveReadText(item: Pick<DraftTts, "text" | "readText">) {
+  return item.readText?.trim() || item.text;
 }
 
 export function getOptionalVoiceVersion(value: string) {
@@ -21,6 +22,15 @@ function normalizeSynthesisSettings<TSettings>(value: TSettings | null | undefin
   return value ?? undefined;
 }
 
+export function getUsableG2p(g2p: unknown, readText: string): G2pItem | undefined {
+  const parsed = g2pItemSchema.safeParse(g2p);
+  if (!parsed.success || parsed.data.text !== readText) {
+    return undefined;
+  }
+
+  return parsed.data;
+}
+
 export function createDraftComparisonInput<TProvider extends TtsProvider>(
   provider: TProvider,
   item: DraftTtsForProvider<TProvider>,
@@ -32,7 +42,7 @@ export function createDraftComparisonInput<TProvider extends TtsProvider>(
     readText,
     voiceName: item.voiceName?.trim() || "",
     voiceVersion: item.voiceVersion?.trim() || "",
-    analysis: normalizeAnalysis(item.speech?.analysis),
+    ...(item.speech?.g2p ? { g2p: item.speech.g2p } : {}),
     synthesisSettings: normalizeSynthesisSettings(item.synthesisSettings),
   };
 }
@@ -47,7 +57,7 @@ export function createPreviousComparisonInput<TProvider extends TtsProvider>(
     readText: normalizeOptionalString(item.readText),
     voiceName: normalizeOptionalString(item.voiceName),
     voiceVersion: normalizeOptionalString(item.voiceVersion),
-    analysis: normalizeAnalysis(item.speech.analysis),
+    ...(item.speech.g2p ? { g2p: item.speech.g2p } : {}),
     synthesisSettings: normalizeSynthesisSettings(item.synthesisSettings),
   };
 }

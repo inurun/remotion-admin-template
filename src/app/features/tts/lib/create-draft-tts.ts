@@ -35,6 +35,6 @@ export function createDraftTts(options: VoiceOption[], sourceTts: DraftTts | und
     volume: 1,
     synthesisSettings: null,
     ...(sourceTts?.avatar ? { avatar: sourceTts.avatar } : {}),
-    speech: { analysis: "" },
+    speech: {},
   };
 }

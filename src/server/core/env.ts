@@ -4,20 +4,14 @@ import { env } from "hono/adapter";
 export type ServerEnv = {
   NEXT_PUBLIC_VIDEO_FPS?: string;
   VITE_VIDEO_FPS?: string;
-  VOISONA_BASE?: string;
-  VOISONA_PASSWORD?: string;
-  VOISONA_USERNAME?: string;
-  VOICEVOX_URL?: string;
+  HAQUMEI_API_URL?: string;
   VOICEPEAK_PATH?: string;
 };
 
 const serverEnvKeys = [
   "NEXT_PUBLIC_VIDEO_FPS",
   "VITE_VIDEO_FPS",
-  "VOISONA_BASE",
-  "VOISONA_PASSWORD",
-  "VOISONA_USERNAME",
-  "VOICEVOX_URL",
+  "HAQUMEI_API_URL",
   "VOICEPEAK_PATH",
 ] as const satisfies readonly (keyof ServerEnv)[];
 

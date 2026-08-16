@@ -15,20 +15,16 @@ describe("getServerEnv", () => {
     envMock.mockReturnValueOnce({
       NEXT_PUBLIC_VIDEO_FPS: " 30 ",
       VITE_VIDEO_FPS: "'60'",
-      VOISONA_BASE: '" http://localhost:32766/api/talk/v1 "',
-      VOISONA_PASSWORD: " 'password' ",
-      VOISONA_USERNAME: " user@example.com ",
-      VOICEVOX_URL: "  ",
+      HAQUMEI_API_URL: '" http://127.0.0.1:8080 "',
+      VOICEPEAK_PATH: " /Applications/voicepeak.app/Contents/MacOS/voicepeak ",
       EXTRA_VALUE: "ignored",
     });
 
     expect(getServerEnv({} as Context)).toEqual({
       NEXT_PUBLIC_VIDEO_FPS: "30",
       VITE_VIDEO_FPS: "60",
-      VOISONA_BASE: "http://localhost:32766/api/talk/v1",
-      VOISONA_PASSWORD: "password",
-      VOISONA_USERNAME: "user@example.com",
-      VOICEVOX_URL: undefined,
+      HAQUMEI_API_URL: "http://127.0.0.1:8080",
+      VOICEPEAK_PATH: "/Applications/voicepeak.app/Contents/MacOS/voicepeak",
     });
   });
 });

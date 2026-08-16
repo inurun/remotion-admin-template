@@ -1,6 +1,6 @@
-import type { DraftTts, SavedTts } from "@/_schemas";
+import type { DraftTts, G2pItem, SavedTts } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
-import type { SynthesizeResponse } from "@/server/features/voisona/contract";
+import type { SynthesizeResponse } from "@/server/features/tts/contract";
 
 export type TtsProvider = DraftTts["provider"];
 export type DraftTtsForProvider<TProvider extends TtsProvider> = Extract<
@@ -18,23 +18,22 @@ export type TtsComparisonInput<TProvider extends TtsProvider> = {
   readText: string;
   voiceName: string;
   voiceVersion: string;
-  analysis: string;
+  g2p?: G2pItem;
   synthesisSettings?: NonNullable<DraftTtsForProvider<TProvider>["synthesisSettings"]>;
 };
 
 export type TtsSynthesisInput<TProvider extends TtsProvider> = TtsComparisonInput<TProvider> & {
-  analysis: string;
-  voiceVersion?: string;
   projectPath: string;
+  voiceVersion?: string;
 };
 
 export type TtsProviderAdapter<TProvider extends TtsProvider> = {
   provider: TProvider;
+  usesG2p: boolean;
   createComparisonInput: (item: DraftTtsForProvider<TProvider>) => TtsComparisonInput<TProvider>;
   createPreviousComparisonInput: (
     item: SavedTtsForProvider<TProvider>,
   ) => TtsComparisonInput<TProvider>;
-  analyze: (serverEnv: ServerEnv, input: TtsComparisonInput<TProvider>) => Promise<string>;
   synthesize: (
     serverEnv: ServerEnv,
     input: TtsSynthesisInput<TProvider>,

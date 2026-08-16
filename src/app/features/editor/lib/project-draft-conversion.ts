@@ -13,8 +13,6 @@ export function toDraftTts(item: SavedTts): DraftTts {
     ...(item.voiceVersion ? { voiceVersion: item.voiceVersion } : {}),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
-    speech: {
-      analysis: item.speech.analysis,
-    },
+    speech: item.speech.g2p ? { g2p: item.speech.g2p } : {},
   } as DraftTts;
 }

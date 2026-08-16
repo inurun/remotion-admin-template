@@ -1,39 +1,32 @@
 import type { ServerEnv } from "@/server/core/env";
-import { getVoisonaReadText } from "@/server/features/voisona/text";
-import { analyzeVoisonaText, synthesizeVoisona } from "@/server/features/voisona/use-case";
+import { synthesizeVoisona } from "@/server/features/haqumei-api/synthesis";
 import {
   createDraftComparisonInput,
   createPreviousComparisonInput,
+  getEffectiveReadText,
   getOptionalVoiceVersion,
 } from "./comparison";
 import type { DraftTtsForProvider, SavedTtsForProvider, TtsProviderAdapter } from "./types";
 
 export const voisonaProvider = {
   provider: "voisona",
+  usesG2p: true,
   createComparisonInput(item: DraftTtsForProvider<"voisona">) {
-    return createDraftComparisonInput(
-      "voisona",
-      item,
-      getVoisonaReadText(item.text, item.readText),
-    );
+    return createDraftComparisonInput("voisona", item, getEffectiveReadText(item));
   },
   createPreviousComparisonInput(item: SavedTtsForProvider<"voisona">) {
     return createPreviousComparisonInput("voisona", item);
   },
-  async analyze(serverEnv: ServerEnv, input) {
-    const analysis = await analyzeVoisonaText(serverEnv, {
-      text: input.readText,
-      language: "ja_JP",
-    });
-    return analysis.analysis;
-  },
   synthesize(serverEnv: ServerEnv, input) {
+    if (!input.g2p) {
+      throw new Error("VoiSona synthesis requires g2p");
+    }
+
     const voiceVersion = getOptionalVoiceVersion(input.voiceVersion);
     return synthesizeVoisona({
       serverEnv,
       projectPath: input.projectPath,
-      text: input.readText,
-      analysis: input.analysis,
+      g2p: input.g2p,
       voiceName: input.voiceName,
       ...(voiceVersion ? { voiceVersion } : {}),
       ...(input.synthesisSettings ? { synthesisSettings: input.synthesisSettings } : {}),

@@ -44,11 +44,15 @@ import {
   writeSavedProject,
 } from "@/server/_shared/storage";
 import type { ServerEnv } from "@/server/core/env";
+import { analyzeTexts } from "@/server/features/haqumei-api/analyze";
+import { assertHaqumeiTextLength } from "@/server/features/haqumei-api/limits";
 import {
   createPreviousTtsComparisonInput,
   createTtsComparisonInput,
   getTtsProvider,
 } from "@/server/features/tts/providers/registry";
+import { getUsableG2p } from "@/server/features/tts/providers/comparison";
+import { stableStringify } from "@/server/_shared/stable-stringify";
 import type { TtsComparisonInput } from "@/server/features/tts/providers/types";
 
 const AUDIO_PADDING_SECONDS = 0.1;
@@ -202,38 +206,54 @@ async function shouldReusePreviousTts(
   }
 
   return (
-    JSON.stringify(
+    stableStringify(
       createPreviousTtsComparisonInput(withEffectiveSynthesisSettings(previous, previousPresets)),
     ) ===
-    JSON.stringify(createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets)))
+    stableStringify(createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets)))
   );
 }
 
-async function resolveAnalysis(
-  serverEnv: ServerEnv,
-  nextInput: TtsComparisonInput<DraftTts["provider"]>,
-  options: { forceAnalyze: boolean },
-) {
-  if (!options.forceAnalyze && nextInput.analysis) {
-    return nextInput.analysis;
-  }
+type PlannedTts = {
+  item: DraftTts;
+  previous?: SavedTts;
+  nextInput: TtsComparisonInput<DraftTts["provider"]>;
+  reuse: boolean;
+};
 
-  return getTtsProvider(nextInput.provider).analyze(serverEnv, nextInput as never);
-}
-
-function hasReadTextChanged(
-  nextInput: TtsComparisonInput<DraftTts["provider"]>,
-  previous?: SavedTts,
-) {
-  if (!previous) {
+function needsG2pAnalyze(plan: PlannedTts) {
+  if (plan.reuse) {
     return false;
   }
 
-  return createPreviousTtsComparisonInput(previous).readText !== nextInput.readText;
+  if (!getTtsProvider(plan.nextInput.provider).usesG2p) {
+    return false;
+  }
+
+  return !getUsableG2p(plan.nextInput.g2p, plan.nextInput.readText);
 }
 
-function hasProviderChanged(item: DraftTts, previous?: SavedTts) {
-  return Boolean(previous) && previous!.provider !== item.provider;
+async function assignBatchG2p(serverEnv: ServerEnv, plans: PlannedTts[]) {
+  const targets = plans.filter(needsG2pAnalyze);
+  if (targets.length === 0) {
+    return;
+  }
+
+  for (const plan of targets) {
+    assertHaqumeiTextLength(plan.nextInput.readText, plan.item.id);
+  }
+
+  const items = await analyzeTexts(
+    serverEnv,
+    targets.map((plan) => plan.nextInput.readText),
+  );
+
+  for (const [index, plan] of targets.entries()) {
+    const g2p = items[index];
+    if (!g2p) {
+      throw new Error(`haqumei-api analyze returned no item for tts ${plan.item.id}`);
+    }
+    plan.nextInput = { ...plan.nextInput, g2p };
+  }
 }
 
 function createReusedSavedTts(item: DraftTts, previous: SavedTts) {
@@ -253,33 +273,41 @@ function createReusedSavedTts(item: DraftTts, previous: SavedTts) {
   };
 }
 
-async function buildSavedTts(
-  serverEnv: ServerEnv,
+async function planSavedTts(
   projectPath: string,
   item: DraftTts,
   previous: SavedTts | undefined,
   nextPresets: VoicePreset[],
   previousPresets: VoicePreset[],
-) {
+): Promise<PlannedTts> {
   validateTts(item);
-  if (await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets)) {
-    return createReusedSavedTts(item, previous!);
+  const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
+  return {
+    item,
+    previous,
+    nextInput,
+    reuse: await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets),
+  };
+}
+
+async function buildSavedTts(serverEnv: ServerEnv, projectPath: string, plan: PlannedTts) {
+  if (plan.reuse && plan.previous) {
+    return createReusedSavedTts(plan.item, plan.previous);
   }
 
-  const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
-  const analysis = await resolveAnalysis(serverEnv, nextInput, {
-    forceAnalyze: hasReadTextChanged(nextInput, previous) || hasProviderChanged(item, previous),
-  });
-  const voiceVersion = getOptionalVoiceVersion(nextInput.voiceVersion);
-  const provider = getTtsProvider(nextInput.provider);
+  const voiceVersion = getOptionalVoiceVersion(plan.nextInput.voiceVersion);
+  const provider = getTtsProvider(plan.nextInput.provider);
+  if (provider.usesG2p) {
+    assertHaqumeiTextLength(plan.nextInput.readText, plan.item.id);
+  }
+
   const audio = await provider.synthesize(serverEnv, {
-    ...nextInput,
-    analysis,
+    ...plan.nextInput,
     projectPath,
     ...(voiceVersion ? { voiceVersion } : {}),
   } as never);
 
-  return createSavedTts(item, nextInput, analysis, audio, voiceVersion);
+  return createSavedTts(plan.item, plan.nextInput, audio, voiceVersion);
 }
 
 function getOptionalVoiceVersion(value: string) {
@@ -289,7 +317,6 @@ function getOptionalVoiceVersion(value: string) {
 function createSavedTts(
   item: DraftTts,
   nextInput: TtsComparisonInput<DraftTts["provider"]>,
-  analysis: string,
   audio: { audioSrc: string; durationSec: number },
   voiceVersion?: string,
 ) {
@@ -307,33 +334,36 @@ function createSavedTts(
     audio: {
       src: audio.audioSrc,
     },
-    speech: {
-      analysis,
-    },
+    speech: nextInput.g2p ? { g2p: nextInput.g2p } : {},
   };
 }
 
-async function buildSavedPage(
-  serverEnv: ServerEnv,
+async function planSavedPage(
   projectPath: string,
   page: DraftPage,
   previousTtsById: Map<string, SavedTts>,
   nextPresets: VoicePreset[],
   previousPresets: VoicePreset[],
-): Promise<SavedPage> {
+) {
   validatePage(page);
-  const tts = (await Promise.all(
+  const tts = await Promise.all(
     page.tts.map((item) =>
-      buildSavedTts(
-        serverEnv,
-        projectPath,
-        item,
-        previousTtsById.get(item.id),
-        nextPresets,
-        previousPresets,
-      ),
+      planSavedTts(projectPath, item, previousTtsById.get(item.id), nextPresets, previousPresets),
     ),
+  );
+
+  return { page, tts };
+}
+
+async function buildSavedPage(
+  serverEnv: ServerEnv,
+  projectPath: string,
+  planned: { page: DraftPage; tts: PlannedTts[] },
+): Promise<SavedPage> {
+  const tts = (await Promise.all(
+    planned.tts.map((plan) => buildSavedTts(serverEnv, projectPath, plan)),
   )) as SavedTts[];
+  const page = planned.page;
 
   if (page.type === "outro") {
     const contentDurationSec = getOutroContentDurationSec(page.meta.blocks.length);
@@ -428,19 +458,35 @@ async function buildSavedProject(
     }),
     updatedAt: nowIso(),
   };
-  const pages = await Promise.all(
+  const nextPresets = draft.voicePresets ?? [];
+  const previousPresets = previousProject?.voicePresets ?? [];
+  const plannedPages = await Promise.all(
     draft.pages.map(async (item) => {
       if (isDraftTransition(item)) {
-        return buildSavedTransition(item);
+        return { type: "transition" as const, item };
       }
-      return buildSavedPage(
-        serverEnv,
-        projectPath,
-        item,
-        previousTtsById,
-        draft.voicePresets ?? [],
-        previousProject?.voicePresets ?? [],
-      );
+      return {
+        type: "page" as const,
+        planned: await planSavedPage(
+          projectPath,
+          item,
+          previousTtsById,
+          nextPresets,
+          previousPresets,
+        ),
+      };
+    }),
+  );
+  await assignBatchG2p(
+    serverEnv,
+    plannedPages.flatMap((item) => (item.type === "page" ? item.planned.tts : [])),
+  );
+  const pages = await Promise.all(
+    plannedPages.map(async (item) => {
+      if (item.type === "transition") {
+        return buildSavedTransition(item.item);
+      }
+      return buildSavedPage(serverEnv, projectPath, item.planned);
     }),
   );
   validateTransitionSequenceDurations(pages);

@@ -19,9 +19,7 @@ import { publishApp } from "@/server/features/publish";
 import { renderApp } from "@/server/features/render";
 import { ttsApp } from "@/server/features/tts";
 import { uploadsApp } from "@/server/features/uploads";
-import { voisonaApp } from "@/server/features/voisona";
 import { voicepeakApp } from "@/server/features/voicepeak";
-import { voicevoxApp } from "@/server/features/voicevox";
 import { weatherApp } from "@/server/features/weather";
 
 const CONTENT_TYPES = new Map([
@@ -75,8 +73,6 @@ function createApi() {
   return new Hono()
     .route("/", projectApp)
     .route("/", ttsApp)
-    .route("/", voisonaApp)
-    .route("/", voicevoxApp)
     .route("/", voicepeakApp)
     .route("/", renderApp)
     .route("/", publishApp)

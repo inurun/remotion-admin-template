@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftTts } from "@/_schemas";
+import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { getPreviewPayload } from "@/app/features/tts/lib/tts-preview-payload";
 import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 
@@ -34,7 +35,7 @@ describe("getPreviewPayload", () => {
     expect(
       getPreviewPayload(
         createTts({
-          speech: { analysis: " analyzed " },
+          speech: { g2p: createG2pItem("analyzed") },
           voiceVersion: " version ",
         }),
         "group/demo",
@@ -42,7 +43,7 @@ describe("getPreviewPayload", () => {
     ).toEqual({
       provider: "voisona",
       projectPath: "group/demo",
-      analysis: "analyzed",
+      g2p: createG2pItem("analyzed"),
       text: "text",
       voiceName: "voice",
       voiceVersion: "version",

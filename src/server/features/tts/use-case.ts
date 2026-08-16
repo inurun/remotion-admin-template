@@ -1,16 +1,19 @@
 import type { VoiceOption } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { clearProjectTtsCache } from "@/server/_shared/storage";
-import { getVoisonaBase } from "@/server/features/voisona/client";
-import { listVoisonaVoices } from "@/server/features/voisona/use-case";
+import { analyzeText } from "@/server/features/haqumei-api/analyze";
+import {
+  listOptionalVoisonaVoices,
+  listVoicevoxVoices,
+} from "@/server/features/haqumei-api/voices";
+import { getHaqumeiApiUrl } from "@/server/features/haqumei-api/client";
 import { getVoicepeakBase, listVoicepeakVoices } from "@/server/features/voicepeak/use-case";
-import { getVoicevoxBase } from "@/server/features/voicevox/client";
-import { listVoicevoxVoices } from "@/server/features/voicevox/use-case";
 import {
   ttsAnalyzeRequestSchema,
   ttsClearCacheRequestSchema,
   ttsSynthesizeRequestSchema,
 } from "./contract";
+import { getEffectiveReadText, getUsableG2p } from "./providers/comparison";
 import { getTtsProvider } from "./providers/registry";
 import type { TtsSynthesisInput } from "./providers/types";
 
@@ -38,9 +41,10 @@ async function loadOptionalProviderVoices(
 }
 
 export async function listTtsVoices(serverEnv: ServerEnv) {
+  const haqumeiApiUrl = getHaqumeiApiUrl(serverEnv);
   const [voisona, voicevox, voicepeak] = await Promise.all([
-    loadProviderVoices("Voisona", getVoisonaBase(serverEnv), listVoisonaVoices(serverEnv)),
-    loadProviderVoices("VOICEVOX", getVoicevoxBase(serverEnv), listVoicevoxVoices(serverEnv)),
+    loadProviderVoices("VoiSona", haqumeiApiUrl, listOptionalVoisonaVoices(serverEnv)),
+    loadProviderVoices("VOICEVOX", haqumeiApiUrl, listVoicevoxVoices(serverEnv)),
     loadOptionalProviderVoices(
       "VoicePeak",
       getVoicepeakBase(serverEnv),
@@ -53,32 +57,29 @@ export async function listTtsVoices(serverEnv: ServerEnv) {
 
 export async function analyzeTts(serverEnv: ServerEnv, input: unknown) {
   const parsed = ttsAnalyzeRequestSchema.parse(input);
-  const analysis = await getTtsProvider(parsed.provider).analyze(serverEnv, {
-    provider: parsed.provider,
-    text: parsed.text,
-    readText: parsed.text,
-    voiceName: "voiceName" in parsed ? parsed.voiceName : "",
-    voiceVersion: "",
-    analysis: "",
-  } as never);
-
-  return { analysis };
+  const text = parsed.text.trim();
+  return { g2p: await analyzeText(serverEnv, text) };
 }
 
 export async function synthesizeTts(serverEnv: ServerEnv, input: unknown) {
   const parsed = ttsSynthesizeRequestSchema.parse(input);
+  const provider = getTtsProvider(parsed.provider);
+  const readText = getEffectiveReadText(parsed);
+  const g2p = provider.usesG2p
+    ? (getUsableG2p(parsed.g2p, readText) ?? (await analyzeText(serverEnv, readText)))
+    : parsed.g2p;
   const synthesisInput = {
     provider: parsed.provider,
     projectPath: parsed.projectPath,
     text: parsed.text,
-    readText: parsed.text,
+    readText,
     voiceName: parsed.voiceName,
     voiceVersion: parsed.voiceVersion ?? "",
-    analysis: parsed.analysis ?? "",
+    ...(g2p ? { g2p } : {}),
     synthesisSettings: parsed.synthesisSettings ?? undefined,
   } satisfies TtsSynthesisInput<typeof parsed.provider>;
 
-  return getTtsProvider(parsed.provider).synthesize(serverEnv, synthesisInput as never);
+  return provider.synthesize(serverEnv, synthesisInput as never);
 }
 
 export async function clearTtsCache(input: unknown) {

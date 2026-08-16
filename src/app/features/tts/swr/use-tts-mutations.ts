@@ -15,7 +15,7 @@ export function useAnalyzeTextMutation() {
   return useSWRMutation("tts-analysis", analyzeTextMutation, {
     onError(error, key, config) {
       console.error(error, key, config);
-      toast.error("analyze failed");
+      toast.error(error instanceof Error ? error.message : "analyze failed");
     },
   });
 }

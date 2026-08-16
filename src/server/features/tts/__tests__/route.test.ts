@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ttsApp } from "../route";
+import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 
 const { analyzeTtsMock, clearTtsCacheMock, listTtsVoicesMock, synthesizeTtsMock } = vi.hoisted(
   () => ({
@@ -40,30 +41,18 @@ describe("tts routes", () => {
     });
   });
 
-  it("analyzes through the selected provider", async () => {
-    analyzeTtsMock.mockResolvedValueOnce({ analysis: "payload" });
+  it("analyzes text through haqumei-api", async () => {
+    const g2p = createG2pItem("hello");
+    analyzeTtsMock.mockResolvedValueOnce({ g2p });
 
     const response = await ttsApp.request("/tts/analyze", {
       method: "POST",
-      body: JSON.stringify({ provider: "voicevox", text: "hello", voiceName: "3" }),
+      body: JSON.stringify({ text: "hello" }),
       headers: { "Content-Type": "application/json" },
     });
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ analysis: "payload" });
-  });
-
-  it("analyzes voicepeak without voiceName", async () => {
-    analyzeTtsMock.mockResolvedValueOnce({ analysis: "direct" });
-
-    const response = await ttsApp.request("/tts/analyze", {
-      method: "POST",
-      body: JSON.stringify({ provider: "voicepeak", text: "hello" }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ analysis: "direct" });
+    expect(await response.json()).toEqual({ g2p });
   });
 
   it("synthesizes through the selected provider", async () => {

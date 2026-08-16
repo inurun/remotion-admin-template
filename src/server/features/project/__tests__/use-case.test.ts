@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
+import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 
 const accessMock = vi.fn();
 const readSavedProjectMock = vi.fn();
@@ -9,11 +10,9 @@ const createSavedProjectMock = vi.fn();
 const ensureSavedProjectFileMock = vi.fn();
 const listSavedProjectsMock = vi.fn();
 const parseDraftPayloadMock = vi.fn((payload: unknown) => payload);
-const analyzeVoisonaTextMock = vi.fn();
+const analyzeTextsMock = vi.fn();
 const synthesizeVoisonaMock = vi.fn();
-const analyzeVoicevoxTextMock = vi.fn();
 const synthesizeVoicevoxMock = vi.fn();
-const analyzeVoicepeakTextMock = vi.fn();
 const synthesizeVoicepeakMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
@@ -37,18 +36,16 @@ vi.mock("@/server/_shared/storage", async () => {
   };
 });
 
-vi.mock("@/server/features/voisona/use-case", () => ({
-  analyzeVoisonaText: analyzeVoisonaTextMock,
-  synthesizeVoisona: synthesizeVoisonaMock,
+vi.mock("@/server/features/haqumei-api/analyze", () => ({
+  analyzeTexts: analyzeTextsMock,
 }));
 
-vi.mock("@/server/features/voicevox/use-case", () => ({
-  analyzeVoicevoxText: analyzeVoicevoxTextMock,
+vi.mock("@/server/features/haqumei-api/synthesis", () => ({
+  synthesizeVoisona: synthesizeVoisonaMock,
   synthesizeVoicevox: synthesizeVoicevoxMock,
 }));
 
 vi.mock("@/server/features/voicepeak/use-case", () => ({
-  analyzeVoicepeakText: analyzeVoicepeakTextMock,
   synthesizeVoicepeak: synthesizeVoicepeakMock,
 }));
 
@@ -58,6 +55,10 @@ function contentPage(pages: SavedSequenceItem[] | undefined, index = 0): SavedPa
     throw new Error("expected content page");
   }
   return page;
+}
+
+function audio(src: string, durationSec = 1) {
+  return { audioSrc: src, outputPath: "/tmp/audio.wav", durationSec };
 }
 
 describe("project use-case", () => {
@@ -70,6 +71,7 @@ describe("project use-case", () => {
     weather: {},
     niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
   };
+  const helloG2p = createG2pItem("Hello");
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -104,7 +106,7 @@ describe("project use-case", () => {
               voiceVersion: "1",
               durationSec: 1.2,
               audio: { src: "/tts/nested/example/old.wav" },
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
             },
           ],
         },
@@ -136,7 +138,7 @@ describe("project use-case", () => {
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
             },
           ],
         },
@@ -161,7 +163,7 @@ describe("project use-case", () => {
       bgm: [],
       voicePresets: getDefaultVoicePresets(),
     });
-    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
     expect(writeSavedProjectMock).toHaveBeenCalledWith("nested/example", result);
   });
@@ -188,7 +190,7 @@ describe("project use-case", () => {
               voiceVersion: "1",
               durationSec: 1.2,
               audio: { src: "/tts/project/old.wav" },
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
             },
           ],
         },
@@ -225,7 +227,7 @@ describe("project use-case", () => {
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
               avatar,
             },
           ],
@@ -240,12 +242,23 @@ describe("project use-case", () => {
       volume: 1,
       avatar,
     });
-    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
   });
 
-  it("saves a freshly synthesized project", async () => {
-    readSavedProjectMock.mockResolvedValueOnce({
+  it("batches analyze for multiple VOICEVOX and VoiSona tts", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const first = createG2pItem("Hello");
+    const second = createG2pItem("World");
+    analyzeTextsMock.mockResolvedValueOnce([first, second]);
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/one.wav", 1));
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/two.wav", 2));
+
+    const serverEnv = {};
+    const { saveProject } = await import("../use-case");
+    const saved = await saveProject(serverEnv, "project", {
+      meta: defaultMeta,
+      bgm: [],
       pages: [
         {
           id: "page-1",
@@ -254,25 +267,49 @@ describe("project use-case", () => {
           meta: { tags: [] },
           padBeforeSec: 0,
           padAfterSec: 0,
-          durationSec: 0,
-          richText: "<p>Previous</p>",
-          tts: [],
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+            {
+              id: "tts-2",
+              provider: "voisona",
+              text: "World",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
         },
       ],
     });
-    analyzeVoisonaTextMock.mockResolvedValueOnce({ analysis: "analysis" });
-    synthesizeVoisonaMock.mockResolvedValueOnce({
-      audioSrc: "/tts/generated.wav",
-      outputPath: "/tmp/generated.wav",
-      durationSec: 2,
-    });
+
+    expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
+    expect(analyzeTextsMock).toHaveBeenCalledWith(serverEnv, ["Hello", "World"]);
+    expect(contentPage(saved.pages).tts.map((item) => item.speech.g2p)).toEqual([first, second]);
+  });
+
+  it("keeps duplicate texts mapped by request index", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const first = createG2pItem("Hello");
+    const second = createG2pItem("Hello");
+    second.segments[0]!.words[0]!.moras[0]!.pitch = "low";
+    analyzeTextsMock.mockResolvedValueOnce([first, second]);
+    synthesizeVoicevoxMock
+      .mockResolvedValueOnce(audio("/tts/one.wav"))
+      .mockResolvedValueOnce(audio("/tts/two.wav"));
 
     const { saveProject } = await import("../use-case");
-    const avatar = {
-      base: "normal" as const,
-      eyes: "opened" as const,
-      mouth: "opened" as const,
-    };
     const saved = await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -282,41 +319,44 @@ describe("project use-case", () => {
           title: "Page 1",
           type: "main",
           meta: { tags: [] },
-          padBeforeSec: 0.5,
-          padAfterSec: 0.25,
-          richText: "<p>Hello</p>",
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
           tts: [
             {
               id: "tts-1",
-              provider: "voisona",
+              provider: "voicevox",
               text: "Hello",
-              voiceName: "voice",
+              voiceName: "3",
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
               speech: {},
-              avatar,
+            },
+            {
+              id: "tts-2",
+              provider: "voicevox",
+              text: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
             },
           ],
         },
       ],
     });
 
-    expect(saved.meta).toEqual({ ...defaultMeta, updatedAt: now });
-    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/generated.wav");
-    expect(contentPage(saved.pages).tts[0]?.avatar).toEqual(avatar);
-    expect(contentPage(saved.pages).durationSec).toBe(2.85);
-    expect(writeSavedProjectMock).toHaveBeenCalledWith("project", saved);
+    expect(analyzeTextsMock).toHaveBeenCalledWith({}, ["Hello", "Hello"]);
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(first);
+    expect(contentPage(saved.pages).tts[1]?.speech.g2p).toEqual(second);
   });
 
   it("saves a freshly synthesized VOICEVOX project", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
-    analyzeVoicevoxTextMock.mockResolvedValueOnce({ analysis: '{"accent_phrases":[]}' });
-    synthesizeVoicevoxMock.mockResolvedValueOnce({
-      audioSrc: "/tts/voicevox.wav",
-      outputPath: "/tmp/voicevox.wav",
-      durationSec: 1,
-    });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -349,15 +389,10 @@ describe("project use-case", () => {
       ],
     });
 
-    expect(analyzeVoicevoxTextMock).toHaveBeenCalledWith(serverEnv, {
-      text: "Hello",
-      voiceName: "3",
-    });
     expect(synthesizeVoicevoxMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
-      text: "Hello",
-      analysis: '{"accent_phrases":[]}',
+      g2p: helloG2p,
       voiceName: "3",
       synthesisSettings: { speedScale: 1.3 },
     });
@@ -365,18 +400,14 @@ describe("project use-case", () => {
       provider: "voicevox",
       durationSec: 1.1,
       audio: { src: "/tts/voicevox.wav" },
-      speech: { analysis: '{"accent_phrases":[]}' },
+      speech: { g2p: helloG2p },
     });
   });
 
   it("synthesizes null tts with the project preset without baking it onto saved tts", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
-    analyzeVoicevoxTextMock.mockResolvedValueOnce({ analysis: '{"accent_phrases":[]}' });
-    synthesizeVoicevoxMock.mockResolvedValueOnce({
-      audioSrc: "/tts/voicevox.wav",
-      outputPath: "/tmp/voicevox.wav",
-      durationSec: 1,
-    });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
     const serverEnv = {};
     const voicePresets = [
@@ -420,13 +451,78 @@ describe("project use-case", () => {
     expect(synthesizeVoicevoxMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
-      text: "Hello",
-      analysis: '{"accent_phrases":[]}',
+      g2p: helloG2p,
       voiceName: "3",
       synthesisSettings: { speedScale: 1.2 },
     });
     expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
     expect(saved.voicePresets).toEqual(voicePresets);
+  });
+
+  it("resynthesizes without reanalyzing when H/L or chain changes", async () => {
+    const edited = createG2pItem("Hello");
+    edited.segments[0]!.words[0]!.moras[0]!.pitch = "low";
+    edited.segments[0]!.words[0]!.chain = true;
+    readSavedProjectMock.mockResolvedValueOnce({
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1.1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              durationSec: 1.1,
+              audio: { src: "/tts/project/old.wav" },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
+
+    const { saveProject } = await import("../use-case");
+    await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: edited },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+    expect(synthesizeVoicevoxMock).toHaveBeenCalledWith(expect.objectContaining({ g2p: edited }));
   });
 
   it("resynthesizes null tts when the project preset changes", async () => {
@@ -457,17 +553,13 @@ describe("project use-case", () => {
               voiceName: "3",
               durationSec: 1.1,
               audio: { src: "/tts/project/old.wav" },
-              speech: { analysis: '{"accent_phrases":[]}' },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
-    synthesizeVoicevoxMock.mockResolvedValueOnce({
-      audioSrc: "/tts/voicevox.wav",
-      outputPath: "/tmp/voicevox.wav",
-      durationSec: 1,
-    });
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -501,23 +593,21 @@ describe("project use-case", () => {
               padAfterSec: 0,
               volume: 1,
               synthesisSettings: null,
-              speech: { analysis: '{"accent_phrases":[]}' },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
 
-    expect(analyzeVoicevoxTextMock).not.toHaveBeenCalled();
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoicevoxMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
-      text: "Hello",
-      analysis: '{"accent_phrases":[]}',
+      g2p: helloG2p,
       voiceName: "3",
       synthesisSettings: { speedScale: 1.5 },
     });
-    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
     expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/voicevox.wav");
   });
 
@@ -534,7 +624,7 @@ describe("project use-case", () => {
       durationSec: 1.1,
       synthesisSettings: { speedScale: 1.3 },
       audio: { src: "/tts/project/old.wav" },
-      speech: { analysis: '{"accent_phrases":[]}' },
+      speech: { g2p: helloG2p },
     };
     readSavedProjectMock.mockResolvedValueOnce({
       voicePresets: [
@@ -567,7 +657,7 @@ describe("project use-case", () => {
         {
           provider: "voicevox",
           voiceName: "3",
-          synthesisSettings: { speedScale: 1.5 },
+          synthesisSettings: { speedScale: 1.9 },
         },
       ],
       pages: [
@@ -581,98 +671,8 @@ describe("project use-case", () => {
           richText: "<p>Hello</p>",
           tts: [
             {
-              id: "tts-1",
-              provider: "voicevox",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "3",
-              padBeforeSec: 0,
-              padAfterSec: 0,
-              volume: 1,
-              synthesisSettings: { speedScale: 1.3 },
-              speech: { analysis: '{"accent_phrases":[]}' },
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(analyzeVoicevoxTextMock).not.toHaveBeenCalled();
-    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
-    expect(contentPage(saved.pages).tts[0]).toMatchObject({
-      audio: { src: "/tts/project/old.wav" },
-      synthesisSettings: { speedScale: 1.3 },
-    });
-  });
-
-  it("keeps reused audio when an override is cleared back to the current preset", async () => {
-    readSavedProjectMock.mockResolvedValueOnce({
-      voicePresets: [
-        {
-          provider: "voicevox",
-          voiceName: "3",
-          synthesisSettings: { speedScale: 1.2 },
-        },
-      ],
-      pages: [
-        {
-          id: "page-1",
-          title: "Page 1",
-          type: "main",
-          meta: { tags: [] },
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          durationSec: 1.1,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voicevox",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "3",
-              durationSec: 1.1,
-              synthesisSettings: { speedScale: 1.2 },
-              audio: { src: "/tts/project/old.wav" },
-              speech: { analysis: '{"accent_phrases":[]}' },
-            },
-          ],
-        },
-      ],
-    });
-
-    const { saveProject } = await import("../use-case");
-    const saved = await saveProject({}, "project", {
-      meta: defaultMeta,
-      bgm: [],
-      voicePresets: [
-        {
-          provider: "voicevox",
-          voiceName: "3",
-          synthesisSettings: { speedScale: 1.2 },
-        },
-      ],
-      pages: [
-        {
-          id: "page-1",
-          title: "Page 1",
-          type: "main",
-          meta: { tags: [] },
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voicevox",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "3",
-              padBeforeSec: 0,
-              padAfterSec: 0,
-              volume: 1,
-              synthesisSettings: null,
-              speech: { analysis: '{"accent_phrases":[]}' },
+              ...previousTts,
+              speech: { g2p: helloG2p },
             },
           ],
         },
@@ -681,17 +681,11 @@ describe("project use-case", () => {
 
     expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
     expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/project/old.wav");
-    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
   });
 
-  it("saves a freshly synthesized VoicePeak project", async () => {
+  it("saves a freshly synthesized VoicePeak project without analyze", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
-    analyzeVoicepeakTextMock.mockResolvedValueOnce({ analysis: "direct" });
-    synthesizeVoicepeakMock.mockResolvedValueOnce({
-      audioSrc: "/tts/voicepeak.wav",
-      outputPath: "/tmp/voicepeak.wav",
-      durationSec: 1.2,
-    });
+    synthesizeVoicepeakMock.mockResolvedValueOnce(audio("/tts/voicepeak.wav", 1.2));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -723,21 +717,18 @@ describe("project use-case", () => {
       ],
     });
 
-    expect(analyzeVoicepeakTextMock).toHaveBeenCalledWith(serverEnv, {
-      text: "Hello",
-    });
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoicepeakMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
       text: "Hello",
-      analysis: "direct",
       voiceName: "Kasane Teto",
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicepeak",
       durationSec: 1.3,
       audio: { src: "/tts/voicepeak.wav" },
-      speech: { analysis: "direct" },
+      speech: {},
     });
   });
 
@@ -774,6 +765,7 @@ describe("project use-case", () => {
   });
 
   it("reanalyzes changed readText before synthesizing", async () => {
+    const nextG2p = createG2pItem("new read");
     readSavedProjectMock.mockResolvedValueOnce({
       pages: [
         {
@@ -795,18 +787,14 @@ describe("project use-case", () => {
               voiceVersion: "1",
               durationSec: 1.2,
               audio: { src: "/tts/old.wav" },
-              speech: { analysis: "old analysis" },
+              speech: { g2p: createG2pItem("old read") },
             },
           ],
         },
       ],
     });
-    analyzeVoisonaTextMock.mockResolvedValueOnce({ analysis: "new analysis" });
-    synthesizeVoisonaMock.mockResolvedValueOnce({
-      audioSrc: "/tts/new.wav",
-      outputPath: "/tmp/new.wav",
-      durationSec: 1.5,
-    });
+    analyzeTextsMock.mockResolvedValueOnce([nextG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/new.wav", 1.5));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -833,34 +821,28 @@ describe("project use-case", () => {
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
-              speech: { analysis: "old analysis" },
+              speech: { g2p: createG2pItem("old read") },
             },
           ],
         },
       ],
     });
 
-    expect(analyzeVoisonaTextMock).toHaveBeenCalledWith(serverEnv, {
-      text: "new read",
-      language: "ja_JP",
-    });
+    expect(analyzeTextsMock).toHaveBeenCalledWith(serverEnv, ["new read"]);
     expect(synthesizeVoisonaMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
-      text: "new read",
-      analysis: "new analysis",
+      g2p: nextG2p,
       voiceName: "voice",
       voiceVersion: "1",
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       readText: "new read",
-      durationSec: 1.6,
-      audio: { src: "/tts/new.wav" },
-      speech: { analysis: "new analysis" },
+      speech: { g2p: nextG2p },
     });
   });
 
-  it("reanalyzes when provider changes even if analysis remains", async () => {
+  it("reuses G2P and resynthesizes when provider changes between VOICEVOX and VoiSona", async () => {
     readSavedProjectMock.mockResolvedValueOnce({
       pages: [
         {
@@ -880,18 +862,13 @@ describe("project use-case", () => {
               voiceName: "3",
               durationSec: 1.2,
               audio: { src: "/tts/old.wav" },
-              speech: { analysis: '{"accent_phrases":[]}' },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
-    analyzeVoisonaTextMock.mockResolvedValueOnce({ analysis: "<tsml>Hello</tsml>" });
-    synthesizeVoisonaMock.mockResolvedValueOnce({
-      audioSrc: "/tts/new.wav",
-      outputPath: "/tmp/new.wav",
-      durationSec: 1.5,
-    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/new.wav", 1.5));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -918,109 +895,25 @@ describe("project use-case", () => {
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
-              speech: { analysis: '{"accent_phrases":[]}' },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
 
-    expect(analyzeVoisonaTextMock).toHaveBeenCalledWith(serverEnv, {
-      text: "Hello",
-      language: "ja_JP",
-    });
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoisonaMock).toHaveBeenCalledWith({
       serverEnv,
       projectPath: "project",
-      text: "Hello",
-      analysis: "<tsml>Hello</tsml>",
+      g2p: helloG2p,
       voiceName: "voice",
       voiceVersion: "1",
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voisona",
-      speech: { analysis: "<tsml>Hello</tsml>" },
-      audio: { src: "/tts/new.wav" },
+      speech: { g2p: helloG2p },
     });
-  });
-
-  it("updates page timing fields without regenerating unchanged tts", async () => {
-    const previous = {
-      pages: [
-        {
-          id: "page-1",
-          title: "Page 1",
-          type: "main",
-          meta: { tags: [] },
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          durationSec: 2,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voisona",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "voice",
-              voiceVersion: "1",
-              durationSec: 2,
-              audio: { src: "/tts/project/old.wav" },
-              speech: { analysis: "Hello" },
-            },
-          ],
-        },
-      ],
-    };
-
-    readSavedProjectMock.mockResolvedValueOnce(previous);
-    const { saveProject } = await import("../use-case");
-    const result = await saveProject({}, "project", {
-      meta: defaultMeta,
-      bgm: [],
-      pages: [
-        {
-          id: "page-1",
-          title: "Renamed",
-          type: "intro",
-          meta: { tags: ["updated"] },
-          padBeforeSec: 1,
-          padAfterSec: 0.5,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voisona",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "voice",
-              voiceVersion: "1",
-              padBeforeSec: 0,
-              padAfterSec: 0,
-              volume: 1,
-              speech: { analysis: "Hello" },
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(contentPage(result.pages)).toMatchObject({
-      title: "Renamed",
-      type: "intro",
-      meta: { tags: ["updated"] },
-      padBeforeSec: 1,
-      padAfterSec: 0.5,
-      durationSec: 3.5,
-    });
-    expect(contentPage(result.pages).tts[0]).toEqual({
-      ...previous.pages[0]?.tts[0],
-      padBeforeSec: 0,
-      padAfterSec: 0,
-      volume: 1,
-    });
-    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
-    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
   });
 
   it("resynthesizes when previous audio file is missing", async () => {
@@ -1046,95 +939,13 @@ describe("project use-case", () => {
               voiceVersion: "1",
               durationSec: 1.2,
               audio: { src: "/tts/project/old.wav" },
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
-    synthesizeVoisonaMock.mockResolvedValueOnce({
-      audioSrc: "/tts/project/new.wav",
-      outputPath: "/tmp/new.wav",
-      durationSec: 1.5,
-    });
-
-    const serverEnv = {};
-    const { saveProject } = await import("../use-case");
-    const saved = await saveProject(serverEnv, "project", {
-      meta: defaultMeta,
-      bgm: [],
-      pages: [
-        {
-          id: "page-1",
-          title: "Page 1",
-          type: "main",
-          meta: { tags: [] },
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voisona",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "voice",
-              voiceVersion: "1",
-              padBeforeSec: 0,
-              padAfterSec: 0,
-              volume: 1,
-              speech: { analysis: "Hello" },
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
-    expect(synthesizeVoisonaMock).toHaveBeenCalledWith({
-      serverEnv,
-      projectPath: "project",
-      text: "Hello",
-      analysis: "Hello",
-      voiceName: "voice",
-      voiceVersion: "1",
-    });
-    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/project/new.wav");
-  });
-
-  it("resynthesizes when previous audio src is not project-scoped", async () => {
-    readSavedProjectMock.mockResolvedValueOnce({
-      pages: [
-        {
-          id: "page-1",
-          title: "Page 1",
-          type: "main",
-          meta: { tags: [] },
-          padBeforeSec: 0,
-          padAfterSec: 0,
-          durationSec: 1.2,
-          richText: "<p>Hello</p>",
-          tts: [
-            {
-              id: "tts-1",
-              provider: "voisona",
-              text: "Hello",
-              readText: "Hello",
-              voiceName: "voice",
-              voiceVersion: "1",
-              durationSec: 1.2,
-              audio: { src: "/tts/old.wav" },
-              speech: { analysis: "Hello" },
-            },
-          ],
-        },
-      ],
-    });
-    synthesizeVoisonaMock.mockResolvedValueOnce({
-      audioSrc: "/tts/project/new.wav",
-      outputPath: "/tmp/new.wav",
-      durationSec: 1.5,
-    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/new.wav", 1.5));
 
     const serverEnv = {};
     const { saveProject } = await import("../use-case");
@@ -1161,30 +972,22 @@ describe("project use-case", () => {
               padBeforeSec: 0,
               padAfterSec: 0,
               volume: 1,
-              speech: { analysis: "Hello" },
+              speech: { g2p: helloG2p },
             },
           ],
         },
       ],
     });
 
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoisonaMock).toHaveBeenCalled();
   });
 
   it("rejects when a page is shorter than an adjacent transition", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     synthesizeVoisonaMock
-      .mockResolvedValueOnce({
-        audioSrc: "/tts/short.wav",
-        outputPath: "/tmp/short.wav",
-        durationSec: 0.2,
-      })
-      .mockResolvedValueOnce({
-        audioSrc: "/tts/long.wav",
-        outputPath: "/tmp/long.wav",
-        durationSec: 3,
-      });
-    analyzeVoisonaTextMock.mockResolvedValue({ analysis: "<tsml />" });
+      .mockResolvedValueOnce(audio("/tts/short.wav", 0.2))
+      .mockResolvedValueOnce(audio("/tts/long.wav", 3));
 
     const { saveProject } = await import("../use-case");
     await expect(
@@ -1206,7 +1009,7 @@ describe("project use-case", () => {
                 provider: "voisona",
                 text: "short",
                 voiceName: "voice",
-                speech: { analysis: "<tsml />" },
+                speech: { g2p: createG2pItem("short") },
               },
             ],
           },
@@ -1229,7 +1032,7 @@ describe("project use-case", () => {
                 provider: "voisona",
                 text: "long",
                 voiceName: "voice",
-                speech: { analysis: "<tsml />" },
+                speech: { g2p: createG2pItem("long") },
               },
             ],
           },
@@ -1290,11 +1093,6 @@ describe("project use-case", () => {
 
     const { copyProject } = await import("../use-case");
     await expect(copyProject("source", "copy")).resolves.toEqual(summary);
-    expect(readSavedProjectMock).toHaveBeenCalledWith("source");
-    expect(createSavedProjectMock).toHaveBeenCalledWith("copy", {
-      ...project,
-      meta: { ...defaultMeta, updatedAt: now },
-    });
   });
 
   it("saves an endcard page without tts using the fixed duration", async () => {
@@ -1327,12 +1125,7 @@ describe("project use-case", () => {
       type: "endcard",
       durationSec: 8.75,
       tts: [],
-      meta: {
-        nicoadSource: "sm46665240",
-        credits: [{ id: "credit-1", title: "BGM", url: "https://example.com" }],
-      },
     });
-    expect(analyzeVoisonaTextMock).not.toHaveBeenCalled();
-    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
   });
 });

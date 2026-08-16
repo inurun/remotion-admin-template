@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DraftPage, DraftTts, VoiceOption } from "@/_schemas";
+import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { createAliasMap } from "@/app/features/zen/create-alias-map";
 import { parseZenScript } from "@/app/features/zen/parse-zen-script";
 import { serializeZenPage } from "@/app/features/zen/serialize-zen-page";
@@ -43,7 +44,7 @@ function ttsItem(overrides: Partial<Extract<DraftTts, { provider: "voicevox" }>>
     padAfterSec: 2,
     volume: 0.5,
     synthesisSettings: null,
-    speech: { analysis: "kept" },
+    speech: { g2p: createG2pItem("kept") },
     avatar: { base: "normal", eyes: "opened", mouth: "opened" },
     ...overrides,
   };
@@ -141,7 +142,7 @@ world
     expect(result.map((item) => item.id)).toEqual(["a", "b"]);
     expect(result[0]?.padBeforeSec).toBe(1);
     expect(result[0]?.volume).toBe(0.5);
-    expect(result[0]?.speech?.analysis).toBe("kept");
+    expect(result[0]?.speech?.g2p).toEqual(createG2pItem("kept"));
   });
 
   it("keeps id and updates text with readText on a substitution", () => {
@@ -159,7 +160,7 @@ hello edited
     expect(result[0]?.text).toBe("hello edited");
     expect(result[0]?.readText).toBe("hello edited");
     expect(result[0]?.padBeforeSec).toBe(1);
-    expect(result[0]?.speech?.analysis).toBe("kept");
+    expect(result[0]?.speech?.g2p).toEqual(createG2pItem("kept"));
   });
 
   it("keeps later ids when a line is inserted", () => {

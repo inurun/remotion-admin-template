@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SavedTts } from "@/_schemas";
+import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { toDraftTts } from "../../lib/project-draft-conversion";
 
 describe("form context conversion", () => {
@@ -15,7 +16,7 @@ describe("form context conversion", () => {
       volume: 0.8,
       durationSec: 1,
       audio: { src: "/tts/hello.wav" },
-      speech: { analysis: "analysis" },
+      speech: { g2p: createG2pItem("analysis") },
       avatar: {
         base: "normal",
         eyes: "sad",

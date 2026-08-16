@@ -45,7 +45,7 @@ describe("createDraftTts", () => {
       padAfterSec: 0,
       volume: 1,
       synthesisSettings: null,
-      speech: { analysis: "" },
+      speech: {},
     });
   });
 
@@ -61,7 +61,7 @@ describe("createDraftTts", () => {
       padAfterSec: 0,
       volume: 1,
       synthesisSettings: null,
-      speech: { analysis: "" },
+      speech: {},
     });
   });
 
@@ -77,7 +77,7 @@ describe("createDraftTts", () => {
       padAfterSec: 0,
       volume: 1,
       synthesisSettings: null,
-      speech: { analysis: "" },
+      speech: {},
     });
   });
 });

@@ -6,8 +6,15 @@ config({ path: [".env.local", ".env"], quiet: true });
 
 const projectRoot = process.cwd();
 const openapiRoot = path.join(projectRoot, "openapi");
-const defaultVoicevoxUrl = "http://localhost:50021";
-const defaultVoisonaBase = "http://localhost:32766/api/talk/v1";
+const defaultHaqumeiApiUrl = "http://127.0.0.1:8080";
+
+const requiredPaths = [
+  "/v1/analyze",
+  "/v1/synthesis/voicevox",
+  "/v1/synthesis/voisona",
+  "/v1/voices/voicevox",
+  "/v1/voices/voisona",
+] as const;
 
 function trimEnvValue(value: string | undefined) {
   const trimmed = value?.trim();
@@ -31,26 +38,12 @@ function normalizeEnvValue(value: string | undefined) {
   return normalized || undefined;
 }
 
-function requireEnv(name: string): string {
-  const value = normalizeEnvValue(process.env[name]);
-  if (!value) {
-    throw new Error(`${name} must be set`);
-  }
-
-  return value;
+function normalizeBaseUrl(baseUrl: string): string {
+  return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
 }
 
-function basicAuthHeader(username: string, password: string): string {
-  return `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
-}
-
-async function ensureDir(dirPath: string): Promise<void> {
-  await fs.mkdir(dirPath, { recursive: true });
-}
-
-async function fetchText(url: string, headers?: Record<string, string>): Promise<string> {
+async function fetchText(url: string): Promise<string> {
   const response = await fetch(url, {
-    headers,
     signal: AbortSignal.timeout(30_000),
   });
   const text = await response.text();
@@ -62,103 +55,114 @@ async function fetchText(url: string, headers?: Record<string, string>): Promise
   return text;
 }
 
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
-function getVoiSonaDocsBaseUrl(apiBaseUrl: string): string {
-  const normalized = normalizeBaseUrl(apiBaseUrl);
-  const docsBaseUrl = normalized.replace(/\/api\/talk\/v1$/u, "");
-
-  if (docsBaseUrl === normalized) {
-    throw new Error(`VOISONA_BASE must end with /api/talk/v1, got: ${apiBaseUrl}`);
-  }
-
-  return docsBaseUrl;
-}
-
-function assertVoicevoxSchema(value: unknown): asserts value is {
-  openapi: string;
-  paths: Record<string, unknown>;
-} {
-  if (typeof value !== "object" || value === null) {
-    throw new Error("VOICEVOX schema is not an object");
-  }
-
-  const schema = value as { openapi?: unknown; paths?: unknown };
-  if (typeof schema.openapi !== "string") {
-    throw new Error("VOICEVOX schema missing openapi");
-  }
-  if (typeof schema.paths !== "object" || schema.paths === null) {
-    throw new Error("VOICEVOX schema missing paths");
-  }
-  if (!("/speakers" in schema.paths)) {
-    throw new Error("VOICEVOX schema missing /speakers");
-  }
-}
-
-function assertVoiSonaSchema(text: string): void {
-  const checks = [
-    { pattern: /^openapi:/mu, label: "openapi" },
-    { pattern: /^servers:/mu, label: "servers" },
-    { pattern: /^  \/voices:/mu, label: "/voices" },
-  ];
-
-  for (const check of checks) {
-    if (!check.pattern.test(text)) {
-      throw new Error(`VoiSona schema missing ${check.label}`);
+function assertRequiredPaths(paths: Record<string, unknown>) {
+  for (const requiredPath of requiredPaths) {
+    if (!(requiredPath in paths)) {
+      throw new Error(`haqumei-api schema missing ${requiredPath}`);
     }
   }
 }
 
+function getSchemaRefName(schema: unknown): string | undefined {
+  if (!isRecord(schema) || typeof schema.$ref !== "string") {
+    return undefined;
+  }
+
+  const match = schema.$ref.match(/\/([^/]+)$/u);
+  return match?.[1];
+}
+
+function getWavSchema(schema: unknown, components: Record<string, unknown> | undefined) {
+  if (!isRecord(schema)) {
+    return undefined;
+  }
+
+  const refName = getSchemaRefName(schema);
+  if (refName && isRecord(components)) {
+    return components[refName];
+  }
+
+  return schema;
+}
+
+function isBinaryWavSchema(schema: unknown) {
+  if (!isRecord(schema)) {
+    return false;
+  }
+
+  return schema.type === "string" && schema.format === "binary";
+}
+
+function assertBinaryWavSchema(openapi: Record<string, unknown>) {
+  const paths = openapi.paths;
+  if (!isRecord(paths)) {
+    throw new Error("haqumei-api schema missing paths");
+  }
+
+  const components = isRecord(openapi.components) ? openapi.components.schemas : undefined;
+  const componentSchemas = isRecord(components) ? components : undefined;
+
+  for (const synthesisPath of ["/v1/synthesis/voicevox", "/v1/synthesis/voisona"] as const) {
+    const pathItem = paths[synthesisPath];
+    if (!isRecord(pathItem) || !isRecord(pathItem.post) || !isRecord(pathItem.post.responses)) {
+      throw new Error(`haqumei-api schema missing POST ${synthesisPath}`);
+    }
+
+    const ok = pathItem.post.responses["200"];
+    if (!isRecord(ok) || !isRecord(ok.content) || !isRecord(ok.content["audio/wav"])) {
+      throw new Error(`haqumei-api schema missing audio/wav for ${synthesisPath}`);
+    }
+
+    const wavSchema = getWavSchema(ok.content["audio/wav"].schema, componentSchemas);
+    if (!isBinaryWavSchema(wavSchema)) {
+      throw new Error(`haqumei-api schema missing binary WAV schema for ${synthesisPath}`);
+    }
+  }
+}
+
+function assertHaqumeiApiSchema(value: unknown): asserts value is {
+  openapi: string;
+  paths: Record<string, unknown>;
+} {
+  if (!isRecord(value)) {
+    throw new Error("haqumei-api schema is not an object");
+  }
+
+  if (typeof value.openapi !== "string") {
+    throw new Error("haqumei-api schema missing openapi");
+  }
+
+  if (!isRecord(value.paths)) {
+    throw new Error("haqumei-api schema missing paths");
+  }
+
+  assertRequiredPaths(value.paths);
+  assertBinaryWavSchema(value);
+}
+
 async function main(): Promise<void> {
-  const voicevoxUrl = normalizeBaseUrl(
-    normalizeEnvValue(process.env.VOICEVOX_URL) ?? defaultVoicevoxUrl,
+  const haqumeiApiUrl = normalizeBaseUrl(
+    normalizeEnvValue(process.env.HAQUMEI_API_URL) ?? defaultHaqumeiApiUrl,
   );
-  const voisonaBase = normalizeBaseUrl(
-    normalizeEnvValue(process.env.VOISONA_BASE) ?? defaultVoisonaBase,
-  );
-  const voisonaUsername = requireEnv("VOISONA_USERNAME");
-  const voisonaPassword = requireEnv("VOISONA_PASSWORD");
+  const schemaUrl = new URL("/openapi.json", `${haqumeiApiUrl}/`).toString();
+  const schema = JSON.parse(await fetchText(schemaUrl)) as unknown;
+  assertHaqumeiApiSchema(schema);
 
-  const voicevoxSchemaUrl = new URL("/openapi.json", `${voicevoxUrl}/`).toString();
-  const voisonaDocsBaseUrl = getVoiSonaDocsBaseUrl(voisonaBase);
-  const voisonaSchemaUrl = new URL("/docs/talk_api.yaml", `${voisonaDocsBaseUrl}/`).toString();
-
-  const [voicevoxJsonText, voisonaYamlText] = await Promise.all([
-    fetchText(voicevoxSchemaUrl),
-    fetchText(voisonaSchemaUrl, {
-      authorization: basicAuthHeader(voisonaUsername, voisonaPassword),
-    }),
-  ]);
-
-  const voicevoxSchema = JSON.parse(voicevoxJsonText) as unknown;
-  assertVoicevoxSchema(voicevoxSchema);
-  assertVoiSonaSchema(voisonaYamlText);
-
-  const voicevoxDir = path.join(openapiRoot, "voicevox");
-  const voisonaDir = path.join(openapiRoot, "voisona");
-  await Promise.all([ensureDir(voicevoxDir), ensureDir(voisonaDir)]);
-
-  await Promise.all([
-    fs.writeFile(
-      path.join(voicevoxDir, "openapi.json"),
-      `${JSON.stringify(voicevoxSchema, null, 2)}\n`,
-      "utf8",
-    ),
-    fs.writeFile(path.join(voisonaDir, "openapi.yaml"), voisonaYamlText, "utf8"),
-  ]);
+  const outputDir = path.join(openapiRoot, "haqumei-api");
+  await fs.mkdir(outputDir, { recursive: true });
+  const outputPath = path.join(outputDir, "openapi.json");
+  await fs.writeFile(outputPath, `${JSON.stringify(schema, null, 2)}\n`, "utf8");
 
   console.log(
     JSON.stringify(
       {
-        voicevox: {
-          output: path.join("openapi", "voicevox", "openapi.json"),
-          source: voicevoxSchemaUrl,
-        },
-        voisona: {
-          output: path.join("openapi", "voisona", "openapi.yaml"),
-          source: voisonaSchemaUrl,
+        haqumeiApi: {
+          output: path.join("openapi", "haqumei-api", "openapi.json"),
+          source: schemaUrl,
         },
       },
       null,

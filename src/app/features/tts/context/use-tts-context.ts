@@ -58,8 +58,8 @@ function useTtsCommands() {
       if (isAnalyzing || !isTtsActionReady(item, canRunTts)) {
         return;
       }
-      const analysis = await analyzeText({ item });
-      setValue(`pages.${pageIndex}.tts.${ttsIndex}.speech.analysis`, analysis, {
+      const g2p = await analyzeText({ item });
+      setValue(`pages.${pageIndex}.tts.${ttsIndex}.speech.g2p`, g2p, {
         shouldDirty: true,
       });
       toast.success("音声分析を更新した");

@@ -1,9 +1,9 @@
-import type { DraftTts } from "@/_schemas";
+import type { DraftTts, G2pItem } from "@/_schemas";
 
 export type PreviewSynthesisPayload = {
   provider: DraftTts["provider"];
   projectPath: string;
-  analysis?: string;
+  g2p?: G2pItem;
   text: string;
   voiceName: string;
   voiceVersion?: string;
@@ -22,9 +22,8 @@ function getRequiredVoiceName(item: DraftTts) {
   return voiceName;
 }
 
-function getAnalysisPart(item: DraftTts) {
-  const analysis = item.speech?.analysis?.trim();
-  return analysis ? { analysis } : {};
+function getG2pPart(item: DraftTts) {
+  return item.speech?.g2p ? { g2p: item.speech.g2p } : {};
 }
 
 function getVoiceVersionPart(item: DraftTts) {
@@ -37,7 +36,7 @@ export function getPreviewPayload(item: DraftTts, projectPath: string): PreviewS
     provider: item.provider,
     projectPath,
     text: getTextForSynthesis(item),
-    ...getAnalysisPart(item),
+    ...getG2pPart(item),
     voiceName: getRequiredVoiceName(item),
     ...getVoiceVersionPart(item),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),

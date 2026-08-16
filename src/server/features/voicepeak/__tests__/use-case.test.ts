@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { analyzeVoicepeakText, listVoicepeakVoices, synthesizeVoicepeak } from "../use-case";
+import { listVoicepeakVoices, synthesizeVoicepeak } from "../use-case";
 
 const {
   accessMock,
@@ -32,7 +32,7 @@ vi.mock("../cli", () => ({
   runVoicepeakSynthesis: runVoicepeakSynthesisMock,
 }));
 
-vi.mock("@/server/features/voisona/wav", () => ({
+vi.mock("@/server/features/tts/wav", () => ({
   getWavDurationSeconds: wavDurationMock,
 }));
 
@@ -57,12 +57,6 @@ describe("voicepeak use cases", () => {
       },
     ]);
     expect(listNarratorsMock).toHaveBeenCalledWith({});
-  });
-
-  it("returns direct analysis", async () => {
-    await expect(analyzeVoicepeakText({}, { text: "hello" })).resolves.toEqual({
-      analysis: "direct",
-    });
   });
 
   it("synthesizes with default Kasane Teto emotion", async () => {

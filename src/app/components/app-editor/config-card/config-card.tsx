@@ -19,7 +19,7 @@ export function ConfigCard() {
       <CardContent className="grid gap-4">
         {selectedPageIndex === null || selectedTtsIndex === null || !selectedTts ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-            tts を選ぶと Read と TSML を編集できる。
+            tts を選ぶと Read と analysis を編集できる。
           </div>
         ) : (
           <SelectedPageContextProvider pageIndex={selectedPageIndex}>

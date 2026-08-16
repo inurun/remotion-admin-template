@@ -6,5 +6,3 @@ export {
 } from "@/_shared/project/default-voice-presets";
 
 export const DEFAULT_VOICEPEAK_PATH = "/Applications/voicepeak.app/Contents/MacOS/voicepeak";
-
-export const VOICEPEAK_DIRECT_ANALYSIS = "direct";

@@ -1,0 +1,1099 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "haqumei-api",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [],
+        "operationId": "health_live",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [],
+        "operationId": "health_ready",
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "503": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/v1/analyze": {
+      "post": {
+        "tags": [],
+        "operationId": "analyze",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/synthesis/voicevox": {
+      "post": {
+        "tags": ["crate::synthesis"],
+        "operationId": "synthesis_voicevox",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoicevoxSynthesisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "WAV audio",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "$ref": "#/components/schemas/WavFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/synthesis/voisona": {
+      "post": {
+        "tags": ["crate::synthesis"],
+        "operationId": "synthesis_voisona",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoisonaSynthesisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "WAV audio",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "$ref": "#/components/schemas/WavFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/voicevox": {
+      "get": {
+        "tags": ["crate::synthesis"],
+        "operationId": "voices_voicevox",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoicevoxVoicesResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/voisona": {
+      "get": {
+        "tags": ["crate::synthesis"],
+        "operationId": "voices_voisona",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoisonaVoicesResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": [],
+        "operationId": "version",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalyzeOptions": {
+        "type": "object",
+        "required": [
+          "normalize_unicode",
+          "use_read_as_pron",
+          "revert_long_vowels",
+          "revert_yotsugana",
+          "modify_filler_accent",
+          "predict_nani",
+          "predict_kana_english",
+          "retreat_acc_nuc",
+          "modify_acc_after_chaining",
+          "process_odoriji"
+        ],
+        "properties": {
+          "modify_acc_after_chaining": {
+            "type": "boolean"
+          },
+          "modify_filler_accent": {
+            "type": "boolean"
+          },
+          "normalize_iu": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IuPronunciation"
+              }
+            ]
+          },
+          "normalize_unicode": {
+            "$ref": "#/components/schemas/UnicodeNormalization"
+          },
+          "predict_kana_english": {
+            "type": "boolean"
+          },
+          "predict_nani": {
+            "type": "boolean"
+          },
+          "process_odoriji": {
+            "type": "boolean"
+          },
+          "retreat_acc_nuc": {
+            "type": "boolean"
+          },
+          "revert_long_vowels": {
+            "type": "boolean"
+          },
+          "revert_yotsugana": {
+            "type": "boolean"
+          },
+          "use_read_as_pron": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AnalyzeRequest": {
+        "type": "object",
+        "required": ["texts"],
+        "properties": {
+          "options": {
+            "$ref": "#/components/schemas/AnalyzeRequestOptions"
+          },
+          "texts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalyzeRequestOptions": {
+        "type": "object",
+        "properties": {
+          "enable_final_glottal_stop": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "modify_acc_after_chaining": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "modify_filler_accent": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "normalize_iu": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IuPronunciation"
+              }
+            ],
+            "default": null
+          },
+          "normalize_unicode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UnicodeNormalization"
+              }
+            ],
+            "default": null
+          },
+          "predict_kana_english": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "predict_nani": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "process_odoriji": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "retreat_acc_nuc": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "revert_long_vowels": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "revert_yotsugana": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "split_n_allophones": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "split_n_before_palatal_affricate": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "split_n_before_r": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "split_q_allophones": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "use_allophones": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "use_read_as_pron": {
+            "type": ["boolean", "null"],
+            "default": null
+          },
+          "use_unidic_yomi": {
+            "type": ["boolean", "null"],
+            "default": null
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalyzeResponse": {
+        "type": "object",
+        "required": ["schema_version", "haqumei_version", "options", "items"],
+        "properties": {
+          "haqumei_version": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/G2pItem"
+            }
+          },
+          "options": {
+            "$ref": "#/components/schemas/AnalyzeOptions"
+          },
+          "schema_version": {
+            "type": "string"
+          }
+        }
+      },
+      "Boundary": {
+        "type": "string",
+        "enum": ["none", "pause", "question", "exclamation"]
+      },
+      "FieldError": {
+        "type": "object",
+        "required": ["path", "reason"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "G2pItem": {
+        "type": "object",
+        "required": ["text", "segments", "warnings"],
+        "properties": {
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            }
+          },
+          "text": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "G2pWord": {
+        "type": "object",
+        "required": ["surface", "chain", "moras", "metadata"],
+        "properties": {
+          "chain": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/WordMetadata"
+          },
+          "moras": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mora"
+            }
+          },
+          "surface": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IuPronunciation": {
+        "type": "string",
+        "enum": ["iu", "yuu", "kanji_iu", "kanji_yuu"]
+      },
+      "Mora": {
+        "type": "object",
+        "required": ["text", "pitch"],
+        "properties": {
+          "pitch": {
+            "$ref": "#/components/schemas/Pitch"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Pitch": {
+        "type": "string",
+        "enum": ["low", "high"]
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "required": ["type", "title", "status", "code", "detail"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "Segment": {
+        "type": "object",
+        "required": ["words", "boundary"],
+        "properties": {
+          "boundary": {
+            "$ref": "#/components/schemas/Boundary"
+          },
+          "words": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/G2pWord"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceSpan": {
+        "type": "object",
+        "required": ["start_utf16", "end_utf16"],
+        "properties": {
+          "end_utf16": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "start_utf16": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnicodeNormalization": {
+        "type": "string",
+        "enum": ["none", "nfc", "nfkc"]
+      },
+      "VersionResponse": {
+        "type": "object",
+        "required": ["name", "version", "schema_version", "haqumei_version"],
+        "properties": {
+          "haqumei_version": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "VoicevoxSynthesisRequest": {
+        "type": "object",
+        "required": ["schema_version", "item", "speaker"],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/G2pItem"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "speaker": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "synthesis_settings": {
+            "$ref": "#/components/schemas/VoicevoxSynthesisSettings"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoicevoxSynthesisSettings": {
+        "type": "object",
+        "properties": {
+          "intonationScale": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "outputSamplingRate": {
+            "type": "integer",
+            "format": "int32",
+            "default": null,
+            "minimum": 0
+          },
+          "outputStereo": {
+            "type": "boolean",
+            "default": null
+          },
+          "pauseLength": {
+            "type": ["number", "null"],
+            "format": "double",
+            "default": null
+          },
+          "pauseLengthScale": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "pitchScale": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "postPhonemeLength": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "prePhonemeLength": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "speedScale": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          },
+          "volumeScale": {
+            "type": "number",
+            "format": "double",
+            "default": null
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoicevoxVoice": {
+        "type": "object",
+        "required": ["speaker", "speaker_name", "style_name", "speaker_uuid", "version"],
+        "properties": {
+          "speaker": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "speaker_name": {
+            "type": "string"
+          },
+          "speaker_uuid": {
+            "type": "string"
+          },
+          "style_name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "VoicevoxVoicesResponse": {
+        "type": "object",
+        "required": ["voices"],
+        "properties": {
+          "voices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoicevoxVoice"
+            }
+          }
+        }
+      },
+      "VoisonaDisplayName": {
+        "type": "object",
+        "required": ["language", "name"],
+        "properties": {
+          "language": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "VoisonaSynthesisRequest": {
+        "type": "object",
+        "required": ["schema_version", "item", "voice_name"],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/G2pItem"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "synthesis_settings": {
+            "$ref": "#/components/schemas/VoisonaSynthesisSettings"
+          },
+          "voice_name": {
+            "type": "string"
+          },
+          "voice_version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoisonaSynthesisSettings": {
+        "type": "object",
+        "properties": {
+          "alp": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 1,
+            "minimum": -1
+          },
+          "huskiness": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 20,
+            "minimum": -20
+          },
+          "intonation": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 2,
+            "minimum": 0
+          },
+          "pitch": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 600,
+            "minimum": -600
+          },
+          "speed": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 5,
+            "minimum": 0.2
+          },
+          "style_weights": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            },
+            "default": null
+          },
+          "volume": {
+            "type": "number",
+            "format": "double",
+            "default": null,
+            "maximum": 8,
+            "minimum": -8
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoisonaVoice": {
+        "type": "object",
+        "required": ["voice_name", "voice_version"],
+        "properties": {
+          "display_names": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoisonaDisplayName"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "voice_name": {
+            "type": "string"
+          },
+          "voice_version": {
+            "type": "string"
+          }
+        }
+      },
+      "VoisonaVoicesResponse": {
+        "type": "object",
+        "required": ["voices"],
+        "properties": {
+          "voices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoisonaVoice"
+            }
+          }
+        }
+      },
+      "Warning": {
+        "type": "object",
+        "required": ["code", "location"],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/WarningCode"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WarningLocation"
+          },
+          "source_span": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SourceSpan"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "WarningCode": {
+        "type": "string",
+        "enum": ["unknown_word", "ignored_token"]
+      },
+      "WarningLocation": {
+        "type": "object",
+        "required": ["segment_index", "word_index"],
+        "properties": {
+          "segment_index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "word_index": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "WavFile": {
+        "type": "string",
+        "format": "binary"
+      },
+      "WordMetadata": {
+        "type": "object",
+        "required": [
+          "orig",
+          "read",
+          "pos",
+          "pos_group1",
+          "pos_group2",
+          "pos_group3",
+          "ctype",
+          "cform",
+          "is_unknown",
+          "is_ignored"
+        ],
+        "properties": {
+          "cform": {
+            "type": "string"
+          },
+          "ctype": {
+            "type": "string"
+          },
+          "is_ignored": {
+            "type": "boolean"
+          },
+          "is_unknown": {
+            "type": "boolean"
+          },
+          "orig": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "string"
+          },
+          "pos_group1": {
+            "type": "string"
+          },
+          "pos_group2": {
+            "type": "string"
+          },
+          "pos_group3": {
+            "type": "string"
+          },
+          "read": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

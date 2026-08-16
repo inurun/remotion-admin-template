@@ -1,6 +1,5 @@
-import { TsmlAnalysisEditor } from "@/app/components/app-editor/config-card/analysis-field/tsml-analysis-editor/tsml-analysis-editor";
+import { G2pAnalysisEditor } from "@/app/components/app-editor/config-card/analysis-field/g2p-analysis-editor/g2p-analysis-editor";
 import { useAnalysisField } from "@/app/components/app-editor/config-card/analysis-field/use-analysis-field";
-import { VoicevoxAnalysisEditor } from "@/app/components/app-editor/config-card/analysis-field/voicevox-analysis-editor/voicevox-analysis-editor";
 
 export function AnalysisField() {
   const { provider, value, onChange } = useAnalysisField();
@@ -13,9 +12,5 @@ export function AnalysisField() {
     );
   }
 
-  return provider === "voicevox" ? (
-    <VoicevoxAnalysisEditor value={value} onChange={onChange} />
-  ) : (
-    <TsmlAnalysisEditor value={value} onChange={onChange} />
-  );
+  return <G2pAnalysisEditor value={value} onChange={onChange} />;
 }

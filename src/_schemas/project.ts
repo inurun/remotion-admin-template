@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
 import { WEATHER_LOCATION_IDS } from "@/features/weather/weather-locations";
+import { g2pItemSchema } from "./g2p";
 
 export { avatarOptions, type AvatarType } from "@/_shared/lib/avatar/avatar-options";
 
@@ -41,7 +42,7 @@ const avatarSettingsSchema = z.object({
 });
 
 const ttsSpeechSchema = z.object({
-  analysis: z.string().optional(),
+  g2p: g2pItemSchema.optional(),
 });
 
 export const voiceOptionSchema = z.object({

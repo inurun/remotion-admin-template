@@ -1,6 +1,6 @@
-import type { TsmlMoraButton } from "@/app/components/app-editor/config-card/tsml-field/use-tsml-field";
 import { ChainButton } from "@/app/components/app-editor/config-card/analysis-field/word-card/chain-button/chain-button";
 import { MoraButtons } from "@/app/components/app-editor/config-card/analysis-field/word-card/mora-buttons/mora-buttons";
+import type { G2pMoraButton } from "@/app/components/app-editor/config-card/analysis-field/g2p-analysis-editor/use-g2p-analysis-editor";
 
 export function WordCard({
   isChained,
@@ -8,7 +8,7 @@ export function WordCard({
   onToggleChain,
 }: {
   isChained: boolean;
-  moraButtons: TsmlMoraButton[];
+  moraButtons: G2pMoraButton[];
   onToggleChain?: () => void;
 }) {
   return (

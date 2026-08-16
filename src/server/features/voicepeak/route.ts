@@ -2,15 +2,9 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { jsonError } from "@/server/_shared/http";
 import { getServerEnv } from "@/server/core/env";
-import {
-  analyzeVoicepeakText,
-  listVoicepeakVoices,
-  synthesizeVoicepeak,
-} from "@/server/features/voicepeak/use-case";
+import { listVoicepeakVoices, synthesizeVoicepeak } from "@/server/features/voicepeak/use-case";
 import {
   synthesizeResponseSchema,
-  voicepeakAnalyzeRequestSchema,
-  voicepeakAnalyzeResponseSchema,
   voicepeakSynthesizeRequestSchema,
   voicesResponseSchema,
 } from "./contract";
@@ -23,16 +17,6 @@ export const voicepeakApp = new Hono()
       );
     } catch (error) {
       return jsonError(c, 500, error, "Failed to load VoicePeak voices");
-    }
-  })
-  .post("/voicepeak/analyze", async (c) => {
-    try {
-      const json = voicepeakAnalyzeRequestSchema.parse(await c.req.json());
-      return c.json(
-        voicepeakAnalyzeResponseSchema.parse(await analyzeVoicepeakText(getServerEnv(c), json)),
-      );
-    } catch (error) {
-      return jsonError(c, 500, error, "Analyze failed");
     }
   })
   .post("/voicepeak/synthesize", async (c) => {
