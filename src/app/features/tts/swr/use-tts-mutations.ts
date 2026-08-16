@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import useSWRMutation from "swr/mutation";
 import type { DraftTts } from "@/_schemas";
+import { getErrorMessage } from "@/_shared/lib/error-message";
 import { requestTextAnalysis } from "@/app/features/tts/api/tts-api";
 
 type AnalyzeTextArg = {
@@ -15,7 +16,7 @@ export function useAnalyzeTextMutation() {
   return useSWRMutation("tts-analysis", analyzeTextMutation, {
     onError(error, key, config) {
       console.error(error, key, config);
-      toast.error(error instanceof Error ? error.message : "analyze failed");
+      toast.error(getErrorMessage(error, "analyze failed"));
     },
   });
 }

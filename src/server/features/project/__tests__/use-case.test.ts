@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const accessMock = vi.fn();
 const readSavedProjectMock = vi.fn();
@@ -297,6 +298,98 @@ describe("project use-case", () => {
     expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
     expect(analyzeTextsMock).toHaveBeenCalledWith(serverEnv, ["Hello", "World"]);
     expect(contentPage(saved.pages).tts.map((item) => item.speech.g2p)).toEqual([first, second]);
+  });
+
+  it("analyzes 74 tts items in one batch", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const texts = Array.from({ length: 74 }, (_, index) => `text ${index}`);
+    analyzeTextsMock.mockResolvedValueOnce(texts.map((text) => createG2pItem(text)));
+    texts.forEach(() => {
+      synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/batch.wav", 1));
+    });
+
+    const serverEnv = {};
+    const { saveProject } = await import("../use-case");
+    await saveProject(serverEnv, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: texts.map((text, index) => ({
+            id: `tts-${index}`,
+            provider: "voicevox" as const,
+            text,
+            voiceName: "3",
+            padBeforeSec: 0,
+            padAfterSec: 0,
+            volume: 1,
+            speech: {},
+          })),
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
+    expect(analyzeTextsMock).toHaveBeenCalledWith(serverEnv, texts);
+  });
+
+  it("does not synthesize or write when analyze fails", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockRejectedValueOnce(
+      new HaqumeiApiError({
+        type: "about:blank",
+        title: "Analysis failed",
+        status: 500,
+        code: "analysis_failed",
+        detail: 'texts[0] "Hello": mora mismatch: split=8 pitch_nuclei=7',
+        errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+      }),
+    );
+
+    const { saveProject } = await import("../use-case");
+    await expect(
+      saveProject({}, "project", {
+        meta: defaultMeta,
+        bgm: [],
+        pages: [
+          {
+            id: "page-1",
+            title: "Page 1",
+            type: "main",
+            meta: { tags: [] },
+            padBeforeSec: 0,
+            padAfterSec: 0,
+            richText: null,
+            tts: [
+              {
+                id: "tts-1",
+                provider: "voicevox",
+                text: "Hello",
+                voiceName: "3",
+                padBeforeSec: 0,
+                padAfterSec: 0,
+                volume: 1,
+                speech: {},
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      status: 500,
+      code: "analysis_failed",
+      message: 'texts[0] "Hello": mora mismatch: split=8 pitch_nuclei=7',
+    });
+    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(writeSavedProjectMock).not.toHaveBeenCalled();
   });
 
   it("keeps duplicate texts mapped by request index", async () => {

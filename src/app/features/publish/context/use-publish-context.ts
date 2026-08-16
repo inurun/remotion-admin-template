@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import type { DraftProject } from "@/_schemas";
+import { getErrorMessage } from "@/_shared/lib/error-message";
 import { saveProject } from "@/app/features/project/api/project-api";
 import { useEditor } from "@/app/features/editor";
 import { usePage } from "@/app/features/page";
@@ -98,7 +99,7 @@ export function usePublishProviderValue(): PublishContextValue {
             toast.success("Publish を開始した。");
           })
           .catch((error: unknown) => {
-            toast.error(error instanceof Error ? error.message : "Publish start failed");
+            toast.error(getErrorMessage(error, "Publish start failed"));
           });
       }
 
@@ -132,10 +133,10 @@ export function usePublishProviderValue(): PublishContextValue {
         await toast.promise(saveProject(projectPath, draftProject), {
           loading: "保存中...",
           success: "保存して音声を更新した。",
-          error: "Save failed",
+          error: (error) => getErrorMessage(error, "Save failed"),
         });
       } catch (error) {
-        setPublishError(JSON.stringify(error));
+        setPublishError(getErrorMessage(error));
         return;
       }
 
@@ -143,7 +144,7 @@ export function usePublishProviderValue(): PublishContextValue {
         await startPublishJob();
         toast.success("Publish を開始した。");
       } catch (error) {
-        setPublishError(error instanceof Error ? error.message : JSON.stringify(error));
+        setPublishError(getErrorMessage(error));
       }
     })();
   }, [handleSubmit, projectPath, resetPublishWatch, startPublishJob]);

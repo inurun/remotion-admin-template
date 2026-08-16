@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import type { DraftProject } from "@/_schemas";
+import { getErrorMessage } from "@/_shared/lib/error-message";
 import { saveProject } from "@/app/features/project/api/project-api";
 import { useEditor } from "@/app/features/editor";
 import { usePage } from "@/app/features/page";
@@ -131,10 +132,10 @@ export function useRenderProviderValue(): RenderContextValue {
         await toast.promise(saveProject(projectPath, draftProject), {
           loading: "保存中...",
           success: "保存して音声を更新した。",
-          error: "Save failed",
+          error: (error) => getErrorMessage(error, "Save failed"),
         });
       } catch (error) {
-        setRenderError(JSON.stringify(error));
+        setRenderError(getErrorMessage(error));
         return;
       }
 
@@ -142,7 +143,7 @@ export function useRenderProviderValue(): RenderContextValue {
         await startRenderJob();
         toast.success("Render を開始した。");
       } catch (error) {
-        setRenderError(JSON.stringify(error));
+        setRenderError(getErrorMessage(error));
       }
     })();
   }, [armPublishAfterRender, handleSubmit, projectPath, resetPublishWatch, startRenderJob]);

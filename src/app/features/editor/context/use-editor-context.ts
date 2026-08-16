@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import type { DraftProject } from "@/_schemas";
+import { getErrorMessage } from "@/_shared/lib/error-message";
 import { saveProject } from "@/app/features/project/api/project-api";
 import { useProject } from "@/app/features/project";
 
@@ -35,7 +36,7 @@ export function useEditorProviderValue(): EditorContextValue {
       await toast.promise(savePromise, {
         loading: "保存中...",
         success: "保存して音声を更新した。",
-        error: "Save failed",
+        error: (error) => getErrorMessage(error, "Save failed"),
       });
     },
     [mutateProject, projectPath],

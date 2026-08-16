@@ -5,6 +5,7 @@ import {
   ProjectAlreadyExistsError,
   ProjectNotFoundError,
 } from "@/server/_shared/storage";
+import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const { copyProjectMock, createProjectMock, listProjectsMock, loadProjectMock, saveProjectMock } =
   vi.hoisted(() => ({
@@ -122,5 +123,37 @@ describe("project routes", () => {
       body: JSON.stringify({ pages: [] }),
     });
     expect(response.status).toBe(400);
+  });
+
+  it("keeps analysis_failed status and diagnostics on save", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    saveProjectMock.mockRejectedValueOnce(
+      new HaqumeiApiError({
+        type: "about:blank",
+        title: "Analysis failed",
+        status: 500,
+        code: "analysis_failed",
+        detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+        errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+      }),
+    );
+
+    const response = await projectApp.request("/project/project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pages: [] }),
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+      code: "analysis_failed",
+      detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+      errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+    });
+
+    errorSpy.mockRestore();
   });
 });
