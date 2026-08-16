@@ -37,4 +37,22 @@ describe("g2pItemSchema", () => {
     });
     expect(text.slice(1, 3)).toBe("𰻞");
   });
+
+  it("accepts an unknown boundary warning without a word location", () => {
+    const text = "前⋯後";
+    const item = createG2pItem(text);
+    item.warnings = [
+      {
+        code: "unknown_word",
+        location: null,
+        source_span: { start_utf16: 1, end_utf16: 2 },
+      },
+    ];
+
+    const warning = g2pItemSchema.parse(item).warnings[0];
+    const span = warning?.source_span;
+    expect(warning?.location).toBeNull();
+    expect(span).toEqual({ start_utf16: 1, end_utf16: 2 });
+    expect(span && text.slice(span.start_utf16, span.end_utf16)).toBe("⋯");
+  });
 });

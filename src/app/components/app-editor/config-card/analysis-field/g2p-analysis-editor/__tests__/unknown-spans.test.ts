@@ -42,4 +42,17 @@ describe("unknown source spans", () => {
 
     expect(getUnknownSourceSpans(item)).toEqual([]);
   });
+
+  it("highlights an unknown boundary warning without a word location", () => {
+    const item = createG2pItem("前⋯後");
+    item.warnings = [
+      {
+        code: "unknown_word",
+        location: null,
+        source_span: { start_utf16: 1, end_utf16: 2 },
+      },
+    ];
+
+    expect(getUnknownSourceSpans(item)).toEqual([{ start_utf16: 1, end_utf16: 2 }]);
+  });
 });
