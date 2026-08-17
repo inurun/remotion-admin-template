@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { autocompletion } from "@codemirror/autocomplete";
 import { lintGutter } from "@codemirror/lint";
-import { EditorView } from "@codemirror/view";
+import { EditorView, scrollPastEnd, tooltips } from "@codemirror/view";
 import { useTheme } from "next-themes";
 import {
   createZenCompletionSource,
@@ -29,6 +29,11 @@ export function useZenEditor(
       createZenLinter(lintAliases),
       lintGutter(),
       EditorView.lineWrapping,
+      scrollPastEnd(),
+      EditorView.scrollMargins.of((view) => ({
+        bottom: Math.round(view.dom.clientHeight * 0.35),
+      })),
+      tooltips({ parent: document.body }),
       EditorView.theme({
         "&": {
           height: "100%",
@@ -48,6 +53,9 @@ export function useZenEditor(
         ".cm-gutters": {
           backgroundColor: "transparent",
           border: "none",
+        },
+        ".cm-tooltip": {
+          zIndex: 60,
         },
       }),
     ],
