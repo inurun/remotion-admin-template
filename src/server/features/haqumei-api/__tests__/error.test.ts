@@ -65,6 +65,26 @@ describe("formatHaqumeiApiLog", () => {
     );
   });
 
+  it("keeps synthesis target text in the log", () => {
+    const error = new HaqumeiApiError({
+      type: "about:blank",
+      title: "Invalid synthesis input",
+      status: 422,
+      code: "invalid_synthesis_input",
+      detail: 'item "対象テキスト": item.segments[0].words[2].moras[0].text is invalid',
+      errors: [
+        {
+          path: "item.segments[0].words[2].moras[0].text",
+          reason: "invalid_mora",
+        },
+      ],
+    });
+
+    expect(formatHaqumeiApiLog(error)).toBe(
+      '422 invalid_synthesis_input: item "対象テキスト": item.segments[0].words[2].moras[0].text is invalid [item.segments[0].words[2].moras[0].text: invalid_mora]',
+    );
+  });
+
   it("adds chunk offset and global texts index when annotated", () => {
     const error = new HaqumeiApiError({
       ...analysisFailed,
