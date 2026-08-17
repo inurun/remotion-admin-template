@@ -5,8 +5,14 @@ const TtsTextFocusContext = createContext<ReturnType<typeof useTtsTextFocusProvi
   null,
 );
 
-export function TtsTextFocusContextProvider({ children }: { children: React.ReactNode }) {
-  const value = useTtsTextFocusProviderValue();
+export function TtsTextFocusContextProvider({
+  pageId,
+  children,
+}: {
+  pageId: string | null;
+  children: React.ReactNode;
+}) {
+  const value = useTtsTextFocusProviderValue(pageId);
   return <TtsTextFocusContext.Provider value={value}>{children}</TtsTextFocusContext.Provider>;
 }
 

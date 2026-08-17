@@ -2,6 +2,28 @@ import type { PageFormValues } from "@/app/features/page/model/page-form-schema"
 import { pageFormSchema } from "@/app/features/page/model/page-form-schema";
 import type { EditorSessionState } from "@/app/features/editor/store/editor-session-state";
 import { mergeSavedSpeechIntoPageForm } from "@/app/features/editor/lib/project-form-conversion";
+import { createBlankPageInput } from "@/app/features/page/lib/page-draft";
+
+export const IDLE_PAGE_FORM_ID = "__idle__";
+
+export function createIdlePageFormValues(): PageFormValues {
+  return createBlankPageInput({
+    id: IDLE_PAGE_FORM_ID,
+    title: "",
+    type: "main",
+  });
+}
+
+export function isPageFormScopeReady(requestedPageId: string | null, readyPageId: string | null) {
+  return requestedPageId === readyPageId;
+}
+
+export function shouldSyncPageFormWatch(
+  requestedPageId: string | null,
+  readyPageId: string | null,
+): requestedPageId is string {
+  return requestedPageId !== null && isPageFormScopeReady(requestedPageId, readyPageId);
+}
 
 export function readPageFormSnapshot(getValues: () => PageFormValues): PageFormValues {
   return getValues();
@@ -18,6 +40,21 @@ export function selectPageFormDefaultValues(
   return item;
 }
 
+export function resolvePageFormSwitchValues(
+  state: Pick<EditorSessionState, "itemsById">,
+  pageId: string | null,
+  idlePage: PageFormValues,
+): PageFormValues {
+  if (!pageId) {
+    return idlePage;
+  }
+  return selectPageFormDefaultValues(state, pageId) ?? idlePage;
+}
+
+export function isPageFormSnapshotForPage(page: PageFormValues, pageId: string) {
+  return page.id === pageId;
+}
+
 export function validatePageFormSnapshot(page: PageFormValues) {
   return pageFormSchema.parse(page);
 }
@@ -30,6 +67,14 @@ type PageFormSpeechTarget = {
     options?: { shouldDirty?: boolean; shouldTouch?: boolean; shouldValidate?: boolean },
   ) => void;
 };
+
+export function applyPageFormSwitch(
+  form: { reset: (values: PageFormValues) => void },
+  nextPage: PageFormValues,
+): PageFormValues {
+  form.reset(nextPage);
+  return nextPage;
+}
 
 export function applyPageFormSavedSpeech(
   form: PageFormSpeechTarget,
@@ -77,6 +122,9 @@ export function createPageFormWatchSync(
         return;
       }
       const snapshot = readPageFormSnapshot(getValues);
+      if (!isPageFormSnapshotForPage(snapshot, pageId)) {
+        return;
+      }
       if (
         ignoredSnapshot &&
         ignoredKey &&

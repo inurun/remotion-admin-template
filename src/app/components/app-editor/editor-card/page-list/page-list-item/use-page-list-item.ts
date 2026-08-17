@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { PageType } from "@/_schemas";
+import { getPageListStaggerDelayMs } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import type { PageThumbnailProps } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-thumbnail/use-page-thumbnail";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
@@ -38,5 +39,6 @@ export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "inde
     aspectRatio: `${width} / ${height}`,
     dirty,
     pageType,
+    staggerDelayMs: getPageListStaggerDelayMs(index),
   };
 }

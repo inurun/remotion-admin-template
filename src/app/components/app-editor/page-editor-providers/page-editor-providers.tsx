@@ -6,16 +6,13 @@ import { TtsContextProvider } from "@/app/features/tts/context/tts-context";
 import { TtsTextFocusContextProvider } from "@/app/features/tts/context/tts-text-focus-context";
 
 export function PageEditorProviders({ children }: { children: ReactNode }) {
-  const { pageId, isContentPage } = usePageEditorProviders();
-  if (!pageId || !isContentPage) {
-    return children;
-  }
+  const { pageId } = usePageEditorProviders();
 
   return (
     <PageFormProvider pageId={pageId}>
-      <SelectedTtsProvider>
+      <SelectedTtsProvider pageId={pageId}>
         <TtsContextProvider>
-          <TtsTextFocusContextProvider>{children}</TtsTextFocusContextProvider>
+          <TtsTextFocusContextProvider pageId={pageId}>{children}</TtsTextFocusContextProvider>
         </TtsContextProvider>
       </SelectedTtsProvider>
     </PageFormProvider>

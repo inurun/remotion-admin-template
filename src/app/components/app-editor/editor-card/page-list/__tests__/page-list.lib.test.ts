@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  getPageListStaggerDelayMs,
   getPageThumbnailFrame,
   getProjectPageTimings,
   getPageMoveState,
+  PAGE_LIST_STAGGER_MAX_MS,
+  PAGE_LIST_STAGGER_STEP_MS,
 } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 
 describe("page list", () => {
@@ -132,5 +135,12 @@ describe("page list", () => {
     expect(getPageMoveState(["a", "b"], 0, 0, 0)).toBeNull();
     expect(getPageMoveState(["a", "b"], 0, -1, 1)).toBeNull();
     expect(getPageMoveState(["a", "b"], 0, 0, 2)).toBeNull();
+  });
+
+  it("staggers page list items by 100ms and caps the delay", () => {
+    expect(getPageListStaggerDelayMs(0)).toBe(0);
+    expect(getPageListStaggerDelayMs(3)).toBe(3 * PAGE_LIST_STAGGER_STEP_MS);
+    expect(getPageListStaggerDelayMs(10)).toBe(PAGE_LIST_STAGGER_MAX_MS);
+    expect(getPageListStaggerDelayMs(-1)).toBe(0);
   });
 });

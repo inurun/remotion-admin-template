@@ -5,8 +5,11 @@ import { ReadTextField } from "@/app/components/app-editor/config-card/read-text
 import { AnalysisField } from "@/app/components/app-editor/config-card/analysis-field/analysis-field";
 import { AvatarSettingsField } from "@/app/components/app-editor/config-card/avatar-settings-field/avatar-settings-field";
 import { TtsPlaybackSettingsField } from "@/app/components/app-editor/config-card/tts-playback-settings-field/tts-playback-settings-field";
-import { useConfigCard } from "@/app/components/app-editor/config-card/use-config-card";
-import { usePageEditorProviders } from "@/app/components/app-editor/page-editor-providers/use-page-editor-providers";
+import {
+  useConfigCard,
+  useConfigCardVisibility,
+} from "@/app/components/app-editor/config-card/use-config-card";
+import { PageSwitchFade } from "@/app/components/app-editor/page-switch-fade/page-switch-fade";
 
 function EmptyConfig() {
   return (
@@ -53,9 +56,10 @@ function ConfigCardInner() {
 }
 
 export function ConfigCard() {
-  const { isContentPage } = usePageEditorProviders();
-  if (!isContentPage) {
-    return <EmptyConfig />;
+  const { pageId, showPageForm } = useConfigCardVisibility();
+  const content = showPageForm ? <ConfigCardInner /> : <EmptyConfig />;
+  if (!pageId) {
+    return content;
   }
-  return <ConfigCardInner />;
+  return <PageSwitchFade pageId={pageId}>{content}</PageSwitchFade>;
 }

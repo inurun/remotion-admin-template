@@ -14,17 +14,19 @@ export function PageListItem({
   pageId,
   thumbnail,
 }: PageListItemProps) {
-  const { ref, handleRef, isDragging, aspectRatio, dirty, pageType } = usePageListItem({
-    index,
-    pageId,
-  });
+  const { ref, handleRef, isDragging, aspectRatio, dirty, pageType, staggerDelayMs } =
+    usePageListItem({
+      index,
+      pageId,
+    });
 
   return (
     <article
       ref={ref}
       data-dragging={isDragging}
       data-selected={isSelected}
-      className="group/page relative min-w-30 grid gap-2 rounded-lg border border-border bg-card p-2 transition data-[dragging=true]:opacity-70 data-[selected=true]:border-primary data-[selected=true]:ring-2 data-[selected=true]:ring-primary/20"
+      className="group/page relative min-w-30 grid gap-2 rounded-lg border border-border bg-card p-2 transition animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-700 data-[dragging=true]:opacity-70 data-[selected=true]:border-primary data-[selected=true]:ring-2 data-[selected=true]:ring-primary/20"
+      style={{ animationDelay: `${staggerDelayMs}ms` }}
     >
       <button
         type="button"

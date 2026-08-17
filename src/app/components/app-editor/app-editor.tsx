@@ -8,7 +8,10 @@ import { ConfigCard } from "@/app/components/app-editor/config-card/config-card"
 import { EditorCard } from "@/app/components/app-editor/editor-card/editor-card";
 import { PreviewCard } from "./preview-card/preview-card";
 import { useAppEditorHotkeys } from "@/app/components/app-editor/app-editor.hotkeys";
-import { useAppEditorLayout } from "@/app/components/app-editor/use-app-editor-layout";
+import {
+  useAppEditorLayout,
+  useDesktopEditorLayout,
+} from "@/app/components/app-editor/use-app-editor-layout";
 import { useAppEditor } from "@/app/components/app-editor/use-app-editor";
 import { PageEditorProviders } from "@/app/components/app-editor/page-editor-providers/page-editor-providers";
 
@@ -33,40 +36,43 @@ export function AppEditor() {
   useAppEditor();
   useAppEditorHotkeys();
   const { defaultLayout, id, onLayoutChanged } = useAppEditorLayout();
+  const isDesktop = useDesktopEditorLayout();
 
   return (
     <PageEditorProviders>
-      <div className="flex flex-col gap-5 lg:hidden">
-        <EditorColumn />
-        <PreviewConfigColumn />
-      </div>
-
-      <ResizablePanelGroup
-        id={id}
-        orientation="horizontal"
-        className="hidden! h-auto! w-full items-start lg:flex!"
-        defaultLayout={defaultLayout}
-        onLayoutChanged={onLayoutChanged}
-      >
-        <ResizablePanel
-          id="editor"
-          defaultSize="70%"
-          minSize="40%"
-          className="min-w-0 overflow-hidden"
+      {isDesktop ? (
+        <ResizablePanelGroup
+          id={id}
+          orientation="horizontal"
+          className="h-auto! w-full items-start"
+          defaultLayout={defaultLayout}
+          onLayoutChanged={onLayoutChanged}
         >
+          <ResizablePanel
+            id="editor"
+            defaultSize="70%"
+            minSize="40%"
+            className="min-w-0 overflow-hidden"
+          >
+            <EditorColumn />
+          </ResizablePanel>
+          <ResizableHandle withHandle className="mx-2.5 self-stretch" />
+          <ResizablePanel
+            id="preview-config"
+            defaultSize="30%"
+            minSize="20%"
+            maxSize="50%"
+            className="overflow-visible!"
+          >
+            <PreviewConfigColumn sticky />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      ) : (
+        <div className="flex flex-col gap-5">
           <EditorColumn />
-        </ResizablePanel>
-        <ResizableHandle withHandle className="mx-2.5 self-stretch" />
-        <ResizablePanel
-          id="preview-config"
-          defaultSize="30%"
-          minSize="20%"
-          maxSize="50%"
-          className="overflow-visible!"
-        >
-          <PreviewConfigColumn sticky />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          <PreviewConfigColumn />
+        </div>
+      )}
     </PageEditorProviders>
   );
 }

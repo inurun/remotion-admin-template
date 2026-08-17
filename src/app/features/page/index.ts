@@ -4,7 +4,7 @@ export {
   resolvePageIndexFromFieldCount,
   resolveSelectedPageIndexAfterRemove,
 } from "@/app/features/page/lib/page-selection";
-export { PageFormProvider } from "@/app/features/page/context/page-form-context";
+export { PageFormProvider, usePageFormScope } from "@/app/features/page/context/page-form-context";
 export {
   SelectedPageContextProvider,
   useSelectedPage,

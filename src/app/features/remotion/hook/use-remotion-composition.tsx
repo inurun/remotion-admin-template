@@ -1,23 +1,30 @@
 import { useEffect, useState } from "react";
-import type { SavedProject } from "@/_schemas";
-import type { ComponentType } from "react";
+import {
+  remotionCompositionLoader,
+  type RemotionCompositionComponent,
+} from "@/app/features/remotion/hook/remotion-composition-loader";
 
 export function useRemotionComposition() {
-  const [component, setComponent] = useState<ComponentType<{ project: SavedProject }> | null>(null);
+  const [component, setComponent] = useState<RemotionCompositionComponent | null>(() =>
+    remotionCompositionLoader.peek(),
+  );
 
   useEffect(() => {
-    let cancelled = false;
+    if (component) {
+      return;
+    }
 
-    void import("@/remotion/core/composition").then((module) => {
+    let cancelled = false;
+    void remotionCompositionLoader.load().then((next) => {
       if (!cancelled) {
-        setComponent(() => module.Composition);
+        setComponent(() => next);
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [component]);
 
   return component;
 }

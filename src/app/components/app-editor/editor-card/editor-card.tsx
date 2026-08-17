@@ -6,9 +6,9 @@ import { EndcardEditor } from "@/app/components/app-editor/editor-card/endcard-e
 import { OutroBlocks } from "@/app/components/app-editor/editor-card/outro-blocks/outro-blocks";
 import { TtsList } from "@/app/components/app-editor/editor-card/tts-list/tts-list";
 import { ZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/zen-dialog";
+import { PageSwitchFade } from "@/app/components/app-editor/page-switch-fade/page-switch-fade";
 import { SelectedPageContextProvider } from "@/app/features/page";
-import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
-import { useSelectedPageId } from "@/app/features/project/context/project-route-context";
+import { useEditorCard } from "@/app/components/app-editor/editor-card/use-editor-card";
 import type { PageType } from "@/_schemas";
 
 function SelectedPageEditor({ type }: { type: PageType }) {
@@ -49,17 +49,8 @@ function SelectedPageEditor({ type }: { type: PageType }) {
 }
 
 export function EditorCard() {
-  const selectedPageId = useSelectedPageId();
-  const selectedPageType = useEditorSession((state) =>
-    selectedPageId ? state.itemsById[selectedPageId]?.type : undefined,
-  );
-  const selectedTransitionVariant = useEditorSession((state) => {
-    if (!selectedPageId) {
-      return undefined;
-    }
-    const item = state.itemsById[selectedPageId];
-    return item?.type === "transition" ? item.variant : undefined;
-  });
+  const { selectedPageId, selectedPageType, selectedTransitionVariant, showPageForm } =
+    useEditorCard();
 
   return (
     <Card>
@@ -72,9 +63,9 @@ export function EditorCard() {
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-[minmax(50px,180px)_minmax(200px,1fr)]">
           <PageList />
-          {selectedPageId && selectedPageType ? (
+          {showPageForm && selectedPageId && selectedPageType ? (
             <SelectedPageContextProvider pageId={selectedPageId}>
-              <div key={selectedPageId} className="flex flex-col gap-2">
+              <PageSwitchFade pageId={selectedPageId} className="flex flex-col gap-2">
                 {selectedPageType === "transition" ? (
                   <>
                     <PageHeader />
@@ -83,7 +74,7 @@ export function EditorCard() {
                 ) : (
                   <SelectedPageEditor type={selectedPageType} />
                 )}
-              </div>
+              </PageSwitchFade>
             </SelectedPageContextProvider>
           ) : null}
         </div>
