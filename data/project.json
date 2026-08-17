@@ -4,7 +4,7 @@
     "description": "Admin + Remotion stub template",
     "width": 1920,
     "height": 1080,
-    "updatedAt": "2026-08-15T08:29:26.664Z",
+    "updatedAt": "2026-08-17T09:35:14.814Z",
     "weather": {},
     "niconico": {
       "title": "",
@@ -19,7 +19,7 @@
       "title": "最初のページ",
       "padBeforeSec": 0,
       "padAfterSec": 0,
-      "durationSec": 10.375666666666666,
+      "durationSec": 8.633666666666667,
       "richText": null,
       "tts": [
         {
@@ -32,7 +32,191 @@
           "padAfterSec": 0,
           "volume": 1,
           "speech": {
-            "analysis": "{\"accent_phrases\":[{\"accent\":3,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"z\",\"consonant_length\":0.10952388495206833,\"pitch\":5.691833972930908,\"text\":\"ゼ\",\"vowel\":\"e\",\"vowel_length\":0.14525902271270752},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.9530415534973145,\"text\":\"ン\",\"vowel\":\"N\",\"vowel_length\":0.08020244538784027},{\"consonant\":\"m\",\"consonant_length\":0.06484396010637283,\"pitch\":6.101534843444824,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.08562007546424866},{\"consonant\":null,\"consonant_length\":null,\"pitch\":6.145688056945801,\"text\":\"オ\",\"vowel\":\"o\",\"vowel_length\":0.09068834781646729},{\"consonant\":\"d\",\"consonant_length\":0.051425084471702576,\"pitch\":5.964138507843018,\"text\":\"ド\",\"vowel\":\"o\",\"vowel_length\":0.06988900154829025},{\"consonant\":\"n\",\"consonant_length\":0.04658261314034462,\"pitch\":5.581577301025391,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.08463367074728012}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.06700892746448517,\"pitch\":5.852756500244141,\"text\":\"テ\",\"vowel\":\"e\",\"vowel_length\":0.09413492679595947},{\"consonant\":\"s\",\"consonant_length\":0.028937822207808495,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.0590314120054245},{\"consonant\":\"t\",\"consonant_length\":0.07032480090856552,\"pitch\":6.120085716247559,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.0786793902516365},{\"consonant\":\"n\",\"consonant_length\":0.0505339652299881,\"pitch\":5.985074520111084,\"text\":\"ナ\",\"vowel\":\"a\",\"vowel_length\":0.08062905818223953}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"n\",\"consonant_length\":0.05647306144237518,\"pitch\":5.770269870758057,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.09237337112426758},{\"consonant\":\"d\",\"consonant_length\":0.048554543405771255,\"pitch\":5.668534755706787,\"text\":\"ダ\",\"vowel\":\"a\",\"vowel_length\":0.20502811670303345}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"ゼンモ'オドノ/テ'_ストナ/ノダ'\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+            "g2p": {
+              "text": "禅モードのテストなのだ",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "禅",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ゼ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "禅",
+                        "read": "ゼン",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "モード",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ド",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "モード",
+                        "read": "モード",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "助詞",
+                        "pos_group1": "連体化",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "テスト",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "テスト",
+                        "read": "テスト",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "な",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ナ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "体言接続",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "名詞",
+                        "pos_group1": "非自立",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "だ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ダ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ダ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": []
+            }
           },
           "avatar": {
             "base": "normal",
@@ -48,9 +232,9 @@
             "postPhonemeLength": 0,
             "pauseLengthScale": 0.5
           },
-          "durationSec": 1.4120000000000001,
+          "durationSec": 1.348,
           "audio": {
-            "src": "/tts/project/d6a1f0475f7dc145fc07b713b81fd94d.wav"
+            "src": "/tts/project/bdb700a4353dedb0e9a69386f18b2b52.wav"
           }
         },
         {
@@ -63,7 +247,253 @@
           "padAfterSec": 0,
           "volume": 1,
           "speech": {
-            "analysis": "{\"accent_phrases\":[{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.63716983795166,\"text\":\"エ\",\"vowel\":\"e\",\"vowel_length\":0.07010091841220856},{\"consonant\":\"s\",\"consonant_length\":0.10308042168617249,\"pitch\":5.696926116943359,\"text\":\"ス\",\"vowel\":\"u\",\"vowel_length\":0.04660531133413315},{\"consonant\":\"k\",\"consonant_length\":0.06246747449040413,\"pitch\":5.583845615386963,\"text\":\"ク\",\"vowel\":\"u\",\"vowel_length\":0.043316178023815155},{\"consonant\":\"d\",\"consonant_length\":0.048491548746824265,\"pitch\":5.452491760253906,\"text\":\"デ\",\"vowel\":\"e\",\"vowel_length\":0.08218111097812653}],\"pause_mora\":null},{\"accent\":2,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"k\",\"consonant_length\":0.08591164648532867,\"pitch\":5.455361843109131,\"text\":\"ク\",\"vowel\":\"u\",\"vowel_length\":0.03992143273353577},{\"consonant\":\"r\",\"consonant_length\":0.043837156146764755,\"pitch\":5.522129058837891,\"text\":\"リ\",\"vowel\":\"i\",\"vowel_length\":0.0818188264966011},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.560856342315674,\"text\":\"ア\",\"vowel\":\"a\",\"vowel_length\":0.05733562633395195}],\"pause_mora\":null},{\"accent\":3,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"s\",\"consonant_length\":0.10177364945411682,\"pitch\":5.420030117034912,\"text\":\"サ\",\"vowel\":\"a\",\"vowel_length\":0.04723631590604782},{\"consonant\":\"r\",\"consonant_length\":0.04009567201137543,\"pitch\":5.384862899780273,\"text\":\"レ\",\"vowel\":\"e\",\"vowel_length\":0.06447560340166092},{\"consonant\":\"r\",\"consonant_length\":0.047304101288318634,\"pitch\":5.359927654266357,\"text\":\"ル\",\"vowel\":\"u\",\"vowel_length\":0.033172596246004105}],\"pause_mora\":null},{\"accent\":5,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"m\",\"consonant_length\":0.0902896523475647,\"pitch\":5.3588175773620605,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.058722689747810364},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.386782646179199,\"text\":\"ン\",\"vowel\":\"N\",\"vowel_length\":0.1309577375650406},{\"consonant\":\"d\",\"consonant_length\":0.030356325209140778,\"pitch\":5.3681817054748535,\"text\":\"ダ\",\"vowel\":\"a\",\"vowel_length\":0.0705634355545044},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.3410162925720215,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.09099168330430984},{\"consonant\":\"w\",\"consonant_length\":0.06770258396863937,\"pitch\":5.337899208068848,\"text\":\"ワ\",\"vowel\":\"a\",\"vowel_length\":0.05059283599257469}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"m\",\"consonant_length\":0.11620567739009857,\"pitch\":5.283936023712158,\"text\":\"モ\",\"vowel\":\"o\",\"vowel_length\":0.10863259434700012},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.26222562789917,\"text\":\"オ\",\"vowel\":\"o\",\"vowel_length\":0.06831556558609009}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"エ'スクデ/クリ'ア/サレル'/モンダイワ'/モ'オ\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+            "g2p": {
+              "text": "escでクリアされる問題はもう",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "ｅｓｃ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "エ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "シ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ｅｓｃ",
+                        "read": "イーエスシー",
+                        "pos": "フィラー",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": true,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "で",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "デ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "で",
+                        "read": "デ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "クリア",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ク",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "リ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ア",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "クリア",
+                        "read": "クリア",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "さ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "サ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "する",
+                        "read": "サ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "サ変・スル",
+                        "cform": "未然レル接続",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "れる",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "レ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "れる",
+                        "read": "レル",
+                        "pos": "助動詞",
+                        "pos_group1": "接尾",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "一段",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "問題",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ダ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "問題",
+                        "read": "モンダイ",
+                        "pos": "名詞",
+                        "pos_group1": "ナイ形容詞語幹",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "は",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ワ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "は",
+                        "read": "ハ",
+                        "pos": "助詞",
+                        "pos_group1": "係助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "もう",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "もう",
+                        "read": "モウ",
+                        "pos": "副詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "unknown_word",
+                  "location": {
+                    "segment_index": 0,
+                    "word_index": 0
+                  },
+                  "source_span": {
+                    "start_utf16": 0,
+                    "end_utf16": 3
+                  }
+                }
+              ]
+            }
           },
           "avatar": {
             "base": "normal",
@@ -79,9 +509,9 @@
             "postPhonemeLength": 0,
             "pauseLengthScale": 0.5
           },
-          "durationSec": 1.6786666666666668,
+          "durationSec": 1.8706666666666667,
           "audio": {
-            "src": "/tts/project/28667d337bc389341019d97a21a10883.wav"
+            "src": "/tts/project/9a921da9d200ecfea651f9b207149b10.wav"
           }
         },
         {
@@ -94,7 +524,535 @@
           "padAfterSec": 0,
           "volume": 1,
           "speech": {
-            "analysis": "<tsml><acoustic_phrase><word chain=\"0\" hl=\"lh\" original=\"これ\" phoneme=\"k,o|r,e\" pos=\"名詞\" pos_group1=\"代名詞\" pos_group2=\"一般\" pronunciation=\"コレ\">これ</word><word chain=\"1\" hl=\"h\" original=\"は\" phoneme=\"w,a\" pos=\"助詞\" pos_group1=\"係助詞\" pronunciation=\"ワ\">は</word><word chain=\"0\" hl=\"lhhhhhhhhhhhhh\" original=\"ｖｏｉｓｏｎａ\" phoneme=\"b,u|i|o|o|a|i|e|s,u|o|o|e|n,u|e|e\" pos=\"フィラー\" pronunciation=\"ブイオーアイエスオーエヌエー\">ｖｏｉｓｏｎａ</word><word chain=\"1\" hl=\"h\" original=\"の\" phoneme=\"n,o\" pos=\"助詞\" pos_group1=\"連体化\" pronunciation=\"ノ\">の</word><word chain=\"0\" hl=\"lhhhhhhh\" original=\"ｔｓｍｌ\" phoneme=\"t,i|i|e|s,u|e|m,u|e|r,u\" pos=\"フィラー\" pronunciation=\"ティーエスエムエル\">ｔｓｍｌ</word><word chain=\"0\" hl=\"hlll\" original=\"サンプル\" phoneme=\"s,a|N|p,u|r,u\" pos=\"名詞\" pos_group1=\"一般\" pronunciation=\"サンプル\">サンプル</word><word cform=\"基本形\" chain=\"1\" ctype=\"特殊・ダ\" hl=\"l\" original=\"だ\" phoneme=\"d,a\" pos=\"助動詞\" pronunciation=\"ダ\">だ</word><word chain=\"1\" hl=\"l\" original=\"よ\" phoneme=\"y,o\" pos=\"助詞\" pos_group1=\"終助詞\" pronunciation=\"ヨ\">よ</word><word chain=\"1\" is_exclamation=\"1\" original=\"！\" phoneme=\"\" pos=\"記号\" pos_group1=\"一般\" pronunciation=\"\">！</word></acoustic_phrase><acoustic_phrase><word chain=\"0\" hl=\"lhhhhhhhhhhh\" original=\"ｃｌａｕｄｅ\" phoneme=\"sh,i|i|e|r,u|e|e|y,u|u|d,i|i|i|i\" pos=\"フィラー\" pronunciation=\"シーエルエーユーディーイー\">ｃｌａｕｄｅ</word><word chain=\"0\" hl=\"hl\" original=\"とか\" phoneme=\"t,o|k,a\" pos=\"助詞\" pos_group1=\"並立助詞\" pronunciation=\"トカ\">とか</word><word cform=\"未然形\" chain=\"0\" ctype=\"一段\" hl=\"lh\" original=\"読める\" phoneme=\"y,o|m,e\" pos=\"動詞\" pos_group1=\"自立\" pronunciation=\"ヨメ\">読め</word><word cform=\"基本形\" chain=\"1\" ctype=\"特殊・ナイ\" hl=\"ll\" original=\"ない\" phoneme=\"n,a|i\" pos=\"助動詞\" pronunciation=\"ナイ\">ない</word><word chain=\"1\" hl=\"l\" original=\"し\" phoneme=\"sh,i\" pos=\"助詞\" pos_group1=\"接続助詞\" pronunciation=\"シ\">し</word><word chain=\"1\" original=\"、\" phoneme=\"\" pos=\"記号\" pos_group1=\"読点\" pronunciation=\"\">、</word></acoustic_phrase><acoustic_phrase><word chain=\"0\" hl=\"hlll\" original=\"ラーメン\" phoneme=\"r,a|a|m,e|N\" pos=\"名詞\" pos_group1=\"一般\" pronunciation=\"ラーメン\">ラーメン</word><word chain=\"1\" hl=\"l\" original=\"は\" phoneme=\"w,a\" pos=\"助詞\" pos_group1=\"係助詞\" pronunciation=\"ワ\">は</word><word cform=\"基本形\" chain=\"0\" ctype=\"形容詞・アウオ段\" hl=\"lhl\" original=\"辛い\" phoneme=\"ts,u|r,a|i\" pos=\"形容詞\" pos_group1=\"自立\" pronunciation=\"ツライ\">辛い</word><word chain=\"1\" hl=\"l\" original=\"し\" phoneme=\"sh,i\" pos=\"助詞\" pos_group1=\"接続助詞\" pronunciation=\"シ\">し</word></acoustic_phrase></tsml>"
+            "g2p": {
+              "text": "これはvoisonaのtsmlサンプルだよ！claudeとか読めないし、ラーメンは辛いし",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "これ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "コ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "レ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "これ",
+                        "read": "コレ",
+                        "pos": "名詞",
+                        "pos_group1": "代名詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "は",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ワ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "は",
+                        "read": "ハ",
+                        "pos": "助詞",
+                        "pos_group1": "係助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "ｖｏｉｓｏｎａ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ヴォ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ソ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ナ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ｖｏｉｓｏｎａ",
+                        "read": "ヴォイソナ",
+                        "pos": "フィラー",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": true,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "助詞",
+                        "pos_group1": "連体化",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "ｔｓｍｌ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ティ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "エ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "エ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ム",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "エ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ｔｓｍｌ",
+                        "read": "ティーエスエムエル",
+                        "pos": "フィラー",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": true,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "サンプル",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "サ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "プ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "サンプル",
+                        "read": "サンプル",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "だ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ダ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ダ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "よ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ヨ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "よ",
+                        "read": "ヨ",
+                        "pos": "助詞",
+                        "pos_group1": "終助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "exclamation"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "ｃｌａｕｄｅ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ク",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ロ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ド",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ｃｌａｕｄｅ",
+                        "read": "クロード",
+                        "pos": "フィラー",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": true,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "とか",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ト",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "カ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "とか",
+                        "read": "トカ",
+                        "pos": "助詞",
+                        "pos_group1": "並立助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "読め",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ヨ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "メ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "読める",
+                        "read": "ヨメ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "一段",
+                        "cform": "未然形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "ない",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ない",
+                        "read": "ナイ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ナイ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "し",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "し",
+                        "read": "シ",
+                        "pos": "助詞",
+                        "pos_group1": "接続助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "ラーメン",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ラ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "メ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ラーメン",
+                        "read": "ラーメン",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "は",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ワ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "は",
+                        "read": "ハ",
+                        "pos": "助詞",
+                        "pos_group1": "係助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "辛い",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ツ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ラ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "辛い",
+                        "read": "ツライ",
+                        "pos": "形容詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "形容詞・アウオ段",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "し",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "し",
+                        "read": "シ",
+                        "pos": "助詞",
+                        "pos_group1": "接続助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": [
+                {
+                  "code": "unknown_word",
+                  "location": {
+                    "segment_index": 0,
+                    "word_index": 2
+                  },
+                  "source_span": {
+                    "start_utf16": 3,
+                    "end_utf16": 10
+                  }
+                },
+                {
+                  "code": "unknown_word",
+                  "location": {
+                    "segment_index": 0,
+                    "word_index": 4
+                  },
+                  "source_span": {
+                    "start_utf16": 11,
+                    "end_utf16": 15
+                  }
+                },
+                {
+                  "code": "unknown_word",
+                  "location": {
+                    "segment_index": 1,
+                    "word_index": 0
+                  },
+                  "source_span": {
+                    "start_utf16": 22,
+                    "end_utf16": 28
+                  }
+                }
+              ]
+            }
           },
           "avatar": {
             "base": "normal",
@@ -102,15 +1060,294 @@
             "mouth": "opened"
           },
           "provider": "voisona",
-          "durationSec": 7.284999999999999,
+          "durationSec": 5.415,
           "audio": {
-            "src": "/tts/project/76ddf7f7cdb348f2b89129a4236d453d.wav"
+            "src": "/tts/project/8ebb2c6e50196ce0c054a9eea0cb6845.wav"
           }
         }
       ],
       "type": "main",
       "meta": {
-        "tags": ["タグ1", "タグ2"]
+        "tags": [
+          "タグ1",
+          "タグ2"
+        ]
+      }
+    },
+    {
+      "id": "03a1618f-952b-4cec-8eda-a65dfff2fe5b",
+      "title": "テスト",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "durationSec": 0.708,
+      "richText": null,
+      "tts": [
+        {
+          "id": "d6a74a06-7769-412c-8d0c-f81b6cc32c4a",
+          "text": "テストだもん",
+          "readText": "テストだもん",
+          "voiceName": "113",
+          "voiceVersion": "0.16.0",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テストだもん",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "テスト",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "テスト",
+                        "read": "テスト",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "だ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ダ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ダ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "もん",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "もん",
+                        "read": "モン",
+                        "pos": "助詞",
+                        "pos_group1": "終助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "durationSec": 0.708,
+          "audio": {
+            "src": "/tts/project/2059aec55c6bbe3a173eb41e0453b3c8.wav"
+          }
+        }
+      ],
+      "type": "main",
+      "meta": {
+        "tags": []
+      }
+    },
+    {
+      "id": "ea99bd98-06bd-4e51-aa17-7f60cc7226bb",
+      "title": "テスト",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "durationSec": 0.9106666666666666,
+      "richText": null,
+      "tts": [
+        {
+          "id": "18675954-1a36-47df-ad1f-043ec233e68f",
+          "text": "テストじゃないもん",
+          "readText": "テストじゃないもん",
+          "voiceName": "113",
+          "voiceVersion": "0.16.0",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テストじゃないもん",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "テスト",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "テスト",
+                        "read": "テスト",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "じゃ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ジャ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "じゃ",
+                        "read": "ジャ",
+                        "pos": "助詞",
+                        "pos_group1": "副助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "ない",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ない",
+                        "read": "ナイ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ナイ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "もん",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "もん",
+                        "read": "モン",
+                        "pos": "助詞",
+                        "pos_group1": "終助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "durationSec": 0.9106666666666666,
+          "audio": {
+            "src": "/tts/project/f8c8cf08a1949333eb2952159b8aa76e.wav"
+          }
+        }
+      ],
+      "type": "main",
+      "meta": {
+        "tags": []
       }
     },
     {
@@ -118,7 +1355,7 @@
       "title": "",
       "padBeforeSec": 0,
       "padAfterSec": 0,
-      "durationSec": 1.7746666666666668,
+      "durationSec": 13.885333333333332,
       "richText": null,
       "tts": [
         {
@@ -131,7 +1368,207 @@
           "padAfterSec": 0,
           "volume": 1,
           "speech": {
-            "analysis": "{\"accent_phrases\":[{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.0862908661365509,\"pitch\":5.921106815338135,\"text\":\"タ\",\"vowel\":\"a\",\"vowel_length\":0.1294858455657959},{\"consonant\":null,\"consonant_length\":null,\"pitch\":6.02793025970459,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.09018822014331818},{\"consonant\":\"t\",\"consonant_length\":0.06185600161552429,\"pitch\":5.983234882354736,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.08122077584266663},{\"consonant\":\"r\",\"consonant_length\":0.03995969891548157,\"pitch\":5.768601417541504,\"text\":\"ル\",\"vowel\":\"u\",\"vowel_length\":0.05937335640192032}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"n\",\"consonant_length\":0.05408979952335358,\"pitch\":5.704990863800049,\"text\":\"ナ\",\"vowel\":\"a\",\"vowel_length\":0.09355417639017105},{\"consonant\":\"sh\",\"consonant_length\":0.05536087602376938,\"pitch\":5.822041034698486,\"text\":\"シ\",\"vowel\":\"i\",\"vowel_length\":0.06844384223222733},{\"consonant\":\"n\",\"consonant_length\":0.057843729853630066,\"pitch\":5.620969772338867,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.09501279145479202}],\"pause_mora\":null},{\"accent\":4,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"b\",\"consonant_length\":0.06420035660266876,\"pitch\":5.467573165893555,\"text\":\"バ\",\"vowel\":\"a\",\"vowel_length\":0.10612122714519501},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.743624687194824,\"text\":\"ア\",\"vowel\":\"a\",\"vowel_length\":0.11330811679363251},{\"consonant\":null,\"consonant_length\":null,\"pitch\":5.857382297515869,\"text\":\"イ\",\"vowel\":\"i\",\"vowel_length\":0.07362841069698334},{\"consonant\":\"n\",\"consonant_length\":0.05757109820842743,\"pitch\":5.93748140335083,\"text\":\"ノ\",\"vowel\":\"o\",\"vowel_length\":0.08812879025936127}],\"pause_mora\":null},{\"accent\":1,\"is_interrogative\":false,\"moras\":[{\"consonant\":\"t\",\"consonant_length\":0.06289692223072052,\"pitch\":6.094906330108643,\"text\":\"テ\",\"vowel\":\"e\",\"vowel_length\":0.09217653423547745},{\"consonant\":\"s\",\"consonant_length\":0.02543114684522152,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.05904516577720642},{\"consonant\":\"t\",\"consonant_length\":0.07062052935361862,\"pitch\":6.040781021118164,\"text\":\"ト\",\"vowel\":\"o\",\"vowel_length\":0.07634864002466202},{\"consonant\":\"d\",\"consonant_length\":0.05658373981714249,\"pitch\":5.79233980178833,\"text\":\"デ\",\"vowel\":\"e\",\"vowel_length\":0.1166546419262886},{\"consonant\":\"s\",\"consonant_length\":0.07438915222883224,\"pitch\":0,\"text\":\"ス\",\"vowel\":\"U\",\"vowel_length\":0.10296463221311569}],\"pause_mora\":null}],\"intonationScale\":1,\"kana\":\"タ'イトル/ナ'シノ/バアイノ'/テ'_ストデ_ス\",\"outputSamplingRate\":24000,\"outputStereo\":false,\"pauseLength\":null,\"pauseLengthScale\":1,\"pitchScale\":0,\"postPhonemeLength\":0,\"prePhonemeLength\":0.1,\"speedScale\":1,\"volumeScale\":1}"
+            "g2p": {
+              "text": "タイトルなしの場合のテストです",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "タイトル",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "タ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "タイトル",
+                        "read": "タイトル",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "なし",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "シ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ない",
+                        "read": "ナシ",
+                        "pos": "形容詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "形容詞・アウオ段",
+                        "cform": "文語基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "助詞",
+                        "pos_group1": "連体化",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "場合",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "バ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ア",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "場合",
+                        "read": "バアイ",
+                        "pos": "名詞",
+                        "pos_group1": "副詞可能",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "助詞",
+                        "pos_group1": "連体化",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "テスト",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "テスト",
+                        "read": "テスト",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "です",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "デ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "です",
+                        "read": "デス",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・デス",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "none"
+                }
+              ],
+              "warnings": []
+            }
           },
           "avatar": {
             "base": "normal",
@@ -147,15 +1584,1493 @@
             "postPhonemeLength": 0,
             "pauseLengthScale": 0.5
           },
-          "durationSec": 1.7746666666666668,
+          "durationSec": 1.732,
           "audio": {
-            "src": "/tts/project/3ba8d49a79431a93ac3578b4bc6a87ab.wav"
+            "src": "/tts/project/6f0c07cce39f4454e14b741e70c6f033.wav"
+          }
+        },
+        {
+          "id": "17e7e113-8f5b-4197-85b6-04ee3f8c0b54",
+          "text": "立ち絵がなくシンプルなスタック式のスタイル。ずんだもんが左側、ひまり・ミコ・小夜は右側に登場する。時期として最も短い。お盆期間中、それまで何日もかけて作っていた動画を没にし1日で作られた。",
+          "readText": "立ち絵がなくシンプルなスタック式のスタイル。ずんだもんが左側、ひまり・ミコ・小夜は右側に登場する。時期として最も短い。お盆期間中、それまで何日もかけて作っていた動画を没にし1日で作られた。",
+          "voiceName": "3",
+          "voiceVersion": "0.16.1",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "立ち絵がなくシンプルなスタック式のスタイル。ずんだもんが左側、ひまり・ミコ・小夜は右側に登場する。時期として最も短い。お盆期間中、それまで何日もかけて作っていた動画を没にし1日で作られた。",
+              "segments": [
+                {
+                  "words": [
+                    {
+                      "surface": "立ち",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "タ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "チ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "立ち",
+                        "read": "タチ",
+                        "pos": "接頭詞",
+                        "pos_group1": "名詞接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "絵",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "エ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "絵",
+                        "read": "エ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "が",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ガ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "が",
+                        "read": "ガ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "なく",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ク",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ない",
+                        "read": "ナク",
+                        "pos": "形容詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "形容詞・アウオ段",
+                        "cform": "連用テ接続",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "シンプル",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "プ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "シンプル",
+                        "read": "シンプル",
+                        "pos": "名詞",
+                        "pos_group1": "形容動詞語幹",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "な",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ナ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "体言接続",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "スタック",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "タ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ッ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ク",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "スタック",
+                        "read": "スタック",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "式",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "キ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "式",
+                        "read": "シキ",
+                        "pos": "名詞",
+                        "pos_group1": "接尾",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "の",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ノ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "の",
+                        "read": "ノ",
+                        "pos": "助詞",
+                        "pos_group1": "連体化",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "スタイル",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ス",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "タ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "スタイル",
+                        "read": "スタイル",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "ずん",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ズ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ずる",
+                        "read": "ズン",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "五段・ラ行",
+                        "cform": "体言接続特殊",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "だ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ダ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "だ",
+                        "read": "ダ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・ダ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "もん",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "もん",
+                        "read": "モン",
+                        "pos": "名詞",
+                        "pos_group1": "非自立",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "が",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ガ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "が",
+                        "read": "ガ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "左側",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ヒ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ダ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "リ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ガ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ワ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "左側",
+                        "read": "ヒダリガワ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "ひま",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ヒ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "マ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ひむ",
+                        "read": "ヒマ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "五段・マ行",
+                        "cform": "未然形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "り",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "リ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "り",
+                        "read": "リ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "文語・リ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "ミコ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ミ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "コ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "ミコ",
+                        "read": "ミコ",
+                        "pos": "名詞",
+                        "pos_group1": "固有名詞",
+                        "pos_group2": "人名",
+                        "pos_group3": "名",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "小夜",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "サ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ヨ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "小夜",
+                        "read": "サヨ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "は",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ワ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "は",
+                        "read": "ハ",
+                        "pos": "助詞",
+                        "pos_group1": "係助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "右側",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ミ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ギ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ガ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ワ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "右側",
+                        "read": "ミギガワ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "に",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ニ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "に",
+                        "read": "ニ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "登場",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ジョ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "登場",
+                        "read": "トウジョウ",
+                        "pos": "名詞",
+                        "pos_group1": "サ変接続",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "する",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ス",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ル",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "する",
+                        "read": "スル",
+                        "pos": "動詞",
+                        "pos_group1": "非自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "サ変・スル",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "時期",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ジ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "キ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "時期",
+                        "read": "ジキ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "と",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ト",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "と",
+                        "read": "ト",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "し",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "する",
+                        "read": "シ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "サ変・スル",
+                        "cform": "連用形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "て",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "て",
+                        "read": "テ",
+                        "pos": "助詞",
+                        "pos_group1": "接続助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "最も",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ッ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ト",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "最も",
+                        "read": "モットモ",
+                        "pos": "副詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "短い",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ミ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ジ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "カ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "短い",
+                        "read": "ミジカイ",
+                        "pos": "形容詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "形容詞・アウオ段",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "お盆",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "オ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ボ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "お盆",
+                        "read": "オボン",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "期間",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "キ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "カ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "期間",
+                        "read": "キカン",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "中",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "チュ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "中",
+                        "read": "チュウ",
+                        "pos": "名詞",
+                        "pos_group1": "接尾",
+                        "pos_group2": "副詞可能",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                },
+                {
+                  "words": [
+                    {
+                      "surface": "それ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ソ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "レ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "それ",
+                        "read": "ソレ",
+                        "pos": "名詞",
+                        "pos_group1": "代名詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "まで",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "マ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "デ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "まで",
+                        "read": "マデ",
+                        "pos": "助詞",
+                        "pos_group1": "副助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "何",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ナ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ン",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "何",
+                        "read": "ナン",
+                        "pos": "名詞",
+                        "pos_group1": "数",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "日",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ニ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "チ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "日",
+                        "read": "ニチ",
+                        "pos": "名詞",
+                        "pos_group1": "接尾",
+                        "pos_group2": "助数詞",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "も",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "モ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "も",
+                        "read": "モ",
+                        "pos": "助詞",
+                        "pos_group1": "係助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "かけ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "カ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ケ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "かける",
+                        "read": "カケ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "一段",
+                        "cform": "連用形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "て",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "て",
+                        "read": "テ",
+                        "pos": "助詞",
+                        "pos_group1": "接続助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "作っ",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ツ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ク",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ッ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "作る",
+                        "read": "ツクッ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "五段・ラ行",
+                        "cform": "連用タ接続",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "て",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "テ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "て",
+                        "read": "テ",
+                        "pos": "助詞",
+                        "pos_group1": "接続助詞",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "い",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "いる",
+                        "read": "イ",
+                        "pos": "動詞",
+                        "pos_group1": "非自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "一段",
+                        "cform": "連用形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "た",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "タ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "た",
+                        "read": "タ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・タ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "動画",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ド",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ー",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ガ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "動画",
+                        "read": "ドウガ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "を",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ヲ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "を",
+                        "read": "ヲ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "没",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ボ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ツ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "没",
+                        "read": "ボツ",
+                        "pos": "名詞",
+                        "pos_group1": "一般",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "に",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "ニ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "に",
+                        "read": "ニ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "し",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "シ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "する",
+                        "read": "シ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "サ変・スル",
+                        "cform": "連用形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "一日",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "イ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "チ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ニ",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "チ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "一日",
+                        "read": "イチニチ",
+                        "pos": "名詞",
+                        "pos_group1": "副詞可能",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "で",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "デ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "で",
+                        "read": "デ",
+                        "pos": "助詞",
+                        "pos_group1": "格助詞",
+                        "pos_group2": "一般",
+                        "pos_group3": "*",
+                        "ctype": "*",
+                        "cform": "*",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "作ら",
+                      "chain": false,
+                      "moras": [
+                        {
+                          "text": "ツ",
+                          "pitch": "low"
+                        },
+                        {
+                          "text": "ク",
+                          "pitch": "high"
+                        },
+                        {
+                          "text": "ラ",
+                          "pitch": "high"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "作る",
+                        "read": "ツクラ",
+                        "pos": "動詞",
+                        "pos_group1": "自立",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "五段・ラ行",
+                        "cform": "未然形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "れ",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "レ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "れる",
+                        "read": "レ",
+                        "pos": "助動詞",
+                        "pos_group1": "接尾",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "一段",
+                        "cform": "連用形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    },
+                    {
+                      "surface": "た",
+                      "chain": true,
+                      "moras": [
+                        {
+                          "text": "タ",
+                          "pitch": "low"
+                        }
+                      ],
+                      "metadata": {
+                        "orig": "た",
+                        "read": "タ",
+                        "pos": "助動詞",
+                        "pos_group1": "*",
+                        "pos_group2": "*",
+                        "pos_group3": "*",
+                        "ctype": "特殊・タ",
+                        "cform": "基本形",
+                        "is_unknown": false,
+                        "is_ignored": false
+                      }
+                    }
+                  ],
+                  "boundary": "pause"
+                }
+              ],
+              "warnings": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "durationSec": 12.153333333333332,
+          "audio": {
+            "src": "/tts/project/bc1d5de72a94debf63d84152782c16eb.wav"
           }
         }
       ],
       "type": "main",
       "meta": {
-        "tags": ["タグ1"]
+        "tags": [
+          "タグ1"
+        ]
       }
     }
   ],
@@ -241,7 +3156,14 @@
       "synthesisSettings": {
         "huskiness": 0.7,
         "speed": 1.4,
-        "style_weights": [0, 1, 0, 0.2, 0, 1]
+        "style_weights": [
+          0,
+          1,
+          0,
+          0.2,
+          0,
+          1
+        ]
       }
     }
   ]
