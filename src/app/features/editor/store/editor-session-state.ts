@@ -1,4 +1,5 @@
 import { isContentPage, isSavedContentPage, type SavedProject } from "@/_schemas";
+import { collectNiconicoParentWorkIds, mergeParentWorkIds } from "@/_shared/project/project-meta";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
@@ -83,6 +84,57 @@ function isSameSnapshot(left: unknown, right: unknown) {
   return left === right || JSON.stringify(left) === JSON.stringify(right);
 }
 
+function collectOutroBlockUrls(itemsById: EditorSessionState["itemsById"]) {
+  const urls: string[] = [];
+  for (const item of Object.values(itemsById)) {
+    if (item.type !== "outro") {
+      continue;
+    }
+    for (const block of item.meta.blocks) {
+      urls.push(block.url);
+    }
+  }
+  return urls;
+}
+
+function mergeOutroParentWorkIds(state: EditorSessionState): EditorSessionState {
+  const nextParentWorkIds = mergeParentWorkIds(
+    state.project.meta.niconico.parentWorkIds,
+    collectNiconicoParentWorkIds(collectOutroBlockUrls(state.itemsById)),
+  );
+  if (isSameSnapshot(state.project.meta.niconico.parentWorkIds, nextParentWorkIds)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    project: {
+      ...state.project,
+      meta: {
+        ...state.project.meta,
+        niconico: {
+          ...state.project.meta.niconico,
+          parentWorkIds: nextParentWorkIds,
+        },
+      },
+    },
+    dirty: {
+      ...state.dirty,
+      project: bump(state.dirty.project),
+    },
+  };
+}
+
+function withMergedOutroParentWorkIds(
+  state: EditorSessionState,
+  item: PageFormValues | TransitionFormValues,
+): EditorSessionState {
+  if (item.type !== "outro") {
+    return state;
+  }
+  return mergeOutroParentWorkIds(state);
+}
+
 function replacePage(
   state: EditorSessionState,
   pageId: string,
@@ -147,18 +199,21 @@ export function applyUpsertPage(
 
   const nextItem = { ...input, id: pageId };
 
-  return {
-    ...state,
-    sequenceOrder: exists ? state.sequenceOrder : [...state.sequenceOrder, pageId],
-    itemsById: {
-      ...state.itemsById,
-      [pageId]: nextItem,
+  return withMergedOutroParentWorkIds(
+    {
+      ...state,
+      sequenceOrder: exists ? state.sequenceOrder : [...state.sequenceOrder, pageId],
+      itemsById: {
+        ...state.itemsById,
+        [pageId]: nextItem,
+      },
+      dirty: {
+        ...markItemDirty(state.dirty, pageId),
+        sequence: exists ? state.dirty.sequence : bump(state.dirty.sequence),
+      },
     },
-    dirty: {
-      ...markItemDirty(state.dirty, pageId),
-      sequence: exists ? state.dirty.sequence : bump(state.dirty.sequence),
-    },
-  };
+    nextItem,
+  );
 }
 
 export function applyAddTts(
@@ -233,20 +288,23 @@ export function applyInsertSequenceItem(
   const nextRemoved = { ...state.dirty.removedItemIds };
   delete nextRemoved[input.id];
 
-  return {
-    ...state,
-    sequenceOrder: nextOrder,
-    itemsById: {
-      ...state.itemsById,
-      [input.id]: input,
+  return withMergedOutroParentWorkIds(
+    {
+      ...state,
+      sequenceOrder: nextOrder,
+      itemsById: {
+        ...state.itemsById,
+        [input.id]: input,
+      },
+      dirty: {
+        ...state.dirty,
+        sequence: bump(state.dirty.sequence),
+        itemIds: { ...state.dirty.itemIds, [input.id]: bump(state.dirty.itemIds[input.id]) },
+        removedItemIds: nextRemoved,
+      },
     },
-    dirty: {
-      ...state.dirty,
-      sequence: bump(state.dirty.sequence),
-      itemIds: { ...state.dirty.itemIds, [input.id]: bump(state.dirty.itemIds[input.id]) },
-      removedItemIds: nextRemoved,
-    },
-  };
+    input,
+  );
 }
 
 export function applyRemoveSequenceItem(

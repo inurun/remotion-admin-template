@@ -1,13 +1,13 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
-import { Controller, useFormContext } from "react-hook-form";
-import { GripVertical, Link2, Trash2 } from "lucide-react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
+import { Field } from "@/_shared/components/ui/field";
 import { Textarea } from "@/_shared/components/ui/textarea";
 import { cn } from "@/_shared/lib/utils";
+import { OUTRO_BLOCK_URL_PLACEHOLDER } from "@/app/features/page/lib/outro-block";
+import { OgpDialog } from "./ogp-dialog/ogp-dialog";
 import { useOutroBlockItem } from "./use-outro-block-item";
-import { useOutroBlockItemOgp } from "./use-outro-block-item-ogp";
 
 export function OutroBlockItem({
   index,
@@ -20,15 +20,14 @@ export function OutroBlockItem({
 }) {
   const { control } = useFormContext<PageFormValues>();
   const { ref, handleRef, isDragging } = useOutroBlockItem(blockId, index);
-  const { pending, error, fetchAndApplyOgp } = useOutroBlockItemOgp(index);
-  const baseName = `meta.blocks.${index}` as const;
+  const { url, title, description, image } = useWatch({ control, name: `meta.blocks.${index}` });
 
   return (
     <article
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "grid gap-3 rounded-lg border border-border bg-card p-3 transition data-[dragging=true]:opacity-70",
+        "grid gap-2 rounded-lg border border-border bg-card p-3 transition data-[dragging=true]:opacity-70",
       )}
     >
       <div className="flex items-center gap-2">
@@ -39,9 +38,15 @@ export function OutroBlockItem({
         >
           <GripVertical className="size-4" />
         </span>
-        <div className="min-w-0 flex-1 text-sm font-medium text-muted-foreground">
-          Block {index + 1}
+        <div
+          className={cn(
+            "min-w-0 flex-1 truncate text-xs text-muted-foreground",
+            !url && "opacity-50",
+          )}
+        >
+          {url || OUTRO_BLOCK_URL_PLACEHOLDER}
         </div>
+        <OgpDialog index={index} />
         <Button
           type="button"
           size="icon-xs"
@@ -53,62 +58,21 @@ export function OutroBlockItem({
         </Button>
       </div>
 
-      <Field>
-        <div className="flex gap-2">
-          <Controller
-            control={control}
-            name={`${baseName}.url`}
-            render={({ field }) => <Input {...field} placeholder="https://" className="flex-1" />}
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={fetchAndApplyOgp}
-            disabled={pending}
-          >
-            <Link2 />
-            {pending ? "..." : "OGP"}
-          </Button>
+      <div className="flex gap-2">
+        {image ? <img src={image} alt={title} className="h-16 pl-2 aspect-video shrink-0" /> : null}
+        <div>
+          {title ? <p className="text-xs text-muted-foreground font-bold">{title}</p> : null}
+          {description ? (
+            <p className="line-clamp-3 text-xs text-muted-foreground">{description}</p>
+          ) : null}
         </div>
-        {error ? <FieldError>{error}</FieldError> : null}
-      </Field>
+      </div>
 
       <Field>
         <Controller
           control={control}
-          name={`${baseName}.title`}
-          render={({ field }) => <Input {...field} placeholder="Title" />}
-        />
-      </Field>
-
-      <Field>
-        <Controller
-          control={control}
-          name={`${baseName}.description`}
-          render={({ field }) => <Textarea {...field} placeholder="OGP description" rows={2} />}
-        />
-      </Field>
-
-      <Field>
-        <Controller
-          control={control}
-          name={`${baseName}.image`}
-          render={({ field }) => (
-            <Input
-              value={field.value ?? ""}
-              onChange={(event) => field.onChange(event.target.value || null)}
-              placeholder="Image URL"
-            />
-          )}
-        />
-      </Field>
-
-      <Field>
-        <Controller
-          control={control}
-          name={`${baseName}.impression`}
-          render={({ field }) => <Textarea {...field} placeholder="Impression" rows={3} />}
+          name={`meta.blocks.${index}.impression`}
+          render={({ field }) => <Textarea {...field} />}
         />
       </Field>
     </article>

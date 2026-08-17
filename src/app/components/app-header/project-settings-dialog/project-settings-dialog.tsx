@@ -102,7 +102,11 @@ export function ProjectSettingsDialog() {
             <Field data-invalid={Boolean(dialog.form.formState.errors.niconicoParentWorkIds)}>
               <label className="grid gap-2 text-sm font-medium">
                 Parent works
-                <Input placeholder="sm9 ss123" {...dialog.form.register("niconicoParentWorkIds")} />
+                <Textarea
+                  rows={3}
+                  placeholder="sm9 ss123"
+                  {...dialog.form.register("niconicoParentWorkIds")}
+                />
               </label>
               <FieldError errors={[dialog.form.formState.errors.niconicoParentWorkIds]} />
             </Field>

@@ -18,23 +18,6 @@ export type PublishPrepExpectation = {
 };
 
 const NICONICO_CONFIRMATION_PATH = /^\/niconico-garage\/video\/videos\/\d+\/?$/;
-const NICONICO_VIDEO_ID_PATTERN = /^\/(?:watch\/(sm\d+)|shorts\/(ss\d+))(?:[/?#]|$)/;
-
-export function extractNiconicoVideoId(url: string): string | undefined {
-  try {
-    const parsed = new URL(url);
-    if (
-      parsed.protocol !== "https:" ||
-      (parsed.hostname !== "www.nicovideo.jp" && parsed.hostname !== "nicovideo.jp")
-    ) {
-      return undefined;
-    }
-    const match = parsed.pathname.match(NICONICO_VIDEO_ID_PATTERN);
-    return match?.[1] ?? match?.[2];
-  } catch {
-    return undefined;
-  }
-}
 
 export function normalizeLogMessage(message: string, maxLength = 4000): string {
   const normalized = message

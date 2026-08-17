@@ -8,7 +8,12 @@ import {
   captureDirtySnapshot,
   hasDirtyChanges,
 } from "@/app/features/editor/store/editor-session-state";
-import { createSavedMainPage, createSavedProject, createSavedTts } from "./fixtures";
+import {
+  createSavedMainPage,
+  createSavedOutroPage,
+  createSavedProject,
+  createSavedTts,
+} from "./fixtures";
 
 function pageFormTts() {
   return {
@@ -34,6 +39,43 @@ function pageFormValues(id: string, title: string) {
     padAfterSec: 0,
     richText: "<p>Hello</p>",
     tts: [pageFormTts()],
+  };
+}
+
+function outroBlock(id: string, url: string) {
+  return {
+    id,
+    url,
+    title: "",
+    description: "",
+    image: null,
+    logo: null,
+    favicon: null,
+    author: "",
+    date: "",
+    publisher: "",
+    lang: "",
+    audio: null,
+    video: null,
+    iframe: "",
+    feed: "",
+    impression: "",
+  };
+}
+
+function outroPageFormValues(id: string, urls: string[]) {
+  return {
+    id,
+    title: "Outro",
+    type: "outro" as const,
+    meta: {
+      tags: [],
+      blocks: urls.map((url, index) => outroBlock(`block-${index + 1}`, url)),
+    },
+    padBeforeSec: 0,
+    padAfterSec: 0,
+    richText: null,
+    tts: [],
   };
 }
 
@@ -194,5 +236,81 @@ describe("editor session store", () => {
       removedItemIds: [],
       forceResynthesis: true,
     });
+  });
+
+  it("merges niconico outro urls into parent work ids and keeps existing ids", () => {
+    const store = createEditorSessionStore(
+      createSavedProject({
+        meta: {
+          title: "project",
+          description: "",
+          width: 1920,
+          height: 1080,
+          weather: {},
+          niconico: {
+            title: "",
+            description: "",
+            thumbnailTime: "00:00.000",
+            parentWorkIds: ["ss1"],
+          },
+        },
+        pages: [createSavedOutroPage({ id: "outro-1" })],
+      }),
+    );
+
+    store
+      .getState()
+      .upsertPage(
+        "outro-1",
+        outroPageFormValues("outro-1", [
+          "https://www.nicovideo.jp/watch/sm9",
+          "https://www.youtube.com/watch?v=abc",
+        ]),
+      );
+
+    expect(store.getState().project.meta.niconico.parentWorkIds).toEqual(["ss1", "sm9"]);
+    expect(store.getState().dirty.project).toBe(1);
+
+    store
+      .getState()
+      .upsertPage(
+        "outro-1",
+        outroPageFormValues("outro-1", ["https://www.nicovideo.jp/watch/sm9"]),
+      );
+    expect(store.getState().dirty.project).toBe(1);
+  });
+
+  it("merges niconico parent work ids when inserting an outro page", () => {
+    const store = createEditorSessionStore(createSavedProject());
+    store
+      .getState()
+      .insertSequenceItem(
+        outroPageFormValues("outro-2", ["https://www.nicovideo.jp/shorts/ss123"]),
+        1,
+      );
+
+    expect(store.getState().project.meta.niconico.parentWorkIds).toEqual(["ss123"]);
+    expect(store.getState().dirty.project).toBe(1);
+  });
+
+  it("does not merge parent work ids when updating a main page", () => {
+    const store = createEditorSessionStore(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({ id: "page-1" }),
+          createSavedOutroPage({
+            id: "outro-1",
+            meta: {
+              tags: [],
+              blocks: [outroBlock("block-1", "https://www.nicovideo.jp/watch/sm9")],
+            },
+          }),
+        ],
+      }),
+    );
+
+    store.getState().upsertPage("page-1", pageFormValues("page-1", "Changed"));
+    expect(store.getState().project.meta.niconico.parentWorkIds).toEqual([]);
+    expect(store.getState().dirty.project).toBe(0);
   });
 });

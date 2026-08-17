@@ -32,7 +32,6 @@ export function TtsTextField({
         value={text}
         aria-invalid={fieldState.invalid}
         placeholder="Text"
-        rows={2}
         onChange={(event) => changeText(event.target.value)}
         onFocus={focusField}
         onKeyDown={handleKeyDown}

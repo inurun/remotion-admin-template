@@ -93,7 +93,7 @@ export function EndcardEditor() {
                   <Controller
                     control={control}
                     name={`${baseName}.message`}
-                    render={({ field }) => <Textarea {...field} placeholder="Message" rows={2} />}
+                    render={({ field }) => <Textarea {...field} placeholder="Message" />}
                   />
                 </Field>
               </>
@@ -118,7 +118,7 @@ export function EndcardEditor() {
                 control={control}
                 name={`${baseName}.text`}
                 render={({ field }) => (
-                  <Textarea {...field} placeholder="Thank you for watching!" rows={2} />
+                  <Textarea {...field} placeholder="Thank you for watching!" />
                 )}
               />
             </Field>

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getProjectVideoSizePresetId, normalizeProjectMeta } from "../project-meta";
+import {
+  collectNiconicoParentWorkIds,
+  extractNiconicoVideoId,
+  getProjectVideoSizePresetId,
+  mergeParentWorkIds,
+  normalizeProjectMeta,
+} from "../project-meta";
 
 describe("project meta", () => {
   it("normalizes unsupported project sizes to landscape", () => {
@@ -76,5 +82,29 @@ describe("project meta", () => {
     expect(getProjectVideoSizePresetId({ width: 1280, height: 1280 })).toBe("square");
     expect(getProjectVideoSizePresetId({ width: 1080, height: 1920 })).toBe("portrait");
     expect(getProjectVideoSizePresetId({ width: 999, height: 999 })).toBe("landscape");
+  });
+
+  it("extracts niconico video ids from watch and shorts urls", () => {
+    expect(extractNiconicoVideoId("https://www.nicovideo.jp/watch/sm9")).toBe("sm9");
+    expect(extractNiconicoVideoId("https://nicovideo.jp/shorts/ss123")).toBe("ss123");
+    expect(extractNiconicoVideoId("https://www.nicovideo.jp/watch/sm9?ref=x")).toBe("sm9");
+    expect(extractNiconicoVideoId("http://www.nicovideo.jp/watch/sm9")).toBeUndefined();
+    expect(extractNiconicoVideoId("https://www.youtube.com/watch?v=abc")).toBeUndefined();
+    expect(extractNiconicoVideoId("not a url")).toBeUndefined();
+  });
+
+  it("collects unique niconico parent work ids from urls", () => {
+    expect(
+      collectNiconicoParentWorkIds([
+        "https://www.nicovideo.jp/watch/sm9",
+        "https://www.youtube.com/watch?v=abc",
+        "https://www.nicovideo.jp/watch/sm9",
+        "https://www.nicovideo.jp/shorts/ss1",
+      ]),
+    ).toEqual(["sm9", "ss1"]);
+  });
+
+  it("merges parent work ids without removing existing ones", () => {
+    expect(mergeParentWorkIds(["ss1", "sm9"], ["sm9", "sm10"])).toEqual(["ss1", "sm9", "sm10"]);
   });
 });

@@ -5,8 +5,8 @@ import path from "node:path";
 import { createOpencode } from "@opencode-ai/sdk/v2";
 import { nowIso, toIso } from "@/_shared/lib/date";
 import { PROJECT_ROOT } from "@/server/_shared/storage";
+import { extractNiconicoVideoId } from "@/_shared/project/project-meta";
 import {
-  extractNiconicoVideoId,
   normalizeLogMessage,
   type VerifiedPublishPrepResult,
   validatePublishPrepResult,

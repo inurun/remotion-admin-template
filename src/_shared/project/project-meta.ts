@@ -24,6 +24,7 @@ const DEFAULT_PROJECT_TITLE = "project";
 const DEFAULT_VIDEO_SIZE_PRESET = VIDEO_SIZE_PRESETS[0];
 const DEFAULT_THUMBNAIL_TIME = "00:00.000";
 const PARENT_WORK_ID_PATTERN = /^(?:sm|ss)\d+$/;
+const NICONICO_VIDEO_ID_PATTERN = /^\/(?:watch\/(sm\d+)|shorts\/(ss\d+))(?:[/?#]|$)/;
 const VIDEO_SIZE_PRESETS_BY_SIZE = new Map(
   VIDEO_SIZE_PRESETS.map((preset) => [getVideoSizeKey(preset), preset]),
 );
@@ -76,6 +77,37 @@ export function parseParentWorkIdsInput(value: string) {
 
 export function formatParentWorkIdsInput(ids: string[]) {
   return ids.join(" ");
+}
+
+export function extractNiconicoVideoId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      (parsed.hostname !== "www.nicovideo.jp" && parsed.hostname !== "nicovideo.jp")
+    ) {
+      return undefined;
+    }
+    const match = parsed.pathname.match(NICONICO_VIDEO_ID_PATTERN);
+    return match?.[1] ?? match?.[2];
+  } catch {
+    return undefined;
+  }
+}
+
+export function collectNiconicoParentWorkIds(urls: string[]) {
+  return [
+    ...new Set(
+      urls.flatMap((url) => {
+        const id = extractNiconicoVideoId(url);
+        return id ? [id] : [];
+      }),
+    ),
+  ];
+}
+
+export function mergeParentWorkIds(existing: string[], incoming: string[]) {
+  return normalizeParentWorkIds([...existing, ...incoming]);
 }
 
 export function getDefaultProjectMeta(title = DEFAULT_PROJECT_TITLE): ProjectMetaLike {

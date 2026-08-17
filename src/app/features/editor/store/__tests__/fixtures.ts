@@ -19,6 +19,23 @@ export function createSavedTts(
   };
 }
 
+export function createSavedOutroPage(
+  overrides: Partial<Extract<SavedPage, { type: "outro" }>> = {},
+): SavedPage {
+  return {
+    id: "outro-1",
+    title: "Outro",
+    type: "outro",
+    meta: { tags: [], blocks: [] },
+    padBeforeSec: 0,
+    padAfterSec: 0,
+    durationSec: 1,
+    richText: null,
+    tts: [],
+    ...overrides,
+  };
+}
+
 export function createSavedMainPage(
   overrides: Partial<Extract<SavedPage, { type: "main" }>> = {},
 ): SavedPage {
