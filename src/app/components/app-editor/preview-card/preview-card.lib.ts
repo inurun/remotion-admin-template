@@ -16,9 +16,10 @@ export function getPreviewPageStartFrame(
 }
 
 export function formatFrameTime(frame: number, fps: number) {
-  const totalSeconds = Math.max(0, Math.floor(frame / fps));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
+  const totalMs = Math.max(0, Math.round((frame / fps) * 1000));
+  const minutes = Math.floor(totalMs / 60_000);
+  const seconds = Math.floor((totalMs % 60_000) / 1000);
+  const milliseconds = totalMs % 1000;
 
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
 }

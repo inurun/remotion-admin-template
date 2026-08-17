@@ -8,6 +8,7 @@ type SeekSliderControlProps = {
 export function SeekSliderControl({ durationInFrames }: SeekSliderControlProps) {
   const {
     commitSeek,
+    copyCurrentTime,
     currentTimeLabel,
     durationTimeLabel,
     maxFrame,
@@ -28,8 +29,16 @@ export function SeekSliderControl({ durationInFrames }: SeekSliderControlProps) 
         onValueCommitted={commitSeek}
         className="min-w-0 flex-1"
       />
-      <span className="w-22 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-        {currentTimeLabel} / {durationTimeLabel}
+      <span className="shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+        <button
+          type="button"
+          title="Copy"
+          onClick={() => void copyCurrentTime()}
+          className="cursor-pointer hover:text-foreground"
+        >
+          {currentTimeLabel}
+        </button>{" "}
+        / {durationTimeLabel}
       </span>
     </>
   );

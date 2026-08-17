@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { VIDEO_FPS } from "@/constants";
 import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
 import {
@@ -78,9 +79,21 @@ export function useSeekSliderControl({ durationInFrames }: UseSeekSliderControlP
     [durationInFrames, maxFrame, playerControl],
   );
 
+  const currentTimeLabel = formatFrameTime(visibleFrame, VIDEO_FPS);
+
+  const copyCurrentTime = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(currentTimeLabel);
+      toast.success("Copied");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  }, [currentTimeLabel]);
+
   return {
     commitSeek,
-    currentTimeLabel: formatFrameTime(visibleFrame, VIDEO_FPS),
+    copyCurrentTime,
+    currentTimeLabel,
     durationTimeLabel: formatFrameTime(maxFrame, VIDEO_FPS),
     maxFrame,
     seek,

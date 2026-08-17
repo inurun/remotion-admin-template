@@ -14,7 +14,10 @@ describe("preview card", () => {
     expect(getPreviewPageStartFrame(undefined, 24, 120)).toBe(0);
   });
 
-  it("formats frame positions as minute time labels", () => {
-    expect(formatFrameTime(24 * 65, 24)).toBe("1:05");
+  it("formats frame positions as thumbnail time labels", () => {
+    expect(formatFrameTime(0, 30)).toBe("00:00.000");
+    expect(formatFrameTime(1, 30)).toBe("00:00.033");
+    expect(formatFrameTime(15, 30)).toBe("00:00.500");
+    expect(formatFrameTime(24 * 65, 24)).toBe("01:05.000");
   });
 });

@@ -3,11 +3,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/_shared/components/ui/resizable";
-import { cn } from "@/_shared/lib/utils";
 import { ConfigCard } from "@/app/components/app-editor/config-card/config-card";
 import { EditorCard } from "@/app/components/app-editor/editor-card/editor-card";
 import { PreviewCard } from "./preview-card/preview-card";
 import { useAppEditorHotkeys } from "@/app/components/app-editor/app-editor.hotkeys";
+import {
+  getPreviewConfigColumnClassName,
+  getPreviewConfigScrollClassName,
+} from "@/app/components/app-editor/app-editor.lib";
 import {
   useAppEditorLayout,
   useDesktopEditorLayout,
@@ -25,9 +28,13 @@ function EditorColumn() {
 
 function PreviewConfigColumn({ sticky = false }: { sticky?: boolean }) {
   return (
-    <section className={cn("flex flex-col gap-4", sticky && "sticky top-6")}>
-      <PreviewCard />
-      <ConfigCard />
+    <section className={getPreviewConfigColumnClassName(sticky)}>
+      <div className="shrink-0">
+        <PreviewCard />
+      </div>
+      <div className={getPreviewConfigScrollClassName(sticky)}>
+        <ConfigCard />
+      </div>
     </section>
   );
 }
@@ -44,7 +51,7 @@ export function AppEditor() {
         <ResizablePanelGroup
           id={id}
           orientation="horizontal"
-          className="h-auto! w-full items-start"
+          className="h-auto! w-full overflow-visible!"
           defaultLayout={defaultLayout}
           onLayoutChanged={onLayoutChanged}
         >
