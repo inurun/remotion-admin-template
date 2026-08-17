@@ -1,4 +1,6 @@
+import { getProjectOutputVideoFileName } from "@/_shared/project/project-path";
 import type { PublishState } from "@/app/features/publish";
+import { useProject } from "@/app/features/project";
 import type { RenderState } from "@/app/features/render";
 import { useRender } from "@/app/features/render";
 
@@ -21,7 +23,12 @@ function getVideoHref(renderState: RenderState) {
   return `${renderState.videoPath}?t=${renderState.logs.length}`;
 }
 
+function getVideoFileName(projectPath: string | null) {
+  return projectPath ? getProjectOutputVideoFileName(projectPath) : "latest.mp4";
+}
+
 export function useRenderDialog() {
+  const { projectPath } = useProject();
   const {
     alsoPublish,
     dialogJobPhase,
@@ -61,6 +68,7 @@ export function useRenderDialog() {
     statusLabel,
     activeLogs,
     videoHref: getVideoHref(renderState),
+    videoFileName: getVideoFileName(projectPath),
     publishResultUrl: publishState.resultUrl,
     errorMessage:
       dialogJobPhase === "publish"

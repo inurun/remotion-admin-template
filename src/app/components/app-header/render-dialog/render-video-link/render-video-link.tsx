@@ -1,7 +1,13 @@
 import { Download } from "lucide-react";
 import { buttonVariants } from "@/_shared/components/ui/button";
 
-export function RenderVideoLink({ videoHref }: { videoHref?: string }) {
+export function RenderVideoLink({
+  videoFileName,
+  videoHref,
+}: {
+  videoFileName: string;
+  videoHref?: string;
+}) {
   if (!videoHref) {
     return null;
   }
@@ -9,12 +15,13 @@ export function RenderVideoLink({ videoHref }: { videoHref?: string }) {
   return (
     <div className="flex flex-wrap gap-2">
       <a
-        aria-label="latest.mp4"
+        aria-label={videoFileName}
         className={buttonVariants({ variant: "secondary", size: "icon" })}
+        download={videoFileName}
         href={videoHref}
         rel="noreferrer"
         target="_blank"
-        title="latest.mp4"
+        title={videoFileName}
       >
         <Download />
       </a>

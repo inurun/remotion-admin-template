@@ -1,3 +1,4 @@
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -189,5 +190,13 @@ describe("storage", () => {
     ).rejects.toThrow("disk full");
     expect(renameMock).not.toHaveBeenCalled();
     expect(rmMock).toHaveBeenCalled();
+  });
+
+  it("maps a project path to the data file stem and output video path", async () => {
+    const { OUT_DIR, getProjectFileStem, getProjectOutputVideoPath } = await import("../storage");
+
+    expect(getProjectFileStem("example")).toBe("example");
+    expect(getProjectFileStem("nested/example")).toBe("example");
+    expect(getProjectOutputVideoPath("nested/example")).toBe(path.join(OUT_DIR, "example.mp4"));
   });
 });

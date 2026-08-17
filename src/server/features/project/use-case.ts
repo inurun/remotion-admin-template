@@ -34,6 +34,7 @@ import {
   listSavedProjects,
   readSavedProject,
   createSavedProject,
+  getProjectFileStem,
   resolvePublicAssetPath,
   writeSavedProject,
 } from "@/server/_shared/storage";
@@ -454,10 +455,6 @@ function buildPreviousTtsMap(previousProject?: SavedProject) {
   );
 }
 
-function getProjectTitleFromPath(projectPath: string) {
-  return projectPath.split("/").filter(Boolean).at(-1) ?? "project";
-}
-
 function toSaveTtsItemFromSaved(item: SavedTts): SaveTtsItem {
   return {
     id: item.id,
@@ -552,7 +549,7 @@ export async function createProject(projectPath: string) {
     projectPath,
     savedProjectSchema.parse({
       meta: {
-        ...getDefaultProjectMeta(getProjectTitleFromPath(projectPath)),
+        ...getDefaultProjectMeta(getProjectFileStem(projectPath)),
         updatedAt: nowIso(),
       },
       bgm: [],
@@ -658,7 +655,7 @@ export async function saveProjectChanges(
 
   const meta = {
     ...normalizeProjectMeta(request.project?.meta ?? previousProject.meta, {
-      titleFallback: getProjectTitleFromPath(projectPath),
+      titleFallback: getProjectFileStem(projectPath),
     }),
     updatedAt: nowIso(),
   };

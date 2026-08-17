@@ -46,7 +46,7 @@ export function RenderDialog() {
             />
             Also publish after render
           </label>
-          <RenderVideoLink videoHref={dialog.videoHref} />
+          <RenderVideoLink videoFileName={dialog.videoFileName} videoHref={dialog.videoHref} />
           {dialog.publishResultUrl && (
             <a
               className="truncate text-sm text-primary underline"

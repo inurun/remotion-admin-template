@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   LATEST_VIDEO_PATH,
-  OUT_DIR,
   PROJECT_ROOT,
   PUBLISH_STATE_PATH,
+  getProjectOutputVideoPath,
   readSavedProject,
 } from "@/server/_shared/storage";
 import { normalizeNiconicoMeta } from "@/_shared/project/project-meta";
@@ -118,12 +118,8 @@ async function pathExists(filePath: string) {
   }
 }
 
-async function resolveRenderedVideoPath(projectTitle: string) {
-  const candidates = [
-    path.join(OUT_DIR, `${projectTitle}.mp4`),
-    LATEST_VIDEO_PATH,
-    path.join(OUT_DIR, "latest.mp4"),
-  ];
+async function resolveRenderedVideoPath(projectPath: string) {
+  const candidates = [getProjectOutputVideoPath(projectPath), LATEST_VIDEO_PATH];
 
   for (const candidate of candidates) {
     if (await pathExists(candidate)) {
@@ -153,7 +149,7 @@ export async function startPublish(projectPath: string) {
     throw new Error("meta.niconico.description is required");
   }
 
-  const videoPath = await resolveRenderedVideoPath(project.meta.title);
+  const videoPath = await resolveRenderedVideoPath(projectPath);
   const job = createPublishPrepJob();
   activeJobId = job.id;
   state.status = "running";

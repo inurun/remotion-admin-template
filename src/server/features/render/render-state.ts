@@ -2,9 +2,11 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  LATEST_VIDEO_PATH,
   OUT_DIR,
   PROJECT_ROOT,
   RENDER_STATE_PATH,
+  getProjectOutputVideoPath,
   readSavedProject,
 } from "@/server/_shared/storage";
 
@@ -122,6 +124,7 @@ export async function startRender(projectPath: string) {
 
   await fs.mkdir(OUT_DIR, { recursive: true });
   const project = await readSavedProject(projectPath);
+  const outputPath = getProjectOutputVideoPath(projectPath);
   resetRenderState();
   state.status = "running";
   appendLog(`Starting render for ${projectPath}...`);
@@ -134,7 +137,7 @@ export async function startRender(projectPath: string) {
       "render",
       "src/remotion/core/runtime.ts",
       "Video",
-      `${OUT_DIR}/${project.meta.title}.mp4`,
+      outputPath,
       "--props",
       JSON.stringify({ project }),
     ],
@@ -155,6 +158,14 @@ export async function startRender(projectPath: string) {
 
   child.on("close", async (code) => {
     if (code === 0) {
+      try {
+        if (outputPath !== LATEST_VIDEO_PATH) {
+          await fs.copyFile(outputPath, LATEST_VIDEO_PATH);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        appendLog(`Failed to update latest.mp4: ${message}`);
+      }
       state.status = "success";
       state.videoPath = "/api/render/video";
       appendLog("Render completed.");

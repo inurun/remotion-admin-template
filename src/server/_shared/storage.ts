@@ -10,6 +10,10 @@ import {
   type SavedProject,
 } from "@/_schemas";
 import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
+import {
+  getProjectFileStem as getProjectFileStemFromPath,
+  getProjectOutputVideoFileName,
+} from "@/_shared/project/project-path";
 
 export const PROJECT_ROOT = process.cwd();
 const DATA_DIR = path.join(PROJECT_ROOT, "data");
@@ -112,6 +116,14 @@ export function normalizeProjectPath(projectPath: string) {
   }
 
   return normalized;
+}
+
+export function getProjectFileStem(projectPath: string) {
+  return getProjectFileStemFromPath(normalizeProjectPath(projectPath));
+}
+
+export function getProjectOutputVideoPath(projectPath: string) {
+  return path.join(OUT_DIR, getProjectOutputVideoFileName(normalizeProjectPath(projectPath)));
 }
 
 export function getProjectTtsDir(projectPath: string) {
