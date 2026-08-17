@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createBlankDraftPage } from "@/app/features/page/lib/page-draft";
+import { createBlankPageInput } from "@/app/features/page/lib/page-draft";
 
 describe("page draft", () => {
   it("creates a blank draft page with selected type and title", () => {
     expect(
-      createBlankDraftPage({
+      createBlankPageInput({
         id: "page-id",
         title: "  Outro  ",
         type: "outro",
@@ -23,7 +23,7 @@ describe("page draft", () => {
 
   it("creates a blank endcard page without tts", () => {
     expect(
-      createBlankDraftPage({
+      createBlankPageInput({
         id: "endcard-id",
         title: "Endcard",
         type: "endcard",
@@ -48,7 +48,7 @@ describe("page draft", () => {
 
   it("keeps blank titles unchanged", () => {
     expect(
-      createBlankDraftPage({
+      createBlankPageInput({
         id: "page-id",
         title: "",
         type: "main",

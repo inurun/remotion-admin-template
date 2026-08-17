@@ -1,6 +1,8 @@
-import type { DraftPage, DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createUuid } from "@/_shared/lib/utils";
-import { createBlankDraftPage } from "@/app/features/page";
+import { createBlankPageInput } from "@/app/features/page";
 import { createZenTts } from "@/app/features/zen/create-zen-tts";
 import type { ZenAliasTarget, ZenDraftPage, ZenSpeakerBlock } from "@/app/features/zen/types";
 
@@ -8,8 +10,8 @@ function createSpeakerTtsList(
   speakers: ZenSpeakerBlock[],
   aliases: Map<string, ZenAliasTarget>,
   voiceOptions: VoiceOption[],
-): DraftTts[] {
-  const result: DraftTts[] = [];
+): TtsFormValues[] {
+  const result: TtsFormValues[] = [];
 
   for (const speaker of speakers) {
     const target = aliases.get(speaker.alias);
@@ -25,14 +27,14 @@ function createSpeakerTtsList(
   return result;
 }
 
-export function buildDraftPages(
+export function buildPageInputs(
   pages: ZenDraftPage[],
   aliases: Map<string, ZenAliasTarget>,
-): DraftPage[] {
+): PageFormValues[] {
   const voiceOptions = [...aliases.values()].map((target) => target.voice);
 
   return pages.map((page) => {
-    const draft = createBlankDraftPage({
+    const draft = createBlankPageInput({
       id: createUuid(),
       title: page.title,
       type: "main",

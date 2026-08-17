@@ -1,0 +1,54 @@
+import type { SavedPage, SavedProject, SavedTts } from "@/_schemas";
+
+export function createSavedTts(
+  overrides: Partial<Extract<SavedTts, { provider: "voisona" }>> = {},
+): SavedTts {
+  return {
+    id: "tts-1",
+    provider: "voisona",
+    text: "Hello",
+    readText: "Hello",
+    voiceName: "voice",
+    padBeforeSec: 0,
+    padAfterSec: 0,
+    volume: 1,
+    durationSec: 1,
+    audio: { src: "/tts/hello.wav" },
+    speech: {},
+    ...overrides,
+  };
+}
+
+export function createSavedMainPage(
+  overrides: Partial<Extract<SavedPage, { type: "main" }>> = {},
+): SavedPage {
+  return {
+    id: "page-1",
+    title: "Page 1",
+    type: "main",
+    meta: { tags: [] },
+    padBeforeSec: 0,
+    padAfterSec: 0,
+    durationSec: 1,
+    richText: "<p>Hello</p>",
+    tts: [createSavedTts()],
+    ...overrides,
+  };
+}
+
+export function createSavedProject(overrides: Partial<SavedProject> = {}): SavedProject {
+  return {
+    meta: {
+      title: "project",
+      description: "",
+      width: 1920,
+      height: 1080,
+      weather: {},
+      niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+    },
+    bgm: [],
+    voicePresets: [],
+    pages: [createSavedMainPage()],
+    ...overrides,
+  };
+}

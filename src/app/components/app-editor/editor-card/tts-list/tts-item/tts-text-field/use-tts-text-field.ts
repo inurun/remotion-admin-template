@@ -1,6 +1,5 @@
 import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { applyTtsTextChange, useTtsTextFocusRef } from "@/app/features/tts";
 import { useTtsTextFieldKeyDown } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-text-field/tts-text-field.hotkeys";
 
@@ -17,21 +16,20 @@ export function useTtsTextField({
   onInsertAfter: (index: number) => void;
   onRemove: () => void;
 }) {
-  const { control, getFieldState, formState, setValue } = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const { control, getFieldState, formState, setValue } = useFormContext<PageFormValues>();
   const textAreaRef = useTtsTextFocusRef(ttsId);
   const handleKeyDown = useTtsTextFieldKeyDown({
-    pageIndex: selectedPageIndex,
+    ttsId,
     ttsIndex: index,
     onInsertAfter,
     onRemove,
   });
   const ttsItem = useWatch({
     control,
-    name: `pages.${selectedPageIndex}.tts.${index}`,
+    name: `tts.${index}`,
   });
 
-  const fieldName = `pages.${selectedPageIndex}.tts.${index}.text` as const;
+  const fieldName = `tts.${index}.text` as const;
   const fieldState = getFieldState(fieldName, formState);
 
   const changeText = (nextText: string) => {
@@ -39,7 +37,7 @@ export function useTtsTextField({
       return;
     }
 
-    setValue(`pages.${selectedPageIndex}.tts.${index}`, applyTtsTextChange(ttsItem, nextText), {
+    setValue(`tts.${index}`, applyTtsTextChange(ttsItem, nextText), {
       shouldDirty: true,
     });
   };

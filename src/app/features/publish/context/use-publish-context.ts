@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-import type { DraftProject } from "@/_schemas";
 import { getErrorMessage } from "@/_shared/lib/error-message";
-import { saveProject } from "@/app/features/project/api/project-api";
-import { useEditor } from "@/app/features/editor";
-import { usePage } from "@/app/features/page";
+import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
 import { startPublish } from "@/app/features/publish/api/publish-api";
 import { usePublishStateQuery } from "@/app/features/publish/swr/use-publish-query";
@@ -41,10 +37,9 @@ function getPublishExecuteLabel(
 }
 
 export function usePublishProviderValue(): PublishContextValue {
-  const { handleSubmit } = useFormContext<DraftProject>();
-  const { isPending: saving } = useEditor();
+  const { isPending: saving, save } = useEditor();
   const { options } = useSettings();
-  const { pageFields } = usePage();
+  const pageCount = useEditorSession((state) => state.sequenceOrder.length);
   const { projectPath } = useProject();
   const { publishState, reloadPublishState } = usePublishStateQuery();
   const [alsoPublish, setAlsoPublish] = useState(false);
@@ -117,24 +112,16 @@ export function usePublishProviderValue(): PublishContextValue {
     }
   }, [alsoPublish, resetPublishWatch]);
 
-  const canSave = options.length > 0 && !saving && pageFields.length > 0;
+  const canSave = options.length > 0 && !saving && pageCount > 0;
   const publishExecuteDisabled = !canSave || publishState.status === "running";
   const publishExecuteLabel = getPublishExecuteLabel(saving, publishState.status);
 
   const handlePublishExecute = useCallback(() => {
     setPublishError(null);
     resetPublishWatch();
-    void handleSubmit(async (draftProject) => {
+    void (async () => {
       try {
-        if (!projectPath) {
-          throw new Error("Project path is required");
-        }
-
-        await toast.promise(saveProject(projectPath, draftProject), {
-          loading: "保存中...",
-          success: "保存して音声を更新した。",
-          error: (error) => getErrorMessage(error, "Save failed"),
-        });
+        await save();
       } catch (error) {
         setPublishError(getErrorMessage(error));
         return;
@@ -147,7 +134,7 @@ export function usePublishProviderValue(): PublishContextValue {
         setPublishError(getErrorMessage(error));
       }
     })();
-  }, [handleSubmit, projectPath, resetPublishWatch, startPublishJob]);
+  }, [resetPublishWatch, save, startPublishJob]);
 
   return {
     alsoPublish,

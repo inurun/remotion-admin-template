@@ -1,12 +1,14 @@
-import { g2pItemSchema, type DraftTts, type G2pItem } from "@/_schemas";
+import { g2pItemSchema, type G2pItem } from "@/_schemas";
 import type {
-  DraftTtsForProvider,
+  TtsInputForProvider,
   SavedTtsForProvider,
   TtsComparisonInput,
   TtsProvider,
 } from "@/server/features/tts/providers/types";
 
-export function getEffectiveReadText(item: Pick<DraftTts, "text" | "readText">) {
+export function getEffectiveReadText(
+  item: Pick<TtsInputForProvider<TtsProvider>, "text" | "readText">,
+) {
   return item.readText?.trim() || item.text;
 }
 
@@ -33,7 +35,7 @@ export function getUsableG2p(g2p: unknown, readText: string): G2pItem | undefine
 
 export function createDraftComparisonInput<TProvider extends TtsProvider>(
   provider: TProvider,
-  item: DraftTtsForProvider<TProvider>,
+  item: TtsInputForProvider<TProvider>,
   readText: string,
 ): TtsComparisonInput<TProvider> {
   return {

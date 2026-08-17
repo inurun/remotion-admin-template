@@ -1,8 +1,7 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useCallback, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
-import { usePage, useSelectedPage } from "@/app/features/page";
 import {
   getPageSettingsTags,
   getSelectedPageSettingsFormValues,
@@ -12,9 +11,7 @@ import {
 } from "./page-settings-dialog.lib";
 
 export function usePageSettingsDialog() {
-  const { setValue } = useFormContext<DraftProject>();
-  const { selectedPage } = usePage();
-  const { selectedPageIndex } = useSelectedPage();
+  const pageForm = useFormContext<PageFormValues>();
   const [open, setOpen] = useState(false);
 
   const form = useForm<PageSettingsFormValues>({
@@ -37,17 +34,17 @@ export function usePageSettingsDialog() {
         return;
       }
 
-      form.reset(getSelectedPageSettingsFormValues(selectedPage));
+      form.reset(getSelectedPageSettingsFormValues(pageForm.getValues()));
     },
-    [form, selectedPage],
+    [form, pageForm],
   );
 
   const submit = form.handleSubmit((values) => {
-    setValue(`pages.${selectedPageIndex}.title`, values.title, {
+    pageForm.setValue("title", values.title, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setValue(`pages.${selectedPageIndex}.meta.tags`, getPageSettingsTags(values), {
+    pageForm.setValue("meta.tags", getPageSettingsTags(values), {
       shouldDirty: true,
       shouldValidate: true,
     });

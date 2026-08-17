@@ -6,7 +6,13 @@ import {
   ProjectAlreadyExistsError,
   ProjectNotFoundError,
 } from "@/server/_shared/storage";
-import { copyProject, createProject, listProjects, loadProject, saveProject } from "./use-case";
+import {
+  copyProject,
+  createProject,
+  listProjects,
+  loadProject,
+  saveProjectChanges,
+} from "./use-case";
 import { projectContract } from "./contract";
 
 function getProjectPath(pathParam: string | undefined) {
@@ -99,7 +105,9 @@ export const projectApp = new Hono()
       const projectPath = getProjectPath(c.req.param("projectPath"));
       const json = projectContract.save.json.parse(await c.req.json());
       return c.json(
-        projectContract.save.response.parse(await saveProject(getServerEnv(c), projectPath, json)),
+        projectContract.save.response.parse(
+          await saveProjectChanges(getServerEnv(c), projectPath, json),
+        ),
       );
     } catch (error) {
       const status = getProjectErrorStatus(error);

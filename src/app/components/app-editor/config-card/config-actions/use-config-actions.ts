@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useSelectedTts, useTts } from "@/app/features/tts";
+import { useTtsFormIndex } from "@/app/features/tts/lib/use-tts-form-index";
 
 function isVoiceActionDisabled({
   canRunTts,
@@ -20,26 +20,26 @@ function isVoiceActionDisabled({
 
 export function useConfigTtsActions() {
   const { analyze, canRunTts, isAnalyzing, preview } = useTts();
-  const { selectedPageIndex } = useSelectedPage();
-  const { selectedTtsIndex } = useSelectedTts();
-  const { control } = useFormContext<DraftProject>();
+  const { ttsId } = useSelectedTts();
+  const ttsIndex = useTtsFormIndex(ttsId);
+  const { control } = useFormContext<PageFormValues>();
   const text = useWatch({
     control,
-    name: `pages.${selectedPageIndex}.tts.${selectedTtsIndex}.text`,
+    name: `tts.${Math.max(ttsIndex, 0)}.text`,
   });
   const voiceName = useWatch({
     control,
-    name: `pages.${selectedPageIndex}.tts.${selectedTtsIndex}.voiceName`,
+    name: `tts.${Math.max(ttsIndex, 0)}.voiceName`,
   });
-  const actionDisabled = isVoiceActionDisabled({ canRunTts, text, voiceName });
+  const actionDisabled = ttsIndex < 0 || isVoiceActionDisabled({ canRunTts, text, voiceName });
 
   const analyzeSelected = useCallback(() => {
-    void analyze(selectedPageIndex, selectedTtsIndex);
-  }, [analyze, selectedPageIndex, selectedTtsIndex]);
+    void analyze(ttsId);
+  }, [analyze, ttsId]);
 
   const previewSelected = useCallback(() => {
-    void preview(selectedPageIndex, selectedTtsIndex);
-  }, [preview, selectedPageIndex, selectedTtsIndex]);
+    void preview(ttsId);
+  }, [preview, ttsId]);
 
   return {
     analyzeSelected,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SavedTts } from "@/_schemas";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
-import { toDraftTts } from "../../lib/project-draft-conversion";
+import { toTtsFormValues } from "../../lib/project-form-conversion";
 
 describe("form context conversion", () => {
   it("keeps saved TTS avatar settings in draft values", () => {
@@ -24,7 +24,7 @@ describe("form context conversion", () => {
       },
     };
 
-    expect(toDraftTts(item)).toMatchObject({
+    expect(toTtsFormValues(item)).toMatchObject({
       avatar: item.avatar,
       padBeforeSec: item.padBeforeSec,
       padAfterSec: item.padAfterSec,

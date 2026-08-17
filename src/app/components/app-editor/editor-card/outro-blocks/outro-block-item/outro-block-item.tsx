@@ -1,12 +1,11 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext } from "react-hook-form";
 import { GripVertical, Link2, Trash2 } from "lucide-react";
-import type { DraftProject } from "@/_schemas";
 import { Button } from "@/_shared/components/ui/button";
 import { Field, FieldError } from "@/_shared/components/ui/field";
 import { Input } from "@/_shared/components/ui/input";
 import { Textarea } from "@/_shared/components/ui/textarea";
 import { cn } from "@/_shared/lib/utils";
-import { useSelectedPage } from "@/app/features/page";
 import { useOutroBlockItem } from "./use-outro-block-item";
 import { useOutroBlockItemOgp } from "./use-outro-block-item-ogp";
 
@@ -19,11 +18,10 @@ export function OutroBlockItem({
   blockId: string;
   onRemove: () => void;
 }) {
-  const { control } = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const { control } = useFormContext<PageFormValues>();
   const { ref, handleRef, isDragging } = useOutroBlockItem(blockId, index);
   const { pending, error, fetchAndApplyOgp } = useOutroBlockItemOgp(index);
-  const baseName = `pages.${selectedPageIndex}.meta.blocks.${index}` as const;
+  const baseName = `meta.blocks.${index}` as const;
 
   return (
     <article

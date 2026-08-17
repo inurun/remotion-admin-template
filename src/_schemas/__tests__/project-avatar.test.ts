@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { draftTtsSchema, savedTtsSchema } from "../project";
+import { ttsFormSchema } from "@/app/features/tts/model/tts-form-schema";
+import { savedTtsSchema } from "../project";
 
 describe("project avatar schema", () => {
   it("accepts avatar appearance settings without actor type", () => {
     expect(
-      draftTtsSchema.parse({
+      ttsFormSchema.parse({
         id: "tts",
         provider: "voisona",
         text: "hello",
@@ -25,7 +26,7 @@ describe("project avatar schema", () => {
 
   it("rejects empty avatar appearance values", () => {
     expect(() =>
-      draftTtsSchema.parse({
+      ttsFormSchema.parse({
         id: "tts",
         provider: "voisona",
         text: "hello",

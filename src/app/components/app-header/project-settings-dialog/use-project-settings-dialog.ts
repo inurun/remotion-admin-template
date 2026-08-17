@@ -1,9 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import type { DraftProject } from "@/_schemas";
+import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
 import { VIDEO_SIZE_PRESETS } from "@/constants";
 import {
   formatParentWorkIdsInput,
@@ -12,11 +12,15 @@ import {
   parseParentWorkIdsInput,
   type VideoSizePresetId,
 } from "@/_shared/project/project-meta";
-import { useEditor } from "@/app/features/editor";
-import { useProject } from "@/app/features/project";
+import { useEditor, useEditorSession } from "@/app/features/editor";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
+import {
+  getProjectSettingsDialogHref,
+  isProjectSettingsRoute,
+} from "@/app/features/project/lib/project-route";
 import { clearTtsCache } from "@/app/features/tts/api/tts-api";
 
-const projectSettingsFormSchema = z.object({
+const projectSettingsDialogFormSchema = z.object({
   title: z.string(),
   description: z.string(),
   videoSizePreset: z.enum(["landscape", "square", "portrait"]),
@@ -26,7 +30,7 @@ const projectSettingsFormSchema = z.object({
   niconicoParentWorkIds: z.string(),
 });
 
-type ProjectSettingsFormValues = z.infer<typeof projectSettingsFormSchema>;
+type ProjectSettingsDialogFormValues = z.infer<typeof projectSettingsDialogFormSchema>;
 
 function getProjectTitleFallback(projectPath: string | null) {
   return projectPath?.split("/").filter(Boolean).at(-1) ?? "project";
@@ -36,7 +40,9 @@ function getVideoSizePreset(presetId: VideoSizePresetId) {
   return VIDEO_SIZE_PRESETS.find((preset) => preset.id === presetId) ?? VIDEO_SIZE_PRESETS[0];
 }
 
-function createFormValues(meta?: DraftProject["meta"]): ProjectSettingsFormValues {
+function createFormValues(
+  meta: ProjectSettingsFormValues["meta"],
+): ProjectSettingsDialogFormValues {
   const normalizedMeta = normalizeProjectMeta(meta);
 
   return {
@@ -51,34 +57,41 @@ function createFormValues(meta?: DraftProject["meta"]): ProjectSettingsFormValue
 }
 
 export function useProjectSettingsDialog() {
-  const { control, setValue } = useFormContext<DraftProject>();
+  const projectSettings = useEditorSession((state) => state.project);
+  const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
+  const updateProjectSettings = useEditorSession((state) => state.updateProjectSettings);
   const { isPending, save } = useEditor();
-  const { projectPath } = useProject();
-  const meta = useWatch({ control, name: "meta" });
-  const [open, setOpen] = useState(false);
+  const { projectPath, route, navigate } = useProjectRoute();
+  const open = isProjectSettingsRoute(route);
   const [isClearingTts, setIsClearingTts] = useState(false);
-  const form = useForm<ProjectSettingsFormValues>({
-    resolver: zodResolver(projectSettingsFormSchema),
-    defaultValues: createFormValues(meta),
+  const form = useForm<ProjectSettingsDialogFormValues>({
+    resolver: zodResolver(projectSettingsDialogFormSchema),
+    defaultValues: createFormValues(projectSettings.meta),
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset(createFormValues(projectSettings.meta));
+    }
+  }, [form, open, projectSettings.meta]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      setOpen(nextOpen);
-      if (nextOpen) {
-        form.reset(createFormValues(meta));
+      if (!projectPath) {
+        return;
       }
+      navigate(getProjectSettingsDialogHref(projectPath, nextOpen, sequenceOrder));
     },
-    [form, meta],
+    [navigate, projectPath, sequenceOrder],
   );
 
   const submit = form.handleSubmit(async (values) => {
     const preset = getVideoSizePreset(values.videoSizePreset);
-    setValue(
-      "meta",
-      normalizeProjectMeta(
+    updateProjectSettings({
+      ...projectSettings,
+      meta: normalizeProjectMeta(
         {
-          ...meta,
+          ...projectSettings.meta,
           title: values.title,
           description: values.description,
           width: preset.width,
@@ -94,13 +107,9 @@ export function useProjectSettingsDialog() {
           titleFallback: getProjectTitleFallback(projectPath),
         },
       ),
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
+    });
     await save();
-    setOpen(false);
+    handleOpenChange(false);
   });
 
   const clearTtsCacheAndResynthesize = useCallback(async () => {
@@ -114,15 +123,15 @@ export function useProjectSettingsDialog() {
     setIsClearingTts(true);
     try {
       await clearTtsCache(projectPath);
-      await save();
+      await save({ forceResynthesis: true });
       toast.success("TTS cache cleared and resynthesized");
-      setOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to clear TTS cache");
     } finally {
       setIsClearingTts(false);
     }
-  }, [isClearingTts, isPending, projectPath, save]);
+  }, [handleOpenChange, isClearingTts, isPending, projectPath, save]);
 
   return {
     form,

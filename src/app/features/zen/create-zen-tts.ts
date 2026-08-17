@@ -1,9 +1,10 @@
-import type { DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   getAvatarTypeByVoiceName,
   resolveAvatarSettings,
 } from "@/_shared/lib/avatar/avatar-settings";
-import { createDraftTts } from "@/app/features/tts";
+import { createTtsInput } from "@/app/features/tts";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 
 export function createZenTts(
@@ -11,8 +12,8 @@ export function createZenTts(
   target: ZenAliasTarget,
   text: string,
   eyes: string | undefined,
-): DraftTts {
-  const draft = createDraftTts(options, undefined);
+): TtsFormValues {
+  const draft = createTtsInput(options, undefined);
   const avatarType = getAvatarTypeByVoiceName(target.voice.voiceName);
   const avatar = resolveAvatarSettings(
     avatarType,
@@ -28,5 +29,5 @@ export function createZenTts(
     readText: text,
     avatar,
     synthesisSettings: null,
-  } as DraftTts;
+  } as TtsFormValues;
 }

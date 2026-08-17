@@ -1,47 +1,26 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-import type { DraftProject } from "@/_schemas";
+import { getErrorMessage } from "@/_shared/lib/error-message";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { useEditor } from "@/app/features/editor";
-import { useProject } from "@/app/features/project";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import { requestPreviewSynthesis } from "@/app/features/tts/api/tts-api";
 import { isTtsActionReady } from "@/app/features/tts/lib/tts-action";
-import { resolveTtsIndexForPage } from "@/app/features/tts/lib/tts-selection";
 import { useAnalyzeTextMutation } from "@/app/features/tts/swr/use-tts-mutations";
 import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 import { useSettings } from "@/app/features/settings";
-
-function useTtsSelection() {
-  const [selectedTtsIndex, setSelectedTtsIndex] = useState<number | null>(null);
-
-  const selectTts = useCallback((index: number) => {
-    setSelectedTtsIndex(index);
-  }, []);
-
-  const syncForPage = useCallback((ttsCount: number) => {
-    setSelectedTtsIndex(resolveTtsIndexForPage(ttsCount));
-  }, []);
-
-  const clearSelection = useCallback(() => {
-    setSelectedTtsIndex(null);
-  }, []);
-
-  return {
-    selectedTtsIndex,
-    selectTts,
-    syncForPage,
-    syncTtsIndexFromPage: syncForPage,
-    clearSelection,
-  };
-}
+import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
+import { useSelectedTtsState } from "@/app/features/tts/context/selected-tts-state";
 
 function useTtsCommands() {
-  const { getValues, setValue } = useFormContext<DraftProject>();
+  const form = useFormContext<PageFormValues>();
   const { isPending: saving } = useEditor();
-  const { projectPath } = useProject();
+  const { projectPath } = useProjectRoute();
   const { options } = useSettings();
+  const voicePresets = useEditorSession((state) => state.project.voicePresets);
   const { trigger: analyzeText, isMutating: isAnalyzing } = useAnalyzeTextMutation();
-
   const canRunTts = options.length > 0 && !saving;
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -52,36 +31,50 @@ function useTtsCommands() {
     await audio.play();
   }, []);
 
+  const getTts = useCallback(
+    (ttsId: string) => form.getValues("tts").find((item) => item.id === ttsId),
+    [form],
+  );
+
   const analyze = useCallback(
-    async (pageIndex: number, ttsIndex: number) => {
-      const item = getValues(`pages.${pageIndex}.tts.${ttsIndex}`);
+    async (ttsId: string) => {
+      const item = getTts(ttsId);
       if (isAnalyzing || !isTtsActionReady(item, canRunTts)) {
         return;
       }
       const g2p = await analyzeText({ item });
-      setValue(`pages.${pageIndex}.tts.${ttsIndex}.speech.g2p`, g2p, {
-        shouldDirty: true,
-      });
+      const tts = form
+        .getValues("tts")
+        .map((entry) =>
+          entry.id === ttsId
+            ? ({ ...entry, speech: { ...entry.speech, g2p } } as TtsFormValues)
+            : entry,
+        );
+      form.setValue("tts", tts, { shouldDirty: true });
       toast.success("音声分析を更新した");
     },
-    [analyzeText, canRunTts, getValues, isAnalyzing, setValue],
+    [analyzeText, canRunTts, form, getTts, isAnalyzing],
   );
 
   const preview = useCallback(
-    async (pageIndex: number, ttsIndex: number) => {
-      const item = getValues(`pages.${pageIndex}.tts.${ttsIndex}`);
+    async (ttsId: string) => {
+      const item = getTts(ttsId);
       if (!isTtsActionReady(item, canRunTts)) {
         return;
       }
       if (!projectPath) {
         throw new Error("Project path is required");
       }
-      const resolvedItem = resolveTtsSynthesisSettings(item, getValues("voicePresets"));
-      const audioSrc = await requestPreviewSynthesis(resolvedItem, projectPath);
-      await playPreview(audioSrc);
-      toast.success("Preview を再生した。");
+      try {
+        const resolvedItem = resolveTtsSynthesisSettings(item, voicePresets);
+        const audioSrc = await requestPreviewSynthesis(resolvedItem, projectPath);
+        await playPreview(audioSrc);
+        toast.success("Preview を再生した。");
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Preview failed"));
+      }
     },
-    [canRunTts, getValues, playPreview, projectPath],
+    [canRunTts, getTts, playPreview, projectPath, voicePresets],
   );
 
   return {
@@ -93,11 +86,13 @@ function useTtsCommands() {
 }
 
 export function useTtsProviderValue() {
-  const selection = useTtsSelection();
+  const selection = useSelectedTtsState();
   const commands = useTtsCommands();
 
   return {
-    ...selection,
+    selectedTtsId: selection.selectedTtsId,
+    selectTts: (ttsId: string) => selection.selectTts(ttsId),
+    clearSelection: () => selection.selectTts(null),
     ...commands,
   };
 }

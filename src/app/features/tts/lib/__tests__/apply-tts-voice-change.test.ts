@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { applyTtsVoiceChange } from "../apply-tts-voice-change";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
-import type { DraftTts } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 
-function item(): DraftTts {
+function item(): TtsFormValues {
   return {
     id: "tts",
     provider: "voicevox",

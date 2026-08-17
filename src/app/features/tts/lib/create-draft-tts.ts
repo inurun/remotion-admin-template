@@ -1,4 +1,5 @@
-import type { DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createUuid } from "@/_shared/lib/utils";
 
 const emptyVoice = {
@@ -7,11 +8,11 @@ const emptyVoice = {
   voiceVersion: "",
 };
 
-function hasVoiceName(voice: DraftTts | VoiceOption | undefined) {
+function hasVoiceName(voice: TtsFormValues | VoiceOption | undefined) {
   return Boolean(voice?.voiceName);
 }
 
-function getInitialVoice(options: VoiceOption[], sourceTts: DraftTts | undefined) {
+function getInitialVoice(options: VoiceOption[], sourceTts: TtsFormValues | undefined) {
   const voice = [sourceTts, options[0]].find(hasVoiceName) ?? emptyVoice;
   return {
     provider: voice.provider,
@@ -20,7 +21,10 @@ function getInitialVoice(options: VoiceOption[], sourceTts: DraftTts | undefined
   };
 }
 
-export function createDraftTts(options: VoiceOption[], sourceTts: DraftTts | undefined): DraftTts {
+export function createTtsInput(
+  options: VoiceOption[],
+  sourceTts: TtsFormValues | undefined,
+): TtsFormValues {
   const voice = getInitialVoice(options, sourceTts);
 
   return {

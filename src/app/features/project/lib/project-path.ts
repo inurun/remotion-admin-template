@@ -7,12 +7,7 @@ function encodeProjectPathForUrl(projectPath: string) {
 }
 
 export function getProjectHref(projectPath: string) {
-  return `/${encodeProjectPathForUrl(projectPath)}`;
-}
-
-export function getProjectPathFromLocation(pathname: string) {
-  const normalizedPath = pathname.replace(/^\/+|\/+$/g, "");
-  return normalizedPath ? decodeURIComponent(normalizedPath) : null;
+  return `/projects/${encodeURIComponent(projectPath)}`;
 }
 
 export function encodeProjectPathParam(projectPath: string) {

@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import type { DraftSequenceItem } from "@/_schemas";
+import type { PageType } from "@/_schemas";
 import type { PageThumbnailProps } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-thumbnail/use-page-thumbnail";
+import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
+import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
 
 export type PageListItemProps = {
   index: number;
@@ -8,15 +10,17 @@ export type PageListItemProps = {
   onRemove: () => void;
   onSelect: () => void;
   pageId: string;
-  pageType: DraftSequenceItem["type"];
-  thumbnail: PageThumbnailProps;
+  thumbnail: Omit<PageThumbnailProps, "dirty">;
 };
 
-export function usePageListItem({
-  index,
-  pageId,
-  thumbnail,
-}: Pick<PageListItemProps, "index" | "pageId" | "thumbnail">) {
+export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "index" | "pageId">) {
+  const width = useSavedProject((state) => state.project.meta.width);
+  const height = useSavedProject((state) => state.project.meta.height);
+  const pageType = useEditorSession((state) => state.itemsById[pageId]?.type) as
+    | PageType
+    | "transition"
+    | undefined;
+  const dirty = useEditorSession((state) => (state.dirty.itemIds[pageId] ?? 0) > 0);
   const { ref, handleRef, isDragging } = useSortable({
     id: pageId,
     index,
@@ -31,6 +35,8 @@ export function usePageListItem({
     ref,
     handleRef,
     isDragging,
-    aspectRatio: `${thumbnail.project.meta.width} / ${thumbnail.project.meta.height}`,
+    aspectRatio: `${width} / ${height}`,
+    dirty,
+    pageType,
   };
 }

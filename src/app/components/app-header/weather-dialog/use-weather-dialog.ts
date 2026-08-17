@@ -1,9 +1,8 @@
 import { useCallback, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import type { DraftProject } from "@/_schemas";
-import { useEditor } from "@/app/features/editor";
+import { useEditor, useEditorSession } from "@/app/features/editor";
 import { fetchTomorrowWeather } from "@/app/features/weather";
 import {
   fromWeatherFormValues,
@@ -13,8 +12,9 @@ import {
 } from "./weather-dialog.lib";
 
 export function useWeatherDialog() {
-  const { control, setValue } = useFormContext<DraftProject>();
-  const weather = useWatch({ control, name: "meta.weather" });
+  const projectSettings = useEditorSession((state) => state.project);
+  const updateProjectSettings = useEditorSession((state) => state.updateProjectSettings);
+  const weather = projectSettings.meta.weather;
   const { isPending, save } = useEditor();
   const [open, setOpen] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -57,9 +57,12 @@ export function useWeatherDialog() {
   );
 
   const submit = form.handleSubmit(async (values) => {
-    setValue("meta.weather", fromWeatherFormValues(values), {
-      shouldDirty: true,
-      shouldValidate: true,
+    updateProjectSettings({
+      ...projectSettings,
+      meta: {
+        ...projectSettings.meta,
+        weather: fromWeatherFormValues(values),
+      },
     });
     await save();
     setOpen(false);

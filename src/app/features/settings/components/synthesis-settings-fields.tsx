@@ -1,7 +1,8 @@
-import type { DraftTts, VoiceOption, VoicepeakSynthesisSettings } from "@/_schemas";
+import type { VoiceOption, VoicepeakSynthesisSettings } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { Input } from "@/_shared/components/ui/input";
 
-type SynthesisSettings = NonNullable<DraftTts["synthesisSettings"]>;
+type SynthesisSettings = NonNullable<TtsFormValues["synthesisSettings"]>;
 type SynthesisSettingsKey = string;
 
 const VOISONA_FIELDS = ["alp", "huskiness", "intonation", "pitch", "speed", "volume"] as const;
@@ -83,7 +84,7 @@ function normalizeEmotion(
   return Object.fromEntries(entries);
 }
 
-function normalizeSynthesisSettingsDraft(value: DraftTts["synthesisSettings"]) {
+function normalizeSynthesisSettingsDraft(value: TtsFormValues["synthesisSettings"]) {
   if (!value) {
     return undefined;
   }
@@ -124,7 +125,7 @@ function VoicepeakSynthesisSettingsFields({
   value,
 }: {
   onChange: (value: SynthesisSettings | undefined) => void;
-  value: DraftTts["synthesisSettings"];
+  value: TtsFormValues["synthesisSettings"];
 }) {
   const settings = (normalizeSynthesisSettingsDraft(value) ?? {}) as VoicepeakSynthesisSettings;
   const emotion = settings.emotion ?? {};
@@ -189,7 +190,7 @@ export function SynthesisSettingsFields({
 }: {
   onChange: (value: SynthesisSettings | undefined) => void;
   provider: VoiceOption["provider"];
-  value: DraftTts["synthesisSettings"];
+  value: TtsFormValues["synthesisSettings"];
 }) {
   if (provider === "voicepeak") {
     return <VoicepeakSynthesisSettingsFields onChange={onChange} value={value} />;

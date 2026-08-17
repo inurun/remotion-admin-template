@@ -4,7 +4,7 @@ import { VIDEO_FPS } from "@/constants";
 import { getProjectPageTimings } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import { getPreviewPageStartFrame } from "@/app/components/app-editor/preview-card/preview-card.lib";
 import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
-import { usePage } from "@/app/features/page";
+import { useSelectedPageId } from "@/app/features/project/context/project-route-context";
 
 type UsePagePreviewSeekParams = {
   durationInFrames: number;
@@ -12,22 +12,18 @@ type UsePagePreviewSeekParams = {
 };
 
 export function usePagePreviewSeek({ durationInFrames, project }: UsePagePreviewSeekParams) {
-  const { selectedPageIndex } = usePage();
+  const selectedPageId = useSelectedPageId();
   const playerControl = useRemotionPlayerControl();
   const pageTimings = useMemo(() => getProjectPageTimings(project), [project]);
 
   useEffect(() => {
-    if (selectedPageIndex === null) {
+    if (!selectedPageId) {
       return;
     }
 
-    const targetFrame = getPreviewPageStartFrame(
-      pageTimings[selectedPageIndex]?.startSec,
-      VIDEO_FPS,
-      durationInFrames,
-    );
-
+    const timing = pageTimings.find((page) => page.id === selectedPageId);
+    const targetFrame = getPreviewPageStartFrame(timing?.startSec, VIDEO_FPS, durationInFrames);
     playerControl.pause();
     playerControl.seekTo(targetFrame);
-  }, [durationInFrames, pageTimings, playerControl, selectedPageIndex]);
+  }, [durationInFrames, pageTimings, playerControl, selectedPageId]);
 }

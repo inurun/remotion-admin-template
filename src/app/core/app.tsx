@@ -1,34 +1,47 @@
 import { SidebarInset } from "@/_shared/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar/app-sidebar";
 import { AppEditor } from "@/app/components/app-editor/app-editor";
-import { EditorContextProvider } from "@/app/features/editor";
-import { FormContextProvider } from "@/app/features/editor";
-import { PageContextProvider } from "@/app/features/page";
 import { ProjectContextProvider } from "@/app/features/project";
+import { ProjectRouteProvider } from "@/app/features/project/context/project-route-context";
 import { RenderContextProvider } from "@/app/features/render";
 import { PublishContextProvider } from "@/app/features/publish";
-import { TtsContextProvider, TtsTextFocusContextProvider } from "@/app/features/tts";
 import { SettingsContextProvider } from "@/app/features/settings";
+import { EditorSessionStoreProvider, SavedProjectStoreProvider } from "@/app/features/editor";
+import { useSelectedProjectQuery } from "@/app/features/project/swr/use-project-queries";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import { AppHeader } from "../components/app-header/app-header";
+
+function ProjectStores({ children }: { children: React.ReactNode }) {
+  const { projectPath } = useProjectRoute();
+  const { project, hasData } = useSelectedProjectQuery(projectPath);
+
+  return (
+    <SavedProjectStoreProvider
+      key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}
+      initialProject={project}
+    >
+      <EditorSessionStoreProvider
+        key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}
+        initialProject={project}
+      >
+        {children}
+      </EditorSessionStoreProvider>
+    </SavedProjectStoreProvider>
+  );
+}
 
 function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <SettingsContextProvider>
-      <ProjectContextProvider>
-        <FormContextProvider>
-          <PageContextProvider>
-            <EditorContextProvider>
-              <TtsContextProvider>
-                <TtsTextFocusContextProvider>
-                  <PublishContextProvider>
-                    <RenderContextProvider>{children}</RenderContextProvider>
-                  </PublishContextProvider>
-                </TtsTextFocusContextProvider>
-              </TtsContextProvider>
-            </EditorContextProvider>
-          </PageContextProvider>
-        </FormContextProvider>
-      </ProjectContextProvider>
+      <ProjectRouteProvider>
+        <ProjectContextProvider>
+          <ProjectStores>
+            <PublishContextProvider>
+              <RenderContextProvider>{children}</RenderContextProvider>
+            </PublishContextProvider>
+          </ProjectStores>
+        </ProjectContextProvider>
+      </ProjectRouteProvider>
     </SettingsContextProvider>
   );
 }

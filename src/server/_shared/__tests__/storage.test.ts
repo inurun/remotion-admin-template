@@ -1,15 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { accessMock, mkdirMock, readFileMock, readdirMock, statMock, writeFileMock } = vi.hoisted(
-  () => ({
-    accessMock: vi.fn(),
-    mkdirMock: vi.fn(),
-    readFileMock: vi.fn(),
-    readdirMock: vi.fn(),
-    statMock: vi.fn(),
-    writeFileMock: vi.fn(),
-  }),
-);
+const {
+  accessMock,
+  mkdirMock,
+  readFileMock,
+  readdirMock,
+  renameMock,
+  rmMock,
+  statMock,
+  writeFileMock,
+} = vi.hoisted(() => ({
+  accessMock: vi.fn(),
+  mkdirMock: vi.fn(),
+  readFileMock: vi.fn(),
+  readdirMock: vi.fn(),
+  renameMock: vi.fn(),
+  rmMock: vi.fn(),
+  statMock: vi.fn(),
+  writeFileMock: vi.fn(),
+}));
 
 vi.mock("node:fs/promises", () => ({
   default: {
@@ -17,6 +26,8 @@ vi.mock("node:fs/promises", () => ({
     mkdir: mkdirMock,
     readFile: readFileMock,
     readdir: readdirMock,
+    rename: renameMock,
+    rm: rmMock,
     stat: statMock,
     writeFile: writeFileMock,
   },
@@ -113,5 +124,70 @@ describe("storage", () => {
       }),
     ).rejects.toBeInstanceOf(ProjectAlreadyExistsError);
     expect(writeFileMock).not.toHaveBeenCalled();
+  });
+
+  it("writes project JSON through unique temp files then rename", async () => {
+    const { writeSavedProject, createProjectWriteTempPath } = await import("../storage");
+    const first = createProjectWriteTempPath("/tmp/project.json");
+    const second = createProjectWriteTempPath("/tmp/project.json");
+    expect(first).not.toBe(second);
+    expect(first).toMatch(/\/tmp\/project\.json\.\d+\.[0-9a-f-]+\.tmp$/);
+    expect(second).toMatch(/\/tmp\/project\.json\.\d+\.[0-9a-f-]+\.tmp$/);
+
+    await writeSavedProject("project", {
+      meta: {
+        title: "project",
+        description: "",
+        width: 1920,
+        height: 1080,
+        weather: {},
+        niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+      },
+      pages: [],
+      bgm: [],
+      voicePresets: [],
+    });
+    await writeSavedProject("project", {
+      meta: {
+        title: "project",
+        description: "",
+        width: 1920,
+        height: 1080,
+        weather: {},
+        niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+      },
+      pages: [],
+      bgm: [],
+      voicePresets: [],
+    });
+
+    expect(writeFileMock).toHaveBeenCalledTimes(2);
+    const tempPaths = writeFileMock.mock.calls.map((call) => String(call[0]));
+    expect(tempPaths[0]).not.toBe(tempPaths[1]);
+    expect(tempPaths[0]).toMatch(/\.tmp$/);
+    expect(renameMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not replace the original file when the temp write fails", async () => {
+    writeFileMock.mockRejectedValueOnce(new Error("disk full"));
+    const { writeSavedProject } = await import("../storage");
+
+    await expect(
+      writeSavedProject("project", {
+        meta: {
+          title: "project",
+          description: "",
+          width: 1920,
+          height: 1080,
+          weather: {},
+          niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+        },
+        pages: [],
+        bgm: [],
+        voicePresets: [],
+      }),
+    ).rejects.toThrow("disk full");
+    expect(renameMock).not.toHaveBeenCalled();
+    expect(rmMock).toHaveBeenCalled();
   });
 });

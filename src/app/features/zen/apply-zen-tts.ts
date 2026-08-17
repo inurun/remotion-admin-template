@@ -1,11 +1,11 @@
-import type { DraftTts } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { getVoiceId } from "@/app/features/settings";
 import { applyTtsTextChange } from "@/app/features/tts/lib/apply-tts-text-change";
 import { applyTtsVoiceChange } from "@/app/features/tts/lib/apply-tts-voice-change";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 
-function ttsAlias(item: DraftTts, voiceAliases: Map<string, string>) {
+function ttsAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
   return (
     voiceAliases.get(
       getVoiceId({
@@ -17,11 +17,15 @@ function ttsAlias(item: DraftTts, voiceAliases: Map<string, string>) {
   );
 }
 
-function isSameTtsKey(left: DraftTts, right: DraftTts, voiceAliases: Map<string, string>) {
+function isSameTtsKey(
+  left: TtsFormValues,
+  right: TtsFormValues,
+  voiceAliases: Map<string, string>,
+) {
   return ttsAlias(left, voiceAliases) === ttsAlias(right, voiceAliases) && left.text === right.text;
 }
 
-function applyEyes(existing: DraftTts, next: DraftTts): DraftTts {
+function applyEyes(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
   const nextEyes = next.avatar?.eyes;
   if (!nextEyes || existing.avatar?.eyes === nextEyes) {
     return existing;
@@ -40,7 +44,7 @@ function applyEyes(existing: DraftTts, next: DraftTts): DraftTts {
   };
 }
 
-function applySubstitute(existing: DraftTts, next: DraftTts): DraftTts {
+function applySubstitute(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
   let result = existing;
   const voiceChanged =
     existing.provider !== next.provider ||
@@ -63,10 +67,10 @@ function applySubstitute(existing: DraftTts, next: DraftTts): DraftTts {
 }
 
 export function applyZenTtsList(
-  existing: DraftTts[],
-  next: DraftTts[],
+  existing: TtsFormValues[],
+  next: TtsFormValues[],
   aliases: Map<string, ZenAliasTarget>,
-): DraftTts[] {
+): TtsFormValues[] {
   const voiceAliases = createVoiceAliasMap(aliases);
   const usedOld = new Set<number>();
   const matchForNew: Array<number | null> = next.map(() => null);
@@ -101,7 +105,7 @@ export function applyZenTtsList(
     substituteForNew.set(newIndex, oldIndex);
   }
 
-  const result: DraftTts[] = [];
+  const result: TtsFormValues[] = [];
   for (const [newIndex, incoming] of next.entries()) {
     const matchedOldIndex = matchForNew[newIndex];
     if (matchedOldIndex !== null && matchedOldIndex !== undefined) {

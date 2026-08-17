@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { DraftTts } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { getPreviewPayload } from "@/app/features/tts/lib/tts-preview-payload";
 import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 
-type VoisonaDraftTts = Extract<DraftTts, { provider: "voisona" }>;
+type VoisonaTtsInput = Extract<TtsFormValues, { provider: "voisona" }>;
 
-function createTts(overrides: Partial<VoisonaDraftTts> = {}): DraftTts {
+function createTts(overrides: Partial<VoisonaTtsInput> = {}): TtsFormValues {
   return {
     id: "tts",
     provider: "voisona",

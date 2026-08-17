@@ -6,12 +6,12 @@ import {
   getEffectiveReadText,
   getOptionalVoiceVersion,
 } from "./comparison";
-import type { DraftTtsForProvider, SavedTtsForProvider, TtsProviderAdapter } from "./types";
+import type { TtsInputForProvider, SavedTtsForProvider, TtsProviderAdapter } from "./types";
 
 export const voicevoxProvider = {
   provider: "voicevox",
   usesG2p: true,
-  createComparisonInput(item: DraftTtsForProvider<"voicevox">) {
+  createComparisonInput(item: TtsInputForProvider<"voicevox">) {
     return createDraftComparisonInput("voicevox", item, getEffectiveReadText(item));
   },
   createPreviousComparisonInput(item: SavedTtsForProvider<"voicevox">) {

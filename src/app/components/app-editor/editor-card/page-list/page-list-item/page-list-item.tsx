@@ -12,13 +12,11 @@ export function PageListItem({
   onRemove,
   onSelect,
   pageId,
-  pageType,
   thumbnail,
 }: PageListItemProps) {
-  const { ref, handleRef, isDragging, aspectRatio } = usePageListItem({
+  const { ref, handleRef, isDragging, aspectRatio, dirty, pageType } = usePageListItem({
     index,
     pageId,
-    thumbnail,
   });
 
   return (
@@ -37,7 +35,7 @@ export function PageListItem({
           className="overflow-hidden rounded-md border border-border opacity-100 group-hover/page:opacity-30 transition-opacity"
           style={{ aspectRatio }}
         >
-          <PageThumbnail {...thumbnail} />
+          <PageThumbnail {...thumbnail} dirty={dirty} />
         </div>
         <div className="absolute top-3 left-3 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {pageType}

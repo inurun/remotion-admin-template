@@ -1,14 +1,17 @@
-import type { DraftTts } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 
-function hasText(item: DraftTts) {
+function hasText(item: TtsFormValues) {
   return Boolean((item.text ?? "").trim());
 }
 
-function hasVoiceName(item: DraftTts) {
+function hasVoiceName(item: TtsFormValues) {
   return Boolean(item.voiceName);
 }
 
-export function isTtsActionReady(item: DraftTts | undefined, canRunTts: boolean): item is DraftTts {
+export function isTtsActionReady(
+  item: TtsFormValues | undefined,
+  canRunTts: boolean,
+): item is TtsFormValues {
   if (!item || !canRunTts) {
     return false;
   }

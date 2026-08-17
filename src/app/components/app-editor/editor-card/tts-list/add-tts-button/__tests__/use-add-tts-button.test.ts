@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { DraftTts, VoiceOption } from "@/_schemas";
-import { createDraftTts } from "@/app/features/tts/lib/create-draft-tts";
+import type { VoiceOption } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
+import { createTtsInput } from "@/app/features/tts/lib/create-draft-tts";
 
-describe("createDraftTts", () => {
+describe("createTtsInput", () => {
   it("inherits avatar settings from the source TTS", () => {
-    const sourceTts: DraftTts = {
+    const sourceTts: TtsFormValues = {
       id: "source",
       provider: "voisona",
       text: "source",
@@ -22,7 +23,7 @@ describe("createDraftTts", () => {
       { provider: "voisona", voiceName: "fallback", displayName: "Fallback" },
     ];
 
-    expect(createDraftTts(options, sourceTts)).toMatchObject({
+    expect(createTtsInput(options, sourceTts)).toMatchObject({
       avatar: sourceTts.avatar,
       padBeforeSec: 0,
       padAfterSec: 0,

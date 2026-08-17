@@ -1,10 +1,11 @@
-import type { DraftTts, G2pItem, SavedTts } from "@/_schemas";
+import type { G2pItem, SavedTts } from "@/_schemas";
+import type { SaveTtsItem } from "@/server/features/project/contract";
 import type { ServerEnv } from "@/server/core/env";
 import type { SynthesizeResponse } from "@/server/features/tts/contract";
 
-export type TtsProvider = DraftTts["provider"];
-export type DraftTtsForProvider<TProvider extends TtsProvider> = Extract<
-  DraftTts,
+export type TtsProvider = SaveTtsItem["provider"];
+export type TtsInputForProvider<TProvider extends TtsProvider> = Extract<
+  SaveTtsItem,
   { provider: TProvider }
 >;
 export type SavedTtsForProvider<TProvider extends TtsProvider> = Extract<
@@ -19,7 +20,7 @@ export type TtsComparisonInput<TProvider extends TtsProvider> = {
   voiceName: string;
   voiceVersion: string;
   g2p?: G2pItem;
-  synthesisSettings?: NonNullable<DraftTtsForProvider<TProvider>["synthesisSettings"]>;
+  synthesisSettings?: NonNullable<TtsInputForProvider<TProvider>["synthesisSettings"]>;
 };
 
 export type TtsSynthesisInput<TProvider extends TtsProvider> = TtsComparisonInput<TProvider> & {
@@ -30,7 +31,7 @@ export type TtsSynthesisInput<TProvider extends TtsProvider> = TtsComparisonInpu
 export type TtsProviderAdapter<TProvider extends TtsProvider> = {
   provider: TProvider;
   usesG2p: boolean;
-  createComparisonInput: (item: DraftTtsForProvider<TProvider>) => TtsComparisonInput<TProvider>;
+  createComparisonInput: (item: TtsInputForProvider<TProvider>) => TtsComparisonInput<TProvider>;
   createPreviousComparisonInput: (
     item: SavedTtsForProvider<TProvider>,
   ) => TtsComparisonInput<TProvider>;

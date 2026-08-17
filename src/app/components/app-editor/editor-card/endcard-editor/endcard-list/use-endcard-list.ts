@@ -1,9 +1,9 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useCallback } from "react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { useFieldArray, useFormContext } from "react-hook-form";
-import type { DraftProject, EndcardAdvertiser, EndcardCredit, EndcardMessage } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { EndcardAdvertiser, EndcardCredit, EndcardMessage } from "@/_schemas";
 
 function cloneItems<T extends object>(items: T[]) {
   return items.map((item) => ({ ...item }));
@@ -13,9 +13,8 @@ function useEndcardFieldArray<T extends { id: string }>(
   name: "credits" | "advertisers" | "messages",
   createBlank: () => T,
 ) {
-  const form = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
-  const fieldName = `pages.${selectedPageIndex}.meta.${name}` as never;
+  const form = useFormContext<PageFormValues>();
+  const fieldName = `meta.${name}` as never;
   const { fields, move, replace, append } = useFieldArray({
     control: form.control,
     keyName: "fieldKey",

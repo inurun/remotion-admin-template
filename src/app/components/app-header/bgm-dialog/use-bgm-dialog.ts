@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
-import { useFieldArray, useForm, useFormContext, useWatch } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { DraftProject } from "@/_schemas";
-import { useEditor } from "@/app/features/editor";
+import type { BgmTrack } from "@/_schemas";
+import { useEditor, useEditorSession } from "@/app/features/editor";
 import { fetchBgmFiles } from "@/app/features/bgm";
 
 const bgmTrackFormSchema = z.object({
@@ -32,7 +32,7 @@ function stringToSec(str: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-function toFormValues(bgm: DraftProject["bgm"]): BgmFormValues {
+function toFormValues(bgm: BgmTrack[]): BgmFormValues {
   return {
     tracks: bgm.map((track) => ({
       src: track.src,
@@ -45,7 +45,7 @@ function toFormValues(bgm: DraftProject["bgm"]): BgmFormValues {
   };
 }
 
-function fromFormValues(values: BgmFormValues): DraftProject["bgm"] {
+function fromFormValues(values: BgmFormValues): BgmTrack[] {
   return values.tracks.map((track) => ({
     src: track.src,
     startSec: stringToSec(track.startSec),
@@ -57,9 +57,9 @@ function fromFormValues(values: BgmFormValues): DraftProject["bgm"] {
 }
 
 export function useBgmDialog() {
-  const { control, setValue } = useFormContext<DraftProject>();
+  const projectSettings = useEditorSession((state) => state.project);
+  const updateProjectSettings = useEditorSession((state) => state.updateProjectSettings);
   const { isPending, save } = useEditor();
-  const bgm = useWatch({ control, name: "bgm" });
   const [open, setOpen] = useState(false);
   const [musicFiles, setMusicFiles] = useState<string[]>([]);
 
@@ -77,7 +77,7 @@ export function useBgmDialog() {
     async (nextOpen: boolean) => {
       setOpen(nextOpen);
       if (nextOpen) {
-        form.reset(toFormValues(bgm));
+        form.reset(toFormValues(projectSettings.bgm));
         try {
           const files = await fetchBgmFiles();
           setMusicFiles(files);
@@ -86,7 +86,7 @@ export function useBgmDialog() {
         }
       }
     },
-    [form, bgm],
+    [form, projectSettings.bgm],
   );
 
   const addTrack = useCallback(() => {
@@ -101,7 +101,10 @@ export function useBgmDialog() {
   }, [append, musicFiles]);
 
   const submit = form.handleSubmit(async (values) => {
-    setValue("bgm", fromFormValues(values), { shouldDirty: true, shouldValidate: true });
+    updateProjectSettings({
+      ...projectSettings,
+      bgm: fromFormValues(values),
+    });
     await save();
     setOpen(false);
   });

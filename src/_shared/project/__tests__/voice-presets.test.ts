@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DraftTts, VoicePreset } from "@/_schemas";
+import type { VoicePreset } from "@/_schemas";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import {
   getEffectiveTtsSynthesisSettings,
@@ -70,9 +70,9 @@ describe("voice presets", () => {
   });
 
   it("resolves missing tts synthesis settings from the project preset", () => {
-    const item: DraftTts = {
+    const item = {
       id: "tts-1",
-      provider: "voisona",
+      provider: "voisona" as const,
       text: "Hello",
       voiceName: "a",
       padBeforeSec: 0,
@@ -87,9 +87,9 @@ describe("voice presets", () => {
   });
 
   it("keeps concrete tts synthesis settings over the project preset", () => {
-    const item: DraftTts = {
+    const item = {
       id: "tts-1",
-      provider: "voicevox",
+      provider: "voicevox" as const,
       text: "Hello",
       voiceName: "3",
       padBeforeSec: 0,

@@ -1,14 +1,15 @@
 import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftProject, G2pItem } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { G2pItem } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useSelectedTts } from "@/app/features/tts";
+import { useTtsFormIndex } from "@/app/features/tts/lib/use-tts-form-index";
 
 export function useAnalysisField() {
-  const { selectedPageIndex } = useSelectedPage();
-  const { selectedTtsIndex } = useSelectedTts();
-  const name = `pages.${selectedPageIndex}.tts.${selectedTtsIndex}.speech.g2p` as const;
-  const providerName = `pages.${selectedPageIndex}.tts.${selectedTtsIndex}.provider` as const;
-  const { control, setValue } = useFormContext<DraftProject>();
+  const { ttsId } = useSelectedTts();
+  const ttsIndex = Math.max(useTtsFormIndex(ttsId), 0);
+  const name = `tts.${ttsIndex}.speech.g2p` as const;
+  const providerName = `tts.${ttsIndex}.provider` as const;
+  const { control, setValue } = useFormContext<PageFormValues>();
   const value = useWatch({ control, name });
   const provider = useWatch({ control, name: providerName });
 

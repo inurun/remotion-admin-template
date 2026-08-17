@@ -1,13 +1,12 @@
 import { useFormContext, useWatch } from "react-hook-form";
-import { voiceProviderSchema, type DraftProject } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import { voiceProviderSchema } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useSettings } from "@/app/features/settings";
 import { getVoiceValue } from "@/app/features/editor";
 import { applyTtsVoiceChange } from "@/app/features/tts";
 
 export function useTtsVoiceField(index: number, onSelect: (index: number) => void) {
-  const { control, getFieldState, formState, setValue } = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const { control, getFieldState, formState, setValue } = useFormContext<PageFormValues>();
   const { options } = useSettings();
   const selectItems = options.map((option) => ({
     value: getVoiceValue(option),
@@ -15,10 +14,10 @@ export function useTtsVoiceField(index: number, onSelect: (index: number) => voi
   }));
   const ttsItem = useWatch({
     control,
-    name: `pages.${selectedPageIndex}.tts.${index}`,
+    name: `tts.${index}`,
   });
 
-  const fieldName = `pages.${selectedPageIndex}.tts.${index}.voiceName` as const;
+  const fieldName = `tts.${index}.voiceName` as const;
   const fieldState = getFieldState(fieldName, formState);
   const selectedValue = getVoiceValue({
     provider: ttsItem?.provider ?? "voisona",
@@ -35,7 +34,7 @@ export function useTtsVoiceField(index: number, onSelect: (index: number) => voi
     const [nextProvider, nextVoiceName, nextVoiceVersion] = value.split("::");
     const parsedProvider = voiceProviderSchema.catch("voisona").parse(nextProvider);
     setValue(
-      `pages.${selectedPageIndex}.tts.${index}`,
+      `tts.${index}`,
       applyTtsVoiceChange(ttsItem, {
         provider: parsedProvider,
         voiceName: nextVoiceName ?? "",

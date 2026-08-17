@@ -1,6 +1,7 @@
-import type { DraftPage, PageType } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { PageType } from "@/_schemas";
 
-export function createBlankDraftPage({
+export function createBlankPageInput({
   id,
   title,
   type,
@@ -8,7 +9,7 @@ export function createBlankDraftPage({
   id: string;
   title: string;
   type: PageType;
-}): DraftPage {
+}): PageFormValues {
   if (type === "outro") {
     return {
       id,

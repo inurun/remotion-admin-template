@@ -1,8 +1,7 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useCallback, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
 import { fetchNicoad } from "@/app/features/nicoad";
-import { useSelectedPage } from "@/app/features/page";
 import {
   createBlankEndcardAdvertiser,
   createBlankEndcardCredit,
@@ -15,8 +14,7 @@ import {
 } from "./endcard-list/use-endcard-list";
 
 export function useEndcardEditor() {
-  const form = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const form = useFormContext<PageFormValues>();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const credits = useEndcardCredits(createBlankEndcardCredit);
@@ -24,7 +22,7 @@ export function useEndcardEditor() {
   const messages = useEndcardMessages(createBlankEndcardMessage);
 
   const fetchAdvertisers = useCallback(async () => {
-    const source = form.getValues(`pages.${selectedPageIndex}.meta.nicoadSource`);
+    const source = form.getValues(`meta.nicoadSource`);
     if (typeof source !== "string" || !source.trim()) {
       setError("Source is required");
       return;
@@ -40,10 +38,9 @@ export function useEndcardEditor() {
     } finally {
       setPending(false);
     }
-  }, [advertisers, form, selectedPageIndex]);
+  }, [advertisers, form]);
 
   return {
-    selectedPageIndex,
     pending,
     error,
     credits,

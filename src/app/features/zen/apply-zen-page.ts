@@ -1,12 +1,12 @@
-import type { DraftPage } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { applyZenTtsList } from "@/app/features/zen/apply-zen-tts";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 
 export function applyZenPage(
-  existing: DraftPage,
-  next: DraftPage,
+  existing: PageFormValues,
+  next: PageFormValues,
   aliases: Map<string, ZenAliasTarget>,
-): DraftPage {
+): PageFormValues {
   const tts = applyZenTtsList(existing.tts, next.tts, aliases);
 
   if (existing.type === "outro") {
