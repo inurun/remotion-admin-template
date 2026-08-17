@@ -1,22 +1,15 @@
-import type {
-  DraftPage,
-  DraftSequenceItem,
-  DraftTransition,
-  PageType,
-  SavedPage,
-  SavedSequenceItem,
-  SavedTransition,
-} from "./project";
+import type { PageType } from "./project/primitives";
+import type { SavedPage, SavedSequenceItem, SavedTransition } from "./project/page";
 
-export function isTransition(
-  item: DraftSequenceItem | SavedSequenceItem,
-): item is DraftTransition | SavedTransition {
+export function isTransition<T extends { type: string }>(
+  item: T,
+): item is Extract<T, { type: "transition" }> {
   return item.type === "transition";
 }
 
-export function isContentPage(
-  item: DraftSequenceItem | SavedSequenceItem,
-): item is DraftPage | SavedPage {
+export function isContentPage<T extends { type: string }>(
+  item: T,
+): item is Exclude<T, { type: "transition" }> {
   return item.type !== "transition";
 }
 
@@ -25,14 +18,6 @@ export function isSavedTransition(item: SavedSequenceItem): item is SavedTransit
 }
 
 export function isSavedContentPage(item: SavedSequenceItem): item is SavedPage {
-  return item.type !== "transition";
-}
-
-export function isDraftTransition(item: DraftSequenceItem): item is DraftTransition {
-  return item.type === "transition";
-}
-
-export function isDraftContentPage(item: DraftSequenceItem): item is DraftPage {
   return item.type !== "transition";
 }
 

@@ -1,13 +1,14 @@
 import type {
   CopyProjectRequest,
   CreateProjectRequest,
-  DraftProject,
   ProjectFileSummary,
   SavedProject,
 } from "@/_schemas";
 import { api } from "@/_shared/lib/api-client";
 import { parseApiJson } from "@/_shared/lib/fetch-json";
 import { encodeProjectPathParam } from "@/app/features/project/lib/project-path";
+import type { SaveProjectChangesInput } from "@/app/features/editor/store/editor-session-state";
+import type { SaveProjectResult } from "@/app/features/editor/store/saved-project-state";
 
 export const projectKeys = {
   list: () => ["projects"] as const,
@@ -27,14 +28,14 @@ export async function fetchProject(projectPath: string) {
   );
 }
 
-export async function saveProject(projectPath: string, project: DraftProject) {
+export async function saveProjectChanges(projectPath: string, changeSet: SaveProjectChangesInput) {
   const encodedPath = encodeProjectPathParam(projectPath);
-  return parseApiJson<SavedProject>(
+  return parseApiJson<SaveProjectResult>(
     await api.project[":projectPath{.+}"].$post({
       param: { projectPath: encodedPath },
-      json: project,
+      json: changeSet,
     } as {
-      json: DraftProject;
+      json: SaveProjectChangesInput;
       param: { projectPath: string };
     }),
   );

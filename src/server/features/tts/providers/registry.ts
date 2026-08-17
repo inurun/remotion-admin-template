@@ -1,4 +1,5 @@
-import type { DraftTts, SavedTts } from "@/_schemas";
+import type { SavedTts } from "@/_schemas";
+import type { SaveTtsItem } from "@/server/features/project/contract";
 import type { TtsProvider, TtsProviderAdapter } from "./types";
 import { voisonaProvider } from "./voisona-provider";
 import { voicepeakProvider } from "./voicepeak-provider";
@@ -14,7 +15,7 @@ export function getTtsProvider<TProvider extends TtsProvider>(provider: TProvide
   return providers[provider];
 }
 
-export function createTtsComparisonInput(item: DraftTts) {
+export function createTtsComparisonInput(item: SaveTtsItem) {
   return getTtsProvider(item.provider).createComparisonInput(item as never);
 }
 

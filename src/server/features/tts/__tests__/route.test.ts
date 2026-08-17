@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ttsApp } from "../route";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const { analyzeTtsMock, clearTtsCacheMock, listTtsVoicesMock, synthesizeTtsMock } = vi.hoisted(
   () => ({
@@ -93,5 +94,35 @@ describe("tts routes", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     expect(clearTtsCacheMock).toHaveBeenCalledWith({ projectPath: "nested/example" });
+  });
+
+  it("keeps analysis_failed detail on analyze", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    analyzeTtsMock.mockRejectedValueOnce(
+      new HaqumeiApiError({
+        type: "about:blank",
+        title: "Analysis failed",
+        status: 500,
+        code: "analysis_failed",
+        detail: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
+        errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+      }),
+    );
+
+    const response = await ttsApp.request("/tts/analyze", {
+      method: "POST",
+      body: JSON.stringify({ text: "hello" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
+      code: "analysis_failed",
+      detail: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
+      errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+    });
+
+    errorSpy.mockRestore();
   });
 });

@@ -12,21 +12,21 @@ export function PageListItem({
   onRemove,
   onSelect,
   pageId,
-  pageType,
   thumbnail,
 }: PageListItemProps) {
-  const { ref, handleRef, isDragging, aspectRatio } = usePageListItem({
-    index,
-    pageId,
-    thumbnail,
-  });
+  const { ref, handleRef, isDragging, aspectRatio, dirty, pageType, staggerDelayMs } =
+    usePageListItem({
+      index,
+      pageId,
+    });
 
   return (
     <article
       ref={ref}
       data-dragging={isDragging}
       data-selected={isSelected}
-      className="group/page relative min-w-30 grid gap-2 rounded-lg border border-border bg-card p-2 transition data-[dragging=true]:opacity-70 data-[selected=true]:border-primary data-[selected=true]:ring-2 data-[selected=true]:ring-primary/20"
+      className="group/page relative min-w-30 grid gap-2 rounded-lg border border-border bg-card p-2 transition animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-700 data-[dragging=true]:opacity-70 data-[selected=true]:border-primary data-[selected=true]:ring-2 data-[selected=true]:ring-primary/20"
+      style={{ animationDelay: `${staggerDelayMs}ms` }}
     >
       <button
         type="button"
@@ -37,7 +37,7 @@ export function PageListItem({
           className="overflow-hidden rounded-md border border-border opacity-100 group-hover/page:opacity-30 transition-opacity"
           style={{ aspectRatio }}
         >
-          <PageThumbnail {...thumbnail} />
+          <PageThumbnail {...thumbnail} dirty={dirty} />
         </div>
         <div className="absolute top-3 left-3 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {pageType}

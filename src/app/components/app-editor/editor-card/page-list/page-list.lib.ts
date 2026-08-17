@@ -79,3 +79,10 @@ export function getPageMoveState(
     ),
   };
 }
+
+export const PAGE_LIST_STAGGER_STEP_MS = 100;
+export const PAGE_LIST_STAGGER_MAX_MS = 400;
+
+export function getPageListStaggerDelayMs(index: number) {
+  return Math.min(Math.max(index, 0) * PAGE_LIST_STAGGER_STEP_MS, PAGE_LIST_STAGGER_MAX_MS);
+}

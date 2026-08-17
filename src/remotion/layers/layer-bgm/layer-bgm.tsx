@@ -4,14 +4,10 @@ import type { BgmTrack } from "@/_schemas";
 import { assetPath, type AssetFile } from "@/_shared/lib/assets/path";
 import { secondsToFrames } from "@/remotion/utils/timing";
 import { collectDuckableIntervals } from "@/remotion/utils/ducking/collect-duckable-intervals";
-import { computeDuckFactor } from "@/remotion/utils/ducking/compute-duck-factor";
+import { computeDuckAmount } from "@/remotion/utils/ducking/compute-duck-amount";
 import { computeFadeFactor } from "@/remotion/utils/ducking/compute-fade-factor";
 import { useProject } from "@/remotion/core/context";
-
-const FADE_SEC = 1.5;
-const DUCK_DOWN_SEC = 0.5;
-const DUCK_HOLD_SEC = 0.5;
-const DUCK_RELEASE_SEC = 1.0;
+import { BGM_DUCK, BGM_FADE_SEC } from "./layer-bgm.constants";
 
 function getBgmAssetPath(src: string) {
   return assetPath(`bgm/${src}` as AssetFile);
@@ -20,13 +16,13 @@ function getBgmAssetPath(src: string) {
 function BgmTrack({
   track,
   globalFrame,
-  duckFactor,
+  duckAmount,
   totalFrames,
   fps,
 }: {
   track: BgmTrack;
   globalFrame: number;
-  duckFactor: number;
+  duckAmount: number;
   totalFrames: number;
   fps: number;
 }) {
@@ -34,7 +30,7 @@ function BgmTrack({
   const endFrame = track.endSec !== null ? secondsToFrames(track.endSec, fps) : totalFrames;
   const durationFrames = Math.max(1, endFrame - startFrame);
   const isLoop = track.endSec === null;
-  const fadeFrames = Math.round(FADE_SEC * fps);
+  const fadeFrames = Math.round(BGM_FADE_SEC * fps);
   const localFrame = globalFrame - startFrame;
 
   const volume = useMemo(() => {
@@ -45,7 +41,7 @@ function BgmTrack({
       track.fadeOut,
       fadeFrames,
     );
-    return track.volume * duckFactor * fadeFactor;
+    return Math.max(0, track.volume - duckAmount) * fadeFactor;
   }, [
     localFrame,
     durationFrames,
@@ -53,7 +49,7 @@ function BgmTrack({
     track.fadeOut,
     track.volume,
     fadeFrames,
-    duckFactor,
+    duckAmount,
   ]);
 
   return (
@@ -77,14 +73,22 @@ export function BgmLayer() {
   const project = useProject();
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
-  const holdFrames = Math.round(DUCK_HOLD_SEC * fps);
-  const fadeDownFrames = Math.round(DUCK_DOWN_SEC * fps);
-  const fadeUpFrames = Math.round(DUCK_RELEASE_SEC * fps);
+  const holdFrames = Math.round(BGM_DUCK.holdSec * fps);
+  const fadeDownFrames = Math.round(BGM_DUCK.downSec * fps);
+  const fadeUpFrames = Math.round(BGM_DUCK.releaseSec * fps);
 
   const duckableIntervals = useMemo(() => collectDuckableIntervals(project, fps), [project, fps]);
 
-  const duckFactor = useMemo(
-    () => computeDuckFactor(frame, duckableIntervals, holdFrames, fadeDownFrames, fadeUpFrames),
+  const duckAmount = useMemo(
+    () =>
+      computeDuckAmount(
+        frame,
+        duckableIntervals,
+        holdFrames,
+        fadeDownFrames,
+        fadeUpFrames,
+        BGM_DUCK.drop,
+      ),
     [frame, duckableIntervals, holdFrames, fadeDownFrames, fadeUpFrames],
   );
 
@@ -97,7 +101,7 @@ export function BgmLayer() {
       key={index}
       track={track}
       globalFrame={frame}
-      duckFactor={duckFactor}
+      duckAmount={duckAmount}
       totalFrames={durationInFrames}
       fps={fps}
     />

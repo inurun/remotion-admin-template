@@ -3,6 +3,7 @@ import path from "node:path";
 import { Hono } from "hono";
 import { renderToString } from "react-dom/server";
 import { layoutHtml } from "@/app/core/layout";
+import { getProjectRootHref, parseProjectRoute } from "@/app/features/project/lib/project-route";
 import {
   ensureProjectDirs,
   getPublicFilePath,
@@ -57,16 +58,16 @@ async function resolveRootProjectPath() {
     throw new ProjectNotFoundError("Project not found");
   }
 
-  return `/${project.path}`;
+  return getProjectRootHref(project.path);
 }
 
 async function assertProjectRouteExists(requestPath: string) {
-  const projectPath = decodeURIComponent(requestPath.replace(/^\/+/u, ""));
-  if (!projectPath) {
+  const route = parseProjectRoute(requestPath);
+  if (route.type === "unknown") {
     throw new InvalidProjectPathError("Invalid project path");
   }
 
-  await readSavedProject(projectPath);
+  await readSavedProject(route.projectPath);
 }
 
 function createApi() {

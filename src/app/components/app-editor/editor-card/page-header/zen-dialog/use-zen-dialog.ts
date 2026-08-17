@@ -1,8 +1,7 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useCallback, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useFormContext } from "react-hook-form";
-import { isDraftContentPage, type DraftProject } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
 import { useSettings } from "@/app/features/settings";
 import { applyZenPage, createAliasMap, parseZenScript, serializeZenPage } from "@/app/features/zen";
 import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-editor/zen-completion";
@@ -10,8 +9,7 @@ import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-edito
 const EMPTY_SOURCE = "";
 
 export function useZenDialog() {
-  const { getValues, setValue } = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const { getValues, setValue } = useFormContext<PageFormValues>();
   const { voices, voiceSettings } = useSettings();
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState(EMPTY_SOURCE);
@@ -57,15 +55,15 @@ export function useZenDialog() {
       }
 
       if (nextOpen) {
-        const page = getValues(`pages.${selectedPageIndex}`);
-        if (page && isDraftContentPage(page) && page.type === "main") {
+        const page = getValues();
+        if (page.type === "main") {
           setSource(serializeZenPage(page, aliases));
         }
       }
 
       setOpen(nextOpen);
     },
-    [aliases, getValues, selectedPageIndex],
+    [aliases, getValues],
   );
 
   const apply = useCallback(() => {
@@ -74,26 +72,26 @@ export function useZenDialog() {
     }
 
     const nextPage = parsed.pages[0];
-    const current = getValues(`pages.${selectedPageIndex}`);
-    if (!nextPage || !current || !isDraftContentPage(current) || current.type !== "main") {
+    const current = getValues();
+    if (!nextPage || current.type !== "main") {
       return;
     }
 
     const next = applyZenPage(current, nextPage, aliases);
-    setValue(`pages.${selectedPageIndex}.title`, next.title, {
+    setValue("title", next.title, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setValue(`pages.${selectedPageIndex}.meta.tags`, next.meta.tags, {
+    setValue("meta.tags", next.meta.tags, {
       shouldDirty: true,
       shouldValidate: true,
     });
-    setValue(`pages.${selectedPageIndex}.tts`, next.tts, {
+    setValue("tts", next.tts, {
       shouldDirty: true,
       shouldValidate: true,
     });
     setOpen(false);
-  }, [aliases, getValues, parsed.errors.length, parsed.pages, selectedPageIndex, setValue]);
+  }, [aliases, getValues, parsed.errors.length, parsed.pages, setValue]);
 
   return {
     open,

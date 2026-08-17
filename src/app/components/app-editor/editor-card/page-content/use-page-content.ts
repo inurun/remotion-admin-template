@@ -1,6 +1,5 @@
 import { useFormContext } from "react-hook-form";
-import { type DraftProject } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { fetchOgp } from "@/app/features/ogp";
 import { useProject } from "@/app/features/project";
 import { uploadImage, uploadVideo } from "@/app/features/uploads";
@@ -8,10 +7,9 @@ import { uploadImage, uploadVideo } from "@/app/features/uploads";
 const EMPTY_RICH_TEXT = "<p></p>";
 
 export function usePageContent() {
-  const { control, setValue } = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
+  const { control, setValue } = useFormContext<PageFormValues>();
   const { projectPath } = useProject();
-  const fieldName = `pages.${selectedPageIndex}.richText` as const;
+  const fieldName = "richText" as const;
 
   return {
     control,

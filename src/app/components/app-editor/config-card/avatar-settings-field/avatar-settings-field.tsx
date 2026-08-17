@@ -1,13 +1,13 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { avatarOptions, type AvatarSettings, type DraftProject } from "@/_schemas";
+import { avatarOptions, type AvatarSettings } from "@/_schemas";
 import { Field } from "@/_shared/components/ui/field";
 import {
   getAvatarTypeByVoiceName,
   getOpenedMouthOptions,
   resolveAvatarSettings,
 } from "@/_shared/lib/avatar/avatar-settings";
-import { usePage } from "@/app/features/page";
-import { useTts } from "@/app/features/tts";
+import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 function AvatarSelect({
   children,
@@ -79,22 +79,16 @@ function AvatarSettingsControls({
   );
 }
 
-function BoundAvatarSettingsField({
-  pageIndex,
-  ttsIndex,
-}: {
-  pageIndex: number;
-  ttsIndex: number;
-}) {
-  const { control } = useFormContext<DraftProject>();
+function BoundAvatarSettingsField({ ttsIndex }: { ttsIndex: number }) {
+  const { control } = useFormContext<PageFormValues>();
   const voiceName = useWatch({
     control,
-    name: `pages.${pageIndex}.tts.${ttsIndex}.voiceName`,
+    name: `tts.${ttsIndex}.voiceName`,
   });
 
   return (
     <Controller
-      name={`pages.${pageIndex}.tts.${ttsIndex}.avatar`}
+      name={`tts.${ttsIndex}.avatar`}
       control={control}
       render={({ field }) => (
         <AvatarSettingsControls
@@ -108,12 +102,12 @@ function BoundAvatarSettingsField({
 }
 
 export function AvatarSettingsField() {
-  const { selectedPageIndex } = usePage();
-  const { selectedTtsIndex } = useTts();
+  const { ttsId } = useSelectedTts();
+  const ttsIndex = useTtsFormIndex(ttsId);
 
-  if (selectedPageIndex === null || selectedTtsIndex === null) {
+  if (ttsIndex < 0) {
     return null;
   }
 
-  return <BoundAvatarSettingsField pageIndex={selectedPageIndex} ttsIndex={selectedTtsIndex} />;
+  return <BoundAvatarSettingsField ttsIndex={ttsIndex} />;
 }

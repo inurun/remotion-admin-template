@@ -1,6 +1,7 @@
 import { useCallback, type KeyboardEvent } from "react";
 import { useFormContext } from "react-hook-form";
-import type { DraftProject, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useTts } from "@/app/features/tts";
 import { eventMatchesHotkey } from "@/app/features/settings/lib/hotkeys";
 import { getVoiceId, useSettings } from "@/app/features/settings";
@@ -17,41 +18,33 @@ function getVoiceForHotkey(
 }
 
 function setTtsVoice({
-  pageIndex,
   setValue,
   ttsIndex,
   voice,
 }: {
-  pageIndex: number;
-  setValue: ReturnType<typeof useFormContext<DraftProject>>["setValue"];
+  setValue: ReturnType<typeof useFormContext<PageFormValues>>["setValue"];
   ttsIndex: number;
   voice: VoiceOption;
 }) {
-  setValue(`pages.${pageIndex}.tts.${ttsIndex}.voiceName`, voice.voiceName, {
-    shouldDirty: true,
-  });
-  setValue(`pages.${pageIndex}.tts.${ttsIndex}.provider`, voice.provider, {
-    shouldDirty: true,
-  });
-  setValue(`pages.${pageIndex}.tts.${ttsIndex}.voiceVersion`, voice.voiceVersion ?? "", {
-    shouldDirty: true,
-  });
+  setValue(`tts.${ttsIndex}.voiceName`, voice.voiceName, { shouldDirty: true });
+  setValue(`tts.${ttsIndex}.provider`, voice.provider, { shouldDirty: true });
+  setValue(`tts.${ttsIndex}.voiceVersion`, voice.voiceVersion ?? "", { shouldDirty: true });
 }
 
 export function useTtsTextFieldKeyDown({
-  pageIndex,
+  ttsId,
   ttsIndex,
   onInsertAfter,
   onRemove,
 }: {
-  pageIndex: number;
+  ttsId: string;
   ttsIndex: number;
   onInsertAfter: (index: number) => void;
   onRemove: () => void;
 }) {
   const { analyze } = useTts();
   const { hotkeys, options, voiceSettings } = useSettings();
-  const { setValue } = useFormContext<DraftProject>();
+  const { setValue } = useFormContext<PageFormValues>();
 
   return useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -73,7 +66,7 @@ export function useTtsTextFieldKeyDown({
 
       if (eventMatchesHotkey(event.nativeEvent, hotkeys.analyze)) {
         event.preventDefault();
-        void analyze(pageIndex, ttsIndex);
+        void analyze(ttsId);
         return;
       }
 
@@ -83,7 +76,7 @@ export function useTtsTextFieldKeyDown({
       }
 
       event.preventDefault();
-      setTtsVoice({ pageIndex, setValue, ttsIndex, voice });
+      setTtsVoice({ setValue, ttsIndex, voice });
     },
     [
       analyze,
@@ -93,8 +86,8 @@ export function useTtsTextFieldKeyDown({
       onInsertAfter,
       onRemove,
       options,
-      pageIndex,
       setValue,
+      ttsId,
       ttsIndex,
       voiceSettings,
     ],

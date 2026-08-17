@@ -1,9 +1,10 @@
-import type { DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 
 export function applyTtsVoiceChange(
-  item: DraftTts,
+  item: TtsFormValues,
   voice: Pick<VoiceOption, "provider" | "voiceName" | "voiceVersion">,
-): DraftTts {
+): TtsFormValues {
   return {
     ...item,
     provider: voice.provider,
@@ -13,5 +14,5 @@ export function applyTtsVoiceChange(
     speech: {
       ...item.speech,
     },
-  } as DraftTts;
+  } as TtsFormValues;
 }

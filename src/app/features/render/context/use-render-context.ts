@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
-import type { DraftProject } from "@/_schemas";
-import { saveProject } from "@/app/features/project/api/project-api";
-import { useEditor } from "@/app/features/editor";
-import { usePage } from "@/app/features/page";
+import { getErrorMessage } from "@/_shared/lib/error-message";
+import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
 import { usePublish } from "@/app/features/publish";
 import { startRender, type RenderState } from "@/app/features/render/api/render-api";
@@ -56,10 +53,9 @@ export type RenderContextValue = {
 };
 
 export function useRenderProviderValue(): RenderContextValue {
-  const { handleSubmit } = useFormContext<DraftProject>();
-  const { isPending: saving } = useEditor();
+  const { isPending: saving, save } = useEditor();
   const { options } = useSettings();
-  const { pageFields } = usePage();
+  const pageCount = useEditorSession((state) => state.sequenceOrder.length);
   const { projectPath } = useProject();
   const { renderState, reloadRenderState } = useRenderStateQuery();
   const {
@@ -103,7 +99,7 @@ export function useRenderProviderValue(): RenderContextValue {
     void reloadRenderState();
   }, [projectPath, reloadRenderState]);
 
-  const canSave = options.length > 0 && !saving && pageFields.length > 0;
+  const canSave = options.length > 0 && !saving && pageCount > 0;
   const isBusy = renderState.status === "running" || publishState.status === "running";
   const renderExecuteDisabled = !canSave || isBusy;
   const renderExecuteLabel = getRenderExecuteLabel(
@@ -122,19 +118,11 @@ export function useRenderProviderValue(): RenderContextValue {
     setDialogJobPhase("render");
     resetPublishWatch();
     armPublishAfterRender();
-    void handleSubmit(async (draftProject) => {
+    void (async () => {
       try {
-        if (!projectPath) {
-          throw new Error("Project path is required");
-        }
-
-        await toast.promise(saveProject(projectPath, draftProject), {
-          loading: "保存中...",
-          success: "保存して音声を更新した。",
-          error: "Save failed",
-        });
+        await save();
       } catch (error) {
-        setRenderError(JSON.stringify(error));
+        setRenderError(getErrorMessage(error));
         return;
       }
 
@@ -142,10 +130,10 @@ export function useRenderProviderValue(): RenderContextValue {
         await startRenderJob();
         toast.success("Render を開始した。");
       } catch (error) {
-        setRenderError(JSON.stringify(error));
+        setRenderError(getErrorMessage(error));
       }
     })();
-  }, [armPublishAfterRender, handleSubmit, projectPath, resetPublishWatch, startRenderJob]);
+  }, [armPublishAfterRender, resetPublishWatch, save, startRenderJob]);
 
   const handlePublishExecute = useCallback(() => {
     setDialogJobPhase("publish");

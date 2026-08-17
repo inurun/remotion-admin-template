@@ -1,4 +1,4 @@
-import { buildDraftPages } from "@/app/features/zen/build-draft-pages";
+import { buildPageInputs } from "@/app/features/zen/build-draft-pages";
 import { dropEmptyZenPages } from "@/app/features/zen/handlers/page-state";
 import { createZenLineHandlers } from "@/app/features/zen/handlers/registry";
 import type {
@@ -44,7 +44,7 @@ export function parseZenScript(
   }
 
   return {
-    pages: state.errors.length === 0 ? buildDraftPages(state.pages, options.aliases) : [],
+    pages: state.errors.length === 0 ? buildPageInputs(state.pages, options.aliases) : [],
     errors: state.errors,
   };
 }

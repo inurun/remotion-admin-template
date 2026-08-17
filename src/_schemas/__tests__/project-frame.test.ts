@@ -1,16 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { isContentPage } from "../guards";
-import { draftProjectSchema, savedProjectSchema } from "../project";
-import type { DraftPage, SavedPage } from "../project";
+import { savedPageSchema, savedProjectSchema } from "../project";
+import type { SavedPage } from "../project";
 
-function firstContentPage(
-  pages: Array<DraftPage | SavedPage | { type: string }>,
-): DraftPage | SavedPage {
+function firstContentPage(pages: Array<SavedPage | { type: string }>): SavedPage {
   const page = pages[0];
-  if (!page || !isContentPage(page as DraftPage | SavedPage)) {
+  if (!page || !isContentPage(page as SavedPage)) {
     throw new Error("expected content page");
   }
-  return page as DraftPage | SavedPage;
+  return page as SavedPage;
 }
 
 describe("project frame schema", () => {
@@ -104,27 +102,16 @@ describe("project frame schema", () => {
       type: "main",
       padBeforeSec: 0,
       padAfterSec: 0,
+      durationSec: 1,
       richText: "",
       tts: [],
     } as const;
 
-    expect(
-      firstContentPage(
-        draftProjectSchema.parse({
-          meta: {},
-          bgm: [],
-          pages: [{ ...page, meta: { tags: ["  tag  "] } }],
-        }).pages,
-      ).meta.tags,
-    ).toEqual(["tag"]);
+    expect(savedPageSchema.parse({ ...page, meta: { tags: ["  tag  "] } }).meta.tags).toEqual([
+      "tag",
+    ]);
 
-    expect(() =>
-      draftProjectSchema.parse({
-        meta: {},
-        bgm: [],
-        pages: [{ ...page, meta: { tags: [" "] } }],
-      }),
-    ).toThrow();
+    expect(() => savedPageSchema.parse({ ...page, meta: { tags: [" "] } })).toThrow();
   });
 
   it("defaults endcard meta lists", () => {

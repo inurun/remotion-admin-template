@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { DraftPage, DraftTts, VoiceOption } from "@/_schemas";
+import type { VoiceOption } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { createAliasMap } from "@/app/features/zen/create-alias-map";
 import { parseZenScript } from "@/app/features/zen/parse-zen-script";
@@ -32,7 +34,9 @@ const { aliases: aliasMap } = aliases([
   { alias: "himari", voice: voice("14", "Himari") },
 ]);
 
-function ttsItem(overrides: Partial<Extract<DraftTts, { provider: "voicevox" }>>): DraftTts {
+function ttsItem(
+  overrides: Partial<Extract<TtsFormValues, { provider: "voicevox" }>>,
+): TtsFormValues {
   return {
     id: "id",
     provider: "voicevox",
@@ -50,7 +54,9 @@ function ttsItem(overrides: Partial<Extract<DraftTts, { provider: "voicevox" }>>
   };
 }
 
-function mainPage(overrides: Partial<Extract<DraftPage, { type: "main" }>> = {}): DraftPage {
+function mainPage(
+  overrides: Partial<Extract<PageFormValues, { type: "main" }>> = {},
+): PageFormValues {
   return {
     id: "page-1",
     title: "タイトル",
@@ -218,7 +224,7 @@ hello
       { aliases: aliasMap },
     );
 
-    const result = applyZenPage(existing, parsed.pages[0] as DraftPage, aliasMap);
+    const result = applyZenPage(existing, parsed.pages[0] as PageFormValues, aliasMap);
     expect(result.id).toBe("page-1");
     expect(result.title).toBe("");
     expect(result.meta.tags).toEqual(["tag2"]);
@@ -228,7 +234,7 @@ hello
   });
 
   it("keeps endcard lists when updating tags", () => {
-    const existing: DraftPage = {
+    const existing: PageFormValues = {
       id: "endcard-1",
       title: "Endcard",
       type: "endcard",

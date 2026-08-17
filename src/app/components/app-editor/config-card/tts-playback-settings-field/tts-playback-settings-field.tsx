@@ -1,9 +1,8 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
 import { Field } from "@/_shared/components/ui/field";
 import { Input } from "@/_shared/components/ui/input";
-import { usePage } from "@/app/features/page";
-import { useTts } from "@/app/features/tts";
+import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 const TTS_PLAYBACK_FIELDS = [
   {
@@ -23,15 +22,9 @@ function parseNumberInput(value: string, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function BoundTtsPlaybackSettingsField({
-  pageIndex,
-  ttsIndex,
-}: {
-  pageIndex: number;
-  ttsIndex: number;
-}) {
-  const { control, setValue } = useFormContext<DraftProject>();
-  const name = `pages.${pageIndex}.tts.${ttsIndex}` as const;
+function BoundTtsPlaybackSettingsField({ ttsIndex }: { ttsIndex: number }) {
+  const { control, setValue } = useFormContext<PageFormValues>();
+  const name = `tts.${ttsIndex}` as const;
   const item = useWatch({ control, name });
 
   return (
@@ -68,14 +61,12 @@ function BoundTtsPlaybackSettingsField({
 }
 
 export function TtsPlaybackSettingsField() {
-  const { selectedPageIndex } = usePage();
-  const { selectedTtsIndex } = useTts();
+  const { ttsId } = useSelectedTts();
+  const ttsIndex = useTtsFormIndex(ttsId);
 
-  if (selectedPageIndex === null || selectedTtsIndex === null) {
+  if (ttsIndex < 0) {
     return null;
   }
 
-  return (
-    <BoundTtsPlaybackSettingsField pageIndex={selectedPageIndex} ttsIndex={selectedTtsIndex} />
-  );
+  return <BoundTtsPlaybackSettingsField ttsIndex={ttsIndex} />;
 }

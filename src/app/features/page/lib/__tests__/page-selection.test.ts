@@ -5,9 +5,10 @@ import {
   resolvePageIndexFromFieldCount,
   resolveSelectedPageIndexAfterRemove,
 } from "@/app/features/page/lib/page-selection";
-import type { DraftSequenceItem } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 
-function contentPage(tts: string[]): DraftSequenceItem {
+function contentPage(tts: string[]): PageFormValues {
   return {
     id: "p",
     title: "",
@@ -27,7 +28,7 @@ function contentPage(tts: string[]): DraftSequenceItem {
   };
 }
 
-function transitionItem(): DraftSequenceItem {
+function transitionItem(): TransitionFormValues {
   return {
     id: "tr",
     type: "transition",

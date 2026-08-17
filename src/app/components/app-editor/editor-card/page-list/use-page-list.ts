@@ -1,85 +1,56 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
-import { useFormContext, useWatch } from "react-hook-form";
-import type { DraftProject } from "@/_schemas";
-import { isDraftContentPage } from "@/_schemas";
-import { calculateProjectDurationSec } from "@/_shared/project/project-timing";
-import { normalizeProjectMeta } from "@/_shared/project/project-meta";
-import { VIDEO_FPS } from "@/constants";
 import { useRemotionComposition } from "@/app/features/remotion/hook/use-remotion-composition";
+import { getPageMoveState } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
+import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import {
-  getProjectPageTimings,
-  getPageMoveState,
-  getPageThumbnailFrame,
-} from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
-import { useProject } from "@/app/features/project";
-import { usePage } from "@/app/features/page";
-import { getLandingPageTtsCount, resolveSelectedPageIndexAfterRemove } from "@/app/features/page";
-import { useTts } from "@/app/features/tts";
+  useProjectRoute,
+  useSelectedPageId,
+} from "@/app/features/project/context/project-route-context";
+import { getProjectPageHref, getProjectRootHref } from "@/app/features/project/lib/project-route";
+import { resolveSelectedPageIndexAfterRemove } from "@/app/features/page";
 
 export function usePageList() {
-  const { project } = useProject();
-  const { control } = useFormContext<DraftProject>();
-  const meta = useWatch({ control, name: "meta" });
-  const previewProject = useMemo(() => {
-    return {
-      ...project,
-      meta: normalizeProjectMeta(meta),
-    };
-  }, [meta, project]);
   const component = useRemotionComposition();
-  const { pageFields, selectedPageIndex, setSelectedPageIndex, movePage, removePage } = usePage();
-  const { syncForPage } = useTts();
-  const durationInFrames = Math.max(1, Math.ceil(calculateProjectDurationSec(project) * VIDEO_FPS));
-  const savedPagesById = new Map(
-    getProjectPageTimings(previewProject).map((page) => [page.id, page]),
-  );
+  const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
+  const removeSequenceItem = useEditorSession((state) => state.removeSequenceItem);
+  const reorderSequence = useEditorSession((state) => state.reorderSequence);
+  const selectedPageId = useSelectedPageId();
+  const { projectPath, navigate } = useProjectRoute();
+  const selectedPageIndex = selectedPageId ? sequenceOrder.indexOf(selectedPageId) : -1;
 
   const selectPage = useCallback(
     (index: number) => {
-      setSelectedPageIndex(index);
-      const item = pageFields[index];
-      const ttsCount = item && isDraftContentPage(item) ? item.tts.length : 0;
-      syncForPage(ttsCount);
+      const pageId = sequenceOrder[index];
+      if (!pageId || !projectPath) {
+        return;
+      }
+      navigate(getProjectPageHref(projectPath, pageId));
     },
-    [pageFields, setSelectedPageIndex, syncForPage],
+    [navigate, projectPath, sequenceOrder],
   );
 
   const remove = useCallback(
     (index: number) => {
-      const nextLength = pageFields.length - 1;
+      const pageId = sequenceOrder[index];
+      if (!pageId || !projectPath) {
+        return;
+      }
+      const nextLength = sequenceOrder.length - 1;
       const nextPageIndex = resolveSelectedPageIndexAfterRemove(
-        selectedPageIndex,
+        selectedPageIndex === -1 ? null : selectedPageIndex,
         index,
         nextLength,
       );
-      const landingTtsCount = getLandingPageTtsCount(pageFields, index, nextPageIndex);
-
-      removePage(index);
-      setSelectedPageIndex(nextPageIndex);
-      syncForPage(landingTtsCount);
-    },
-    [pageFields, removePage, selectedPageIndex, setSelectedPageIndex, syncForPage],
-  );
-
-  const move = useCallback(
-    (fromIndex: number, toIndex: number) => {
-      const pageMove = getPageMoveState(
-        pageFields.map((field) => field.id),
-        selectedPageIndex,
-        fromIndex,
-        toIndex,
+      removeSequenceItem(pageId);
+      const nextIds = sequenceOrder.filter((_, itemIndex) => itemIndex !== index);
+      const nextItemId = nextPageIndex === null ? undefined : nextIds[nextPageIndex];
+      navigate(
+        nextItemId ? getProjectPageHref(projectPath, nextItemId) : getProjectRootHref(projectPath),
       );
-
-      if (!pageMove) {
-        return;
-      }
-
-      movePage(pageMove.fromIndex, pageMove.toIndex);
-      setSelectedPageIndex(pageMove.nextSelectedPageIndex);
     },
-    [movePage, pageFields, selectedPageIndex, setSelectedPageIndex],
+    [navigate, projectPath, removeSequenceItem, selectedPageIndex, sequenceOrder],
   );
 
   const handleDragEnd = useCallback(
@@ -93,23 +64,33 @@ export function usePageList() {
         return;
       }
 
-      move(source.initialIndex, source.index);
+      const pageMove = getPageMoveState(
+        sequenceOrder,
+        selectedPageIndex === -1 ? null : selectedPageIndex,
+        source.initialIndex,
+        source.index,
+      );
+      if (!pageMove) {
+        return;
+      }
+
+      const nextIds = [...sequenceOrder];
+      const [moved] = nextIds.splice(pageMove.fromIndex, 1);
+      if (!moved) {
+        return;
+      }
+      nextIds.splice(pageMove.toIndex, 0, moved);
+      reorderSequence(nextIds);
     },
-    [move],
+    [reorderSequence, selectedPageIndex, sequenceOrder],
   );
 
   return {
     component,
-    durationInFrames,
-    project: previewProject,
-    pageFields,
+    sequenceOrder,
     selectedPageIndex,
     selectPage,
     remove,
     handleDragEnd,
-    getThumbnailFrame: (pageId: string) => {
-      const savedPage = savedPagesById.get(pageId);
-      return savedPage ? getPageThumbnailFrame(savedPage, VIDEO_FPS, durationInFrames) : null;
-    },
   };
 }

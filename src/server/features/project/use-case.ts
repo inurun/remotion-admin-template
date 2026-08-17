@@ -1,20 +1,15 @@
 import fs from "node:fs/promises";
 import {
   type ProjectFileSummary,
-  type DraftPage,
-  type DraftProjectInput,
-  type DraftSequenceItem,
-  type DraftTransition,
-  type DraftTts,
   type SavedPage,
   type SavedProject,
   type SavedSequenceItem,
   type SavedTts,
   type VoicePreset,
-  isDraftContentPage,
-  isDraftTransition,
+  isContentPage,
   isSavedContentPage,
   isSavedTransition,
+  isTransition,
   pageTypeRequiresTts,
   savedProjectSchema,
 } from "@/_schemas";
@@ -37,12 +32,19 @@ import { createTtsTimingSegments, getTtsTimingEndSec } from "@/_shared/lib/tts/t
 import {
   isProjectTtsSrc,
   listSavedProjects,
-  parseDraftPayload,
   readSavedProject,
   createSavedProject,
   resolvePublicAssetPath,
   writeSavedProject,
 } from "@/server/_shared/storage";
+import type {
+  SavePageItem,
+  SaveProjectChangesRequest,
+  SaveSequenceItem,
+  SaveTransitionItem,
+  SaveTtsItem,
+} from "@/server/features/project/contract";
+import { isSaveTransitionItem } from "@/server/features/project/contract";
 import type { ServerEnv } from "@/server/core/env";
 import { analyzeTexts } from "@/server/features/haqumei-api/analyze";
 import { assertHaqumeiTextLength } from "@/server/features/haqumei-api/limits";
@@ -77,7 +79,9 @@ function getOutroContentDurationSec(blockCount: number) {
   );
 }
 
-function getTtsPlaybackSettings(item: Pick<DraftTts, "padBeforeSec" | "padAfterSec" | "volume">) {
+function getTtsPlaybackSettings(
+  item: Pick<SaveTtsItem, "padBeforeSec" | "padAfterSec" | "volume">,
+) {
   return {
     padBeforeSec: item.padBeforeSec ?? DEFAULT_TTS_PLAYBACK_SETTINGS.padBeforeSec,
     padAfterSec: item.padAfterSec ?? DEFAULT_TTS_PLAYBACK_SETTINGS.padAfterSec,
@@ -89,7 +93,7 @@ function sequenceDurationInFrames(durationSec: number) {
   return Math.max(1, secondsToFrames(durationSec, VIDEO_FPS));
 }
 
-function validateSequenceItems(items: DraftSequenceItem[]) {
+function validateSequenceItems(items: Array<SaveSequenceItem | SavedSequenceItem>) {
   if (items.length === 0) {
     return;
   }
@@ -100,19 +104,19 @@ function validateSequenceItems(items: DraftSequenceItem[]) {
     return;
   }
 
-  if (isDraftTransition(first) || isDraftTransition(last)) {
+  if (isTransition(first) || isTransition(last)) {
     throw new Error("transition must be between content pages");
   }
 
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
-    if (!item || !isDraftTransition(item)) {
+    if (!item || !isTransition(item)) {
       continue;
     }
 
     const prev = items[index - 1];
     const next = items[index + 1];
-    if (!prev || !next || !isDraftContentPage(prev) || !isDraftContentPage(next)) {
+    if (!prev || !next || !isContentPage(prev) || !isContentPage(next)) {
       throw new Error(`transition ${item.id} must be between content pages`);
     }
   }
@@ -143,7 +147,7 @@ function validateTransitionSequenceDurations(pages: SavedSequenceItem[]) {
   }
 }
 
-function validatePage(page: DraftPage) {
+function validatePage(page: SavePageItem) {
   if (!pageTypeRequiresTts(page.type)) {
     return;
   }
@@ -153,7 +157,7 @@ function validatePage(page: DraftPage) {
   }
 }
 
-function validateTts(item: DraftTts) {
+function validateTts(item: SaveTtsItem) {
   if (!item.text.trim()) {
     throw new Error(`text is required for tts ${item.id}`);
   }
@@ -177,7 +181,7 @@ async function audioFileExists(src: string) {
 }
 
 function withEffectiveSynthesisSettings<
-  T extends Pick<DraftTts, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+  T extends Pick<SaveTtsItem, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
 >(item: T, presets: VoicePreset[]): T {
   const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
   return {
@@ -187,7 +191,7 @@ function withEffectiveSynthesisSettings<
 }
 
 async function shouldReusePreviousTts(
-  item: DraftTts,
+  item: SaveTtsItem,
   projectPath: string,
   previous: SavedTts | undefined,
   nextPresets: VoicePreset[],
@@ -214,9 +218,9 @@ async function shouldReusePreviousTts(
 }
 
 type PlannedTts = {
-  item: DraftTts;
+  item: SaveTtsItem;
   previous?: SavedTts;
-  nextInput: TtsComparisonInput<DraftTts["provider"]>;
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>;
   reuse: boolean;
 };
 
@@ -256,7 +260,7 @@ async function assignBatchG2p(serverEnv: ServerEnv, plans: PlannedTts[]) {
   }
 }
 
-function createReusedSavedTts(item: DraftTts, previous: SavedTts) {
+function createReusedSavedTts(item: SaveTtsItem, previous: SavedTts) {
   return {
     id: previous.id,
     provider: previous.provider,
@@ -275,10 +279,11 @@ function createReusedSavedTts(item: DraftTts, previous: SavedTts) {
 
 async function planSavedTts(
   projectPath: string,
-  item: DraftTts,
+  item: SaveTtsItem,
   previous: SavedTts | undefined,
   nextPresets: VoicePreset[],
   previousPresets: VoicePreset[],
+  forceResynthesis = false,
 ): Promise<PlannedTts> {
   validateTts(item);
   const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
@@ -286,7 +291,9 @@ async function planSavedTts(
     item,
     previous,
     nextInput,
-    reuse: await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets),
+    reuse: forceResynthesis
+      ? false
+      : await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets),
   };
 }
 
@@ -315,8 +322,8 @@ function getOptionalVoiceVersion(value: string) {
 }
 
 function createSavedTts(
-  item: DraftTts,
-  nextInput: TtsComparisonInput<DraftTts["provider"]>,
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
   audio: { audioSrc: string; durationSec: number },
   voiceVersion?: string,
 ) {
@@ -340,15 +347,23 @@ function createSavedTts(
 
 async function planSavedPage(
   projectPath: string,
-  page: DraftPage,
+  page: SavePageItem,
   previousTtsById: Map<string, SavedTts>,
   nextPresets: VoicePreset[],
   previousPresets: VoicePreset[],
+  forceResynthesis = false,
 ) {
   validatePage(page);
   const tts = await Promise.all(
     page.tts.map((item) =>
-      planSavedTts(projectPath, item, previousTtsById.get(item.id), nextPresets, previousPresets),
+      planSavedTts(
+        projectPath,
+        item,
+        previousTtsById.get(item.id),
+        nextPresets,
+        previousPresets,
+        forceResynthesis,
+      ),
     ),
   );
 
@@ -358,7 +373,7 @@ async function planSavedPage(
 async function buildSavedPage(
   serverEnv: ServerEnv,
   projectPath: string,
-  planned: { page: DraftPage; tts: PlannedTts[] },
+  planned: { page: SavePageItem; tts: PlannedTts[] },
 ): Promise<SavedPage> {
   const tts = (await Promise.all(
     planned.tts.map((plan) => buildSavedTts(serverEnv, projectPath, plan)),
@@ -422,7 +437,7 @@ async function buildSavedPage(
   };
 }
 
-function buildSavedTransition(transition: DraftTransition) {
+function buildSavedTransition(transition: SaveTransitionItem) {
   return {
     id: transition.id,
     type: "transition" as const,
@@ -443,60 +458,89 @@ function getProjectTitleFromPath(projectPath: string) {
   return projectPath.split("/").filter(Boolean).at(-1) ?? "project";
 }
 
-async function buildSavedProject(
-  serverEnv: ServerEnv,
-  payload: unknown,
-  projectPath: string,
-  previousProject?: SavedProject,
-): Promise<SavedProject> {
-  const draft = parseDraftPayload(payload);
-  validateSequenceItems(draft.pages);
-  const previousTtsById = buildPreviousTtsMap(previousProject);
-  const meta = {
-    ...normalizeProjectMeta(draft.meta, {
-      titleFallback: getProjectTitleFromPath(projectPath),
-    }),
-    updatedAt: nowIso(),
-  };
-  const nextPresets = draft.voicePresets ?? [];
-  const previousPresets = previousProject?.voicePresets ?? [];
-  const plannedPages = await Promise.all(
-    draft.pages.map(async (item) => {
-      if (isDraftTransition(item)) {
-        return { type: "transition" as const, item };
-      }
-      return {
-        type: "page" as const,
-        planned: await planSavedPage(
-          projectPath,
-          item,
-          previousTtsById,
-          nextPresets,
-          previousPresets,
-        ),
-      };
-    }),
-  );
-  await assignBatchG2p(
-    serverEnv,
-    plannedPages.flatMap((item) => (item.type === "page" ? item.planned.tts : [])),
-  );
-  const pages = await Promise.all(
-    plannedPages.map(async (item) => {
-      if (item.type === "transition") {
-        return buildSavedTransition(item.item);
-      }
-      return buildSavedPage(serverEnv, projectPath, item.planned);
-    }),
-  );
-  validateTransitionSequenceDurations(pages);
+function toSaveTtsItemFromSaved(item: SavedTts): SaveTtsItem {
+  return {
+    id: item.id,
+    provider: item.provider,
+    text: item.text,
+    readText: item.readText,
+    voiceName: item.voiceName,
+    padBeforeSec: item.padBeforeSec,
+    padAfterSec: item.padAfterSec,
+    volume: item.volume,
+    ...(item.voiceVersion ? { voiceVersion: item.voiceVersion } : {}),
+    ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
+    ...(item.avatar ? { avatar: item.avatar } : {}),
+    speech: item.speech.g2p ? { g2p: item.speech.g2p } : {},
+  } as SaveTtsItem;
+}
 
-  return savedProjectSchema.parse({
-    meta,
-    bgm: draft.bgm,
-    pages,
-    voicePresets: draft.voicePresets,
+function toSavePageItemFromSaved(page: SavedPage): SavePageItem {
+  const tts = page.tts.map(toSaveTtsItemFromSaved);
+  if (page.type === "outro") {
+    return {
+      id: page.id,
+      title: page.title,
+      type: "outro",
+      meta: page.meta,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      richText: page.richText,
+      tts,
+    };
+  }
+
+  if (page.type === "endcard") {
+    return {
+      id: page.id,
+      title: page.title,
+      type: "endcard",
+      meta: page.meta,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      richText: page.richText,
+      tts,
+    };
+  }
+
+  return {
+    id: page.id,
+    title: page.title,
+    type: page.type,
+    meta: page.meta,
+    padBeforeSec: page.padBeforeSec,
+    padAfterSec: page.padAfterSec,
+    richText: page.richText,
+    tts,
+  };
+}
+
+function pageNeedsResynthesisForPresets(
+  page: SavedPage,
+  previousPresets: VoicePreset[],
+  nextPresets: VoicePreset[],
+) {
+  return page.tts.some((item) => {
+    return (
+      stableStringify(getEffectiveTtsSynthesisSettings(item, previousPresets)) !==
+      stableStringify(getEffectiveTtsSynthesisSettings(item, nextPresets))
+    );
   });
+}
+
+function resolveSequenceOrder(
+  previous: SavedProject,
+  itemsById: Map<string, SavedSequenceItem>,
+  sequenceOrder: string[] | undefined,
+) {
+  const requested = sequenceOrder ?? previous.pages.map((item) => item.id);
+  const nextOrder = requested.filter((itemId) => itemsById.has(itemId));
+  for (const itemId of itemsById.keys()) {
+    if (!nextOrder.includes(itemId)) {
+      nextOrder.push(itemId);
+    }
+  }
+  return nextOrder;
 }
 
 export async function listProjects(): Promise<ProjectFileSummary[]> {
@@ -533,13 +577,97 @@ export async function loadProject(projectPath: string) {
   return readSavedProject(projectPath);
 }
 
-export async function saveProject(
+export async function saveProjectChanges(
   serverEnv: ServerEnv,
   projectPath: string,
-  payload: DraftProjectInput,
+  request: SaveProjectChangesRequest,
 ) {
   const previousProject = await readSavedProject(projectPath);
-  const project = await buildSavedProject(serverEnv, payload, projectPath, previousProject);
+  const itemsById = new Map(previousProject.pages.map((item) => [item.id, item]));
+  const updatedItemIds: string[] = [];
+
+  for (const itemId of request.removedItemIds) {
+    itemsById.delete(itemId);
+  }
+
+  const nextPresets = request.project?.voicePresets ?? previousProject.voicePresets ?? [];
+  const previousPresets = previousProject.voicePresets ?? [];
+  const pagesToProcess = new Map<string, SavePageItem>();
+  const forceResynthesis = Boolean(request.forceResynthesis);
+  const presetsUnchanged = stableStringify(previousPresets) === stableStringify(nextPresets);
+
+  for (const item of request.upsertItems) {
+    if (isSaveTransitionItem(item)) {
+      itemsById.set(item.id, buildSavedTransition(item));
+      updatedItemIds.push(item.id);
+      continue;
+    }
+    pagesToProcess.set(item.id, item);
+  }
+
+  if (forceResynthesis) {
+    for (const [itemId, saved] of itemsById) {
+      if (pagesToProcess.has(itemId) || !isSavedContentPage(saved)) {
+        continue;
+      }
+      pagesToProcess.set(itemId, toSavePageItemFromSaved(saved));
+    }
+  } else if (request.project && !presetsUnchanged) {
+    for (const [itemId, saved] of itemsById) {
+      if (pagesToProcess.has(itemId) || !isSavedContentPage(saved)) {
+        continue;
+      }
+      if (pageNeedsResynthesisForPresets(saved, previousPresets, nextPresets)) {
+        pagesToProcess.set(itemId, toSavePageItemFromSaved(saved));
+      }
+    }
+  }
+
+  const previousTtsById = buildPreviousTtsMap(previousProject);
+  const plannedPages = await Promise.all(
+    [...pagesToProcess.values()].map((page) =>
+      planSavedPage(
+        projectPath,
+        page,
+        previousTtsById,
+        nextPresets,
+        previousPresets,
+        forceResynthesis,
+      ),
+    ),
+  );
+  await assignBatchG2p(
+    serverEnv,
+    plannedPages.flatMap((planned) => planned.tts),
+  );
+  for (const planned of plannedPages) {
+    const savedPage = await buildSavedPage(serverEnv, projectPath, planned);
+    itemsById.set(savedPage.id, savedPage);
+    if (!updatedItemIds.includes(savedPage.id)) {
+      updatedItemIds.push(savedPage.id);
+    }
+  }
+
+  const sequenceOrder = resolveSequenceOrder(previousProject, itemsById, request.sequenceOrder);
+  const pages = sequenceOrder.flatMap((itemId) => {
+    const item = itemsById.get(itemId);
+    return item ? [item] : [];
+  });
+  validateSequenceItems(pages);
+  validateTransitionSequenceDurations(pages);
+
+  const meta = {
+    ...normalizeProjectMeta(request.project?.meta ?? previousProject.meta, {
+      titleFallback: getProjectTitleFromPath(projectPath),
+    }),
+    updatedAt: nowIso(),
+  };
+  const project = savedProjectSchema.parse({
+    meta,
+    bgm: request.project?.bgm ?? previousProject.bgm,
+    pages,
+    voicePresets: nextPresets,
+  });
   await writeSavedProject(projectPath, project);
-  return project;
+  return { project, updatedItemIds };
 }

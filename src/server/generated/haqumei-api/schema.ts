@@ -370,7 +370,7 @@ export interface components {
         };
         Warning: {
             code: components["schemas"]["WarningCode"];
-            location: components["schemas"]["WarningLocation"];
+            location?: null | components["schemas"]["WarningLocation"];
             source_span?: null | components["schemas"]["SourceSpan"];
         };
         /** @enum {string} */
@@ -495,11 +495,27 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Analysis failed */
             500: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "analysis_failed",
+                     *       "detail": "texts[37] \"対象テキスト\": mora mismatch: split=8 pitch_nuclei=7",
+                     *       "errors": [
+                     *         {
+                     *           "path": "texts[37]",
+                     *           "reason": "mora_mismatch"
+                     *         }
+                     *       ],
+                     *       "status": 500,
+                     *       "title": "Analysis failed",
+                     *       "type": "about:blank"
+                     *     }
+                     */
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };

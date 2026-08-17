@@ -5,22 +5,28 @@ import {
   ProjectAlreadyExistsError,
   ProjectNotFoundError,
 } from "@/server/_shared/storage";
+import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
-const { copyProjectMock, createProjectMock, listProjectsMock, loadProjectMock, saveProjectMock } =
-  vi.hoisted(() => ({
-    copyProjectMock: vi.fn(),
-    createProjectMock: vi.fn(),
-    listProjectsMock: vi.fn(),
-    loadProjectMock: vi.fn(),
-    saveProjectMock: vi.fn(),
-  }));
+const {
+  copyProjectMock,
+  createProjectMock,
+  listProjectsMock,
+  loadProjectMock,
+  saveProjectChangesMock,
+} = vi.hoisted(() => ({
+  copyProjectMock: vi.fn(),
+  createProjectMock: vi.fn(),
+  listProjectsMock: vi.fn(),
+  loadProjectMock: vi.fn(),
+  saveProjectChangesMock: vi.fn(),
+}));
 
 vi.mock("../use-case", () => ({
   copyProject: copyProjectMock,
   createProject: createProjectMock,
   listProjects: listProjectsMock,
   loadProject: loadProjectMock,
-  saveProject: saveProjectMock,
+  saveProjectChanges: saveProjectChangesMock,
 }));
 
 describe("project routes", () => {
@@ -112,15 +118,47 @@ describe("project routes", () => {
   });
 
   it("returns bad request for missing path", async () => {
-    saveProjectMock.mockRejectedValueOnce(new InvalidProjectPathError("bad"));
+    saveProjectChangesMock.mockRejectedValueOnce(new InvalidProjectPathError("bad"));
 
     const response = await projectApp.request("/project/bad.json", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ pages: [] }),
+      body: JSON.stringify({ upsertItems: [], removedItemIds: [] }),
     });
     expect(response.status).toBe(400);
+  });
+
+  it("keeps analysis_failed status and diagnostics on save", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    saveProjectChangesMock.mockRejectedValueOnce(
+      new HaqumeiApiError({
+        type: "about:blank",
+        title: "Analysis failed",
+        status: 500,
+        code: "analysis_failed",
+        detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+        errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+      }),
+    );
+
+    const response = await projectApp.request("/project/project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ upsertItems: [], removedItemIds: [] }),
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+      code: "analysis_failed",
+      detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
+      errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+    });
+
+    errorSpy.mockRestore();
   });
 });

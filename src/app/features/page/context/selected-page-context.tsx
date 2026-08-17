@@ -1,23 +1,19 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 type SelectedPageContextValue = {
-  selectedPageIndex: number;
+  pageId: string;
 };
 
 const SelectedPageContext = createContext<SelectedPageContextValue | null>(null);
 
 export function SelectedPageContextProvider({
-  pageIndex,
+  pageId,
   children,
 }: {
-  pageIndex: number;
+  pageId: string;
   children: ReactNode;
 }) {
-  return (
-    <SelectedPageContext.Provider value={{ selectedPageIndex: pageIndex }}>
-      {children}
-    </SelectedPageContext.Provider>
-  );
+  return <SelectedPageContext.Provider value={{ pageId }}>{children}</SelectedPageContext.Provider>;
 }
 
 export function useSelectedPage() {

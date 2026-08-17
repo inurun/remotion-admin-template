@@ -100,11 +100,24 @@
             }
           },
           "500": {
-            "description": "",
+            "description": "Analysis failed",
             "content": {
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
+                },
+                "example": {
+                  "code": "analysis_failed",
+                  "detail": "texts[37] \"対象テキスト\": mora mismatch: split=8 pitch_nuclei=7",
+                  "errors": [
+                    {
+                      "path": "texts[37]",
+                      "reason": "mora_mismatch"
+                    }
+                  ],
+                  "status": 500,
+                  "title": "Analysis failed",
+                  "type": "about:blank"
                 }
               }
             }
@@ -1002,13 +1015,20 @@
       },
       "Warning": {
         "type": "object",
-        "required": ["code", "location"],
+        "required": ["code"],
         "properties": {
           "code": {
             "$ref": "#/components/schemas/WarningCode"
           },
           "location": {
-            "$ref": "#/components/schemas/WarningLocation"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WarningLocation"
+              }
+            ]
           },
           "source_span": {
             "oneOf": [

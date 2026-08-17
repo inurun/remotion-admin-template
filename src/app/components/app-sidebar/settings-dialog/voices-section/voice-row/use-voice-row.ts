@@ -1,10 +1,11 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { UseFormReturn } from "react-hook-form";
-import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import type { DraftProject, VoiceOption } from "@/_schemas";
+import { useFormState, useWatch } from "react-hook-form";
+import type { VoiceOption } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 import { getVoicePresetSettings, upsertVoicePreset } from "@/_shared/project/voice-presets";
+import { useEditorSession, useEditorSessionStoreApi } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
 import type { useVoicesSection } from "@/app/components/app-sidebar/settings-dialog/voices-section/use-voices-section";
@@ -25,7 +26,8 @@ export function useVoiceRow({
   voices: VoicesSectionState;
 }) {
   const { projectPath } = useProject();
-  const projectForm = useFormContext<DraftProject>();
+  const editorStore = useEditorSessionStoreApi();
+  const voicePresets = useEditorSession((state) => state.project.voicePresets);
   const label =
     useWatch({
       control: form.control,
@@ -44,11 +46,6 @@ export function useVoiceRow({
       name: `voiceSettings.${settingIndex}.hotkey`,
       defaultValue: "",
     }) ?? "";
-  const voicePresets =
-    useWatch({
-      control: projectForm.control,
-      name: "voicePresets",
-    }) ?? [];
   useFormState({
     control: form.control,
     name: `voiceSettings.${settingIndex}.hotkey`,
@@ -83,9 +80,10 @@ export function useVoiceRow({
     onLabelChange: (value: string) => voices.setVoiceLabel(voice, value),
     onRemove: () => voices.removeVoice(voice),
     onSynthesisSettingsChange: ((value) => {
-      projectForm.setValue("voicePresets", upsertVoicePreset(voicePresets, voice, value), {
-        shouldDirty: true,
-        shouldValidate: true,
+      const state = editorStore.getState();
+      state.updateProjectSettings({
+        ...state.project,
+        voicePresets: upsertVoicePreset(state.project.voicePresets, voice, value),
       });
     }) as Parameters<typeof SynthesisSettingsFields>[0]["onChange"],
   };

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { DraftTts, VoicePreset } from "@/_schemas";
+import type { VoicePreset } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   getDisplayedTtsSynthesisSettings,
   toStoredTtsSynthesisSettings,
@@ -13,7 +14,9 @@ const presets: VoicePreset[] = [
   },
 ];
 
-function item(overrides: Partial<Extract<DraftTts, { provider: "voicevox" }>> = {}): DraftTts {
+function item(
+  overrides: Partial<Extract<TtsFormValues, { provider: "voicevox" }>> = {},
+): TtsFormValues {
   return {
     id: "tts-1",
     provider: "voicevox",

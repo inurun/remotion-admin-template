@@ -1,20 +1,21 @@
-import type { DraftTts, G2pItem } from "@/_schemas";
+import type { G2pItem } from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 
 export type PreviewSynthesisPayload = {
-  provider: DraftTts["provider"];
+  provider: TtsFormValues["provider"];
   projectPath: string;
   g2p?: G2pItem;
   text: string;
   voiceName: string;
   voiceVersion?: string;
-  synthesisSettings?: NonNullable<DraftTts["synthesisSettings"]>;
+  synthesisSettings?: NonNullable<TtsFormValues["synthesisSettings"]>;
 };
 
-function getTextForSynthesis(item: DraftTts) {
+function getTextForSynthesis(item: TtsFormValues) {
   return item.readText?.trim() || item.text;
 }
 
-function getRequiredVoiceName(item: DraftTts) {
+function getRequiredVoiceName(item: TtsFormValues) {
   const voiceName = item.voiceName?.trim();
   if (!voiceName) {
     throw new Error("Voice name is required");
@@ -22,16 +23,19 @@ function getRequiredVoiceName(item: DraftTts) {
   return voiceName;
 }
 
-function getG2pPart(item: DraftTts) {
+function getG2pPart(item: TtsFormValues) {
   return item.speech?.g2p ? { g2p: item.speech.g2p } : {};
 }
 
-function getVoiceVersionPart(item: DraftTts) {
+function getVoiceVersionPart(item: TtsFormValues) {
   const voiceVersion = item.voiceVersion?.trim();
   return voiceVersion ? { voiceVersion } : {};
 }
 
-export function getPreviewPayload(item: DraftTts, projectPath: string): PreviewSynthesisPayload {
+export function getPreviewPayload(
+  item: TtsFormValues,
+  projectPath: string,
+): PreviewSynthesisPayload {
   return {
     provider: item.provider,
     projectPath,

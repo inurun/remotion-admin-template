@@ -7,11 +7,11 @@ import { useEditor } from "@/app/features/editor";
 import { useRender } from "@/app/features/render";
 import { ProjectSettingsDialog } from "@/app/components/app-header/project-settings-dialog/project-settings-dialog";
 import { WeatherDialog } from "@/app/components/app-header/weather-dialog/weather-dialog";
-import { useProject } from "@/app/features/project";
+import { useEditorSession } from "@/app/features/editor";
 
 export function AppHeader() {
   const { save: onSave, isPending: saving } = useEditor();
-  const { project } = useProject();
+  const title = useEditorSession((state) => state.project.meta.title);
   const { openRenderDialog } = useRender();
 
   return (
@@ -21,7 +21,7 @@ export function AppHeader() {
           <SidebarTrigger />
         </div>
         <div className="grid gap-1">
-          <h1 className="font-heading tracking-tight text-xl font-bold">{project.meta.title}</h1>
+          <h1 className="font-heading tracking-tight text-xl font-bold">{title}</h1>
         </div>
         <div className="flex items-center justify-end gap-2">
           <BgmDialog />
@@ -31,7 +31,9 @@ export function AppHeader() {
             type="button"
             variant="secondary"
             title={saving ? "Saving" : "Save"}
-            onClick={onSave}
+            onClick={() => {
+              void onSave();
+            }}
           >
             <Save className={saving ? "animate-pulse" : undefined} />
             {saving ? "Saving" : "Save"}

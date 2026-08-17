@@ -1,23 +1,19 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 type SelectedTtsContextValue = {
-  selectedTtsIndex: number;
+  ttsId: string;
 };
 
 const SelectedTtsContext = createContext<SelectedTtsContextValue | null>(null);
 
 export function SelectedTtsContextProvider({
-  ttsIndex,
+  ttsId,
   children,
 }: {
-  ttsIndex: number;
+  ttsId: string;
   children: ReactNode;
 }) {
-  return (
-    <SelectedTtsContext.Provider value={{ selectedTtsIndex: ttsIndex }}>
-      {children}
-    </SelectedTtsContext.Provider>
-  );
+  return <SelectedTtsContext.Provider value={{ ttsId }}>{children}</SelectedTtsContext.Provider>;
 }
 
 export function useSelectedTts() {

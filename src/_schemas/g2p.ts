@@ -46,7 +46,7 @@ const g2pWarningLocationSchema = z.object({
 
 const g2pWarningSchema = z.object({
   code: g2pWarningCodeSchema,
-  location: g2pWarningLocationSchema,
+  location: g2pWarningLocationSchema.nullable().optional(),
   source_span: g2pSourceSpanSchema.nullable().optional(),
 });
 

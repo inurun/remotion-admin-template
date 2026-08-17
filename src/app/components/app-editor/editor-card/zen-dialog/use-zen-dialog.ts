@@ -1,19 +1,27 @@
 import { useCallback, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { resolveInsertPageIndex, usePage } from "@/app/features/page";
+import { resolveInsertPageIndex } from "@/app/features/page";
+import { useEditorSession } from "@/app/features/editor";
+import {
+  useProjectRoute,
+  useSelectedPageId,
+} from "@/app/features/project/context/project-route-context";
+import { getProjectPageHref } from "@/app/features/project/lib/project-route";
 import { useSettings } from "@/app/features/settings";
-import { useTts } from "@/app/features/tts";
 import { createAliasMap, parseZenScript } from "@/app/features/zen";
 import type { ZenCompletionAlias } from "@/app/features/zen/components/zen-editor/zen-completion";
 
 const EMPTY_SOURCE = "";
 
 export function useZenDialog() {
-  const { pageFields, insertPage, selectedPageIndex, setSelectedPageIndex } = usePage();
-  const { clearSelection } = useTts();
+  const insertSequenceItem = useEditorSession((state) => state.insertSequenceItem);
+  const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
+  const selectedPageId = useSelectedPageId();
+  const { projectPath, navigate } = useProjectRoute();
   const { voices, voiceSettings } = useSettings();
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState(EMPTY_SOURCE);
+  const selectedPageIndex = selectedPageId ? sequenceOrder.indexOf(selectedPageId) : -1;
 
   const { aliases, aliasErrors } = useMemo(() => {
     const result = createAliasMap(voices, voiceSettings);
@@ -65,22 +73,27 @@ export function useZenDialog() {
       return;
     }
 
-    const startIndex = resolveInsertPageIndex(selectedPageIndex, pageFields.length);
-    setSelectedPageIndex(startIndex);
-    clearSelection();
+    const startIndex = resolveInsertPageIndex(
+      selectedPageIndex === -1 ? null : selectedPageIndex,
+      sequenceOrder.length,
+    );
     parsed.pages.forEach((page, index) => {
-      insertPage(startIndex + index, page);
+      insertSequenceItem(page, startIndex + index);
     });
+    const firstPage = parsed.pages[0];
+    if (projectPath && firstPage) {
+      navigate(getProjectPageHref(projectPath, firstPage.id));
+    }
     setSource(EMPTY_SOURCE);
     setOpen(false);
   }, [
-    clearSelection,
-    insertPage,
-    pageFields.length,
+    insertSequenceItem,
+    navigate,
     parsed.errors.length,
     parsed.pages,
+    projectPath,
     selectedPageIndex,
-    setSelectedPageIndex,
+    sequenceOrder.length,
   ]);
 
   return {

@@ -9,8 +9,10 @@ import {
   type PageType,
   type TransitionVariant,
 } from "@/_schemas";
-import { usePage, createBlankDraftPage, createBlankDraftTransition } from "@/app/features/page";
-import { useTts } from "@/app/features/tts";
+import { createBlankPageInput, createBlankTransitionInput } from "@/app/features/page";
+import { useEditorSession } from "@/app/features/editor";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
+import { getProjectPageHref } from "@/app/features/project/lib/project-route";
 
 const PAGE_TYPE_VALUES = pageTypeSchema.options;
 const TRANSITION_VARIANT_VALUES = transitionVariantSchema.options;
@@ -48,8 +50,9 @@ function parseAddableType(
 }
 
 export function useAddPageDialog() {
-  const { pageFields, appendPage, setSelectedPageIndex } = usePage();
-  const { clearSelection } = useTts();
+  const insertSequenceItem = useEditorSession((state) => state.insertSequenceItem);
+  const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
+  const { projectPath, navigate } = useProjectRoute();
   const [open, setOpen] = useState(false);
   const form = useForm<AddPageFormValues>({
     resolver: zodResolver(addPageFormSchema),
@@ -80,25 +83,21 @@ export function useAddPageDialog() {
   );
 
   const submit = form.handleSubmit((values) => {
-    setSelectedPageIndex(pageFields.length);
-    clearSelection();
-
     const parsed = parseAddableType(values.type);
-    if (parsed.kind === "transition") {
-      appendPage(
-        createBlankDraftTransition({
-          id: createUuid(),
-          variant: parsed.variant,
-        }),
-      );
-    } else {
-      appendPage(
-        createBlankDraftPage({
-          id: createUuid(),
-          title: values.title,
-          type: parsed.type,
-        }),
-      );
+    const item =
+      parsed.kind === "transition"
+        ? createBlankTransitionInput({
+            id: createUuid(),
+            variant: parsed.variant,
+          })
+        : createBlankPageInput({
+            id: createUuid(),
+            title: values.title,
+            type: parsed.type,
+          });
+    insertSequenceItem(item, sequenceOrder.length);
+    if (projectPath) {
+      navigate(getProjectPageHref(projectPath, item.id));
     }
     setOpen(false);
   });

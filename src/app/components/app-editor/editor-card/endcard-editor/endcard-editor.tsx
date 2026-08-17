@@ -1,6 +1,6 @@
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext } from "react-hook-form";
 import { Link2 } from "lucide-react";
-import type { DraftProject } from "@/_schemas";
 import { Button } from "@/_shared/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/_shared/components/ui/field";
 import { Input } from "@/_shared/components/ui/input";
@@ -9,10 +9,9 @@ import { EndcardList } from "./endcard-list/endcard-list";
 import { useEndcardEditor } from "./use-endcard-editor";
 
 export function EndcardEditor() {
-  const { control } = useFormContext<DraftProject>();
-  const { selectedPageIndex, pending, error, credits, advertisers, messages, fetchAdvertisers } =
-    useEndcardEditor();
-  const sourceName = `pages.${selectedPageIndex}.meta.nicoadSource` as const;
+  const { control } = useFormContext<PageFormValues>();
+  const { pending, error, credits, advertisers, messages, fetchAdvertisers } = useEndcardEditor();
+  const sourceName = `meta.nicoadSource` as const;
 
   return (
     <FieldGroup className="gap-6">
@@ -25,7 +24,7 @@ export function EndcardEditor() {
         onDragEnd={credits.handleDragEnd}
       >
         {(index) => {
-          const baseName = `pages.${selectedPageIndex}.meta.credits.${index}` as const;
+          const baseName = `meta.credits.${index}` as const;
           return (
             <>
               <Field>
@@ -80,7 +79,7 @@ export function EndcardEditor() {
           onDragEnd={advertisers.handleDragEnd}
         >
           {(index) => {
-            const baseName = `pages.${selectedPageIndex}.meta.advertisers.${index}` as const;
+            const baseName = `meta.advertisers.${index}` as const;
             return (
               <>
                 <Field>
@@ -112,7 +111,7 @@ export function EndcardEditor() {
         onDragEnd={messages.handleDragEnd}
       >
         {(index) => {
-          const baseName = `pages.${selectedPageIndex}.meta.messages.${index}` as const;
+          const baseName = `meta.messages.${index}` as const;
           return (
             <Field>
               <Controller

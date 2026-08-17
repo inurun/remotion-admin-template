@@ -59,6 +59,7 @@ export function useSelectedProjectQuery(projectPath: string | null) {
       bgm: [],
       voicePresets: getDefaultVoicePresets(),
     },
+    hasData: Boolean(data),
     mutateProject: async (project: SavedProject) => {
       await mutateProjectIfPresent(projectPath, mutate, project);
     },

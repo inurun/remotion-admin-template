@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
+import { formatHaqumeiApiLog, HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 function getErrorCode(error: unknown) {
   if (!error || typeof error !== "object" || !("code" in error)) {
@@ -63,11 +63,12 @@ export function jsonError(
 ) {
   if (error instanceof HaqumeiApiError) {
     const haqumeiStatus = error.status as ContentfulStatusCode;
-    console.error(`[api] ${c.req.method} ${c.req.path} -> ${haqumeiStatus}: ${error.code}`);
+    console.error(`[api] ${c.req.method} ${c.req.path} -> ${formatHaqumeiApiLog(error)}`);
     return c.json(
       {
         error: error.message,
         code: error.code,
+        detail: error.detail,
         errors: error.errors,
       },
       { status: haqumeiStatus },

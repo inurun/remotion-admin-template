@@ -3,6 +3,8 @@ import type { components } from "@/server/generated/haqumei-api/schema";
 type HaqumeiProblemDetails = components["schemas"]["ProblemDetails"];
 type HaqumeiFieldError = components["schemas"]["FieldError"];
 
+const TEXTS_PATH = /^texts\[(\d+)\]$/u;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -43,13 +45,50 @@ export function parseHaqumeiProblemDetails(error: unknown, status: number): Haqu
   };
 }
 
+function formatFieldErrors(errors: HaqumeiFieldError[]) {
+  return errors.map((item) => `${item.path}: ${item.reason}`).join(", ");
+}
+
 function formatHaqumeiApiError(problem: HaqumeiProblemDetails) {
-  const paths = problem.errors?.map((item) => item.path).filter(Boolean) ?? [];
-  if (paths.length > 0) {
-    return `${problem.code}: ${paths.join(", ")}`;
+  if (problem.detail) {
+    return problem.detail;
   }
 
-  return problem.detail || problem.title || problem.code;
+  const fields = formatFieldErrors(problem.errors ?? []);
+  if (fields) {
+    return `${problem.code}: ${fields}`;
+  }
+
+  return problem.title || problem.code;
+}
+
+function formatChunkLog(error: HaqumeiApiError) {
+  if (error.chunkOffset === undefined) {
+    return "";
+  }
+
+  const chunkOffset = error.chunkOffset;
+  const globalPaths = error.errors.flatMap((item) => {
+    const match = TEXTS_PATH.exec(item.path);
+    if (!match) {
+      return [];
+    }
+
+    return [`texts[${chunkOffset + Number(match[1])}]`];
+  });
+
+  const parts = [`chunkOffset=${chunkOffset}`];
+  if (globalPaths.length > 0) {
+    parts.push(`global=${globalPaths.join(",")}`);
+  }
+
+  return ` ${parts.join(" ")}`;
+}
+
+export function formatHaqumeiApiLog(error: HaqumeiApiError) {
+  const fields = formatFieldErrors(error.errors);
+  const fieldSuffix = fields ? ` [${fields}]` : "";
+  return `${error.status} ${error.code}: ${error.message}${fieldSuffix}${formatChunkLog(error)}`;
 }
 
 export class HaqumeiApiError extends Error {
@@ -58,6 +97,7 @@ export class HaqumeiApiError extends Error {
   readonly title: string;
   readonly detail: string;
   readonly errors: HaqumeiFieldError[];
+  chunkOffset?: number;
 
   constructor(problem: HaqumeiProblemDetails) {
     super(formatHaqumeiApiError(problem));
@@ -67,6 +107,11 @@ export class HaqumeiApiError extends Error {
     this.title = problem.title;
     this.detail = problem.detail;
     this.errors = problem.errors ?? [];
+  }
+
+  withChunkOffset(chunkOffset: number) {
+    this.chunkOffset = chunkOffset;
+    return this;
   }
 
   static fromUnknown(error: unknown, status: number) {

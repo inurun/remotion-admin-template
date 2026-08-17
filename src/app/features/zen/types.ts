@@ -1,4 +1,5 @@
-import type { AvatarType, DraftPage, VoiceOption } from "@/_schemas";
+import type { AvatarType, VoiceOption } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 
 export type ZenParseError = {
   line: number;
@@ -47,6 +48,6 @@ export type ParseZenScriptOptions = {
 };
 
 export type ParseZenScriptResult = {
-  pages: DraftPage[];
+  pages: PageFormValues[];
   errors: ZenParseError[];
 };

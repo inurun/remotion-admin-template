@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/react/sortable";
 import { useTts } from "@/app/features/tts";
 
 export function useTtsItem(ttsId: string, index: number) {
-  const { selectedTtsIndex } = useTts();
+  const { selectedTtsId } = useTts();
   const { ref, handleRef, isDragging } = useSortable({
     id: ttsId,
     index,
@@ -17,6 +17,6 @@ export function useTtsItem(ttsId: string, index: number) {
     ref,
     handleRef,
     isDragging,
-    isSelected: selectedTtsIndex === index,
+    isSelected: selectedTtsId === ttsId,
   };
 }

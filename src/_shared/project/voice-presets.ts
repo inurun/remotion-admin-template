@@ -1,4 +1,4 @@
-import type { DraftTts, VoiceOption, VoicePreset } from "@/_schemas";
+import type { VoiceOption, VoicePreset } from "@/_schemas";
 
 export {
   DEFAULT_KASANE_TETO_EMOTION,
@@ -8,11 +8,18 @@ export {
   KASANE_TETO_NARRATOR,
 } from "@/_shared/project/default-voice-presets";
 
-function isEmptySettings(value: DraftTts["synthesisSettings"]) {
+type TtsSynthesisFields = {
+  provider: VoicePreset["provider"];
+  voiceName?: string;
+  voiceVersion?: string;
+  synthesisSettings?: VoicePreset["synthesisSettings"] | null;
+};
+
+function isEmptySettings(value: TtsSynthesisFields["synthesisSettings"]) {
   return !value || Object.keys(value).length === 0;
 }
 
-function getConcreteSynthesisSettings(value: DraftTts["synthesisSettings"]) {
+function getConcreteSynthesisSettings(value: TtsSynthesisFields["synthesisSettings"]) {
   return isEmptySettings(value) ? undefined : value;
 }
 
@@ -60,7 +67,7 @@ export function getVoicePresetSettings(
 export function upsertVoicePreset(
   presets: VoicePreset[],
   voice: Pick<VoiceOption, "provider" | "voiceName" | "voiceVersion">,
-  synthesisSettings: DraftTts["synthesisSettings"] | undefined,
+  synthesisSettings: TtsSynthesisFields["synthesisSettings"] | undefined,
 ): VoicePreset[] {
   const existingIndex = findVoicePresetIndex(presets, voice);
 
@@ -86,7 +93,7 @@ export function upsertVoicePreset(
 }
 
 function getTtsPresetSettings(
-  item: Pick<DraftTts, "provider" | "voiceName" | "voiceVersion">,
+  item: Pick<TtsSynthesisFields, "provider" | "voiceName" | "voiceVersion">,
   presets: VoicePreset[],
 ) {
   return getVoicePresetSettings(presets, {
@@ -97,7 +104,7 @@ function getTtsPresetSettings(
 }
 
 export function getEffectiveTtsSynthesisSettings(
-  item: Pick<DraftTts, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+  item: Pick<TtsSynthesisFields, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
   presets: VoicePreset[],
 ) {
   return (
@@ -106,10 +113,13 @@ export function getEffectiveTtsSynthesisSettings(
   );
 }
 
-export function resolveTtsSynthesisSettings(item: DraftTts, presets: VoicePreset[]): DraftTts {
+export function resolveTtsSynthesisSettings<T extends TtsSynthesisFields>(
+  item: T,
+  presets: VoicePreset[],
+): T {
   const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
   return {
     ...item,
     ...(synthesisSettings ? { synthesisSettings } : { synthesisSettings: undefined }),
-  } as DraftTts;
+  };
 }

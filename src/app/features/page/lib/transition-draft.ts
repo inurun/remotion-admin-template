@@ -1,12 +1,13 @@
-import type { DraftTransition, TransitionVariant } from "@/_schemas";
+import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
+import type { TransitionVariant } from "@/_schemas";
 
-export function createBlankDraftTransition({
+export function createBlankTransitionInput({
   id,
   variant,
 }: {
   id: string;
   variant: TransitionVariant;
-}): DraftTransition {
+}): TransitionFormValues {
   return {
     id,
     type: "transition",

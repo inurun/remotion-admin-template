@@ -1,4 +1,5 @@
-import type { DraftPage, DraftTts } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { getAvatarTypeByVoiceName } from "@/_shared/lib/avatar/avatar-settings";
 import { getVoiceId } from "@/app/features/settings";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
@@ -9,7 +10,7 @@ function serializeSpeechText(text: string) {
   return text.replaceAll("\n", "  ");
 }
 
-function resolveAlias(item: DraftTts, voiceAliases: Map<string, string>) {
+function resolveAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
   const voiceId = getVoiceId({
     provider: item.provider,
     voiceName: item.voiceName ?? "",
@@ -18,7 +19,7 @@ function resolveAlias(item: DraftTts, voiceAliases: Map<string, string>) {
   return voiceAliases.get(voiceId) ?? item.voiceName ?? "unknown";
 }
 
-function resolveEyesToken(item: DraftTts) {
+function resolveEyesToken(item: TtsFormValues) {
   const eyes = item.avatar?.eyes;
   if (!eyes) {
     return undefined;
@@ -28,7 +29,10 @@ function resolveEyesToken(item: DraftTts) {
   return eyes === defaultEyes ? undefined : eyes;
 }
 
-function toSpeakerBlocks(tts: DraftTts[], voiceAliases: Map<string, string>): ZenSpeakerBlock[] {
+function toSpeakerBlocks(
+  tts: TtsFormValues[],
+  voiceAliases: Map<string, string>,
+): ZenSpeakerBlock[] {
   const speakers: ZenSpeakerBlock[] = [];
 
   for (const item of tts) {
@@ -52,7 +56,7 @@ function toSpeakerBlocks(tts: DraftTts[], voiceAliases: Map<string, string>): Ze
 }
 
 export function serializeZenPage(
-  page: Pick<DraftPage, "title" | "meta" | "tts">,
+  page: Pick<PageFormValues, "title" | "meta" | "tts">,
   aliases: Map<string, ZenAliasTarget>,
 ) {
   const voiceAliases = createVoiceAliasMap(aliases);

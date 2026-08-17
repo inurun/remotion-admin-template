@@ -18,7 +18,7 @@ export function ZenDialog() {
   return (
     <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
       <DialogTrigger render={<Button type="button" size="icon-sm" variant="ghost" />}>
-        <PocketKnife className="size-4 -rotate-90" />
+        <PocketKnife className="size-4 rotate-90 -scale-x-100" />
       </DialogTrigger>
       <DialogContent
         showCloseButton
@@ -26,7 +26,7 @@ export function ZenDialog() {
       >
         <DialogHeader>
           <DialogTitle>
-            <PocketKnife className="size-4 -rotate-90" />
+            <PocketKnife className="size-4 rotate-90 -scale-x-100" />
           </DialogTitle>
         </DialogHeader>
 

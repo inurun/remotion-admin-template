@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 
 import {
-  draftProjectSchema,
   projectFileSummarySchema,
   savedProjectSchema,
   type ProjectFileSummary,
@@ -267,11 +267,26 @@ export async function readSavedProject(projectPath: string): Promise<SavedProjec
   }
 }
 
+export function createProjectWriteTempPath(filePath: string) {
+  return `${filePath}.${process.pid}.${randomUUID()}.tmp`;
+}
+
 export async function writeSavedProject(projectPath: string, project: SavedProject) {
   await ensureProjectDirs();
   const filePath = createProjectFilePath(projectPath);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(project, null, 2));
+  const tempPath = createProjectWriteTempPath(filePath);
+  try {
+    await fs.writeFile(tempPath, JSON.stringify(project, null, 2));
+    await fs.rename(tempPath, filePath);
+  } catch (error) {
+    try {
+      await fs.rm(tempPath, { force: true });
+    } catch {
+      // ignore cleanup errors
+    }
+    throw error;
+  }
 }
 
 export async function createSavedProject(projectPath: string, project: SavedProject) {
@@ -287,13 +302,8 @@ export async function createSavedProject(projectPath: string, project: SavedProj
     }
   }
 
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(project, null, 2));
+  await writeSavedProject(projectPath, project);
   return readProjectSummary(projectPath);
-}
-
-export function parseDraftPayload(payload: unknown) {
-  return draftProjectSchema.parse(payload);
 }
 
 export function getPublicFilePath(urlPath: string) {

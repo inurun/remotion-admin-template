@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
+import type { SaveSequenceItem } from "@/server/features/project/contract";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const accessMock = vi.fn();
 const readSavedProjectMock = vi.fn();
@@ -9,7 +11,6 @@ const writeSavedProjectMock = vi.fn();
 const createSavedProjectMock = vi.fn();
 const ensureSavedProjectFileMock = vi.fn();
 const listSavedProjectsMock = vi.fn();
-const parseDraftPayloadMock = vi.fn((payload: unknown) => payload);
 const analyzeTextsMock = vi.fn();
 const synthesizeVoisonaMock = vi.fn();
 const synthesizeVoicevoxMock = vi.fn();
@@ -30,7 +31,6 @@ vi.mock("@/server/_shared/storage", async () => {
     createSavedProject: createSavedProjectMock,
     ensureSavedProjectFile: ensureSavedProjectFileMock,
     listSavedProjects: listSavedProjectsMock,
-    parseDraftPayload: parseDraftPayloadMock,
     readSavedProject: readSavedProjectMock,
     writeSavedProject: writeSavedProjectMock,
   };
@@ -48,6 +48,31 @@ vi.mock("@/server/features/haqumei-api/synthesis", () => ({
 vi.mock("@/server/features/voicepeak/use-case", () => ({
   synthesizeVoicepeak: synthesizeVoicepeakMock,
 }));
+
+async function saveProject(
+  serverEnv: object,
+  projectPath: string,
+  draft: {
+    meta: unknown;
+    bgm?: unknown;
+    pages: Array<{ id: string } & Record<string, unknown>>;
+    voicePresets?: unknown;
+  },
+) {
+  const { saveProjectSettingsSchema } = await import("../contract");
+  const { saveProjectChanges } = await import("../use-case");
+  const result = await saveProjectChanges(serverEnv, projectPath, {
+    project: saveProjectSettingsSchema.parse({
+      meta: draft.meta,
+      bgm: draft.bgm ?? [],
+      ...(draft.voicePresets !== undefined ? { voicePresets: draft.voicePresets } : {}),
+    }),
+    upsertItems: draft.pages as SaveSequenceItem[],
+    removedItemIds: [],
+    sequenceOrder: draft.pages.map((page) => page.id),
+  });
+  return result.project;
+}
 
 function contentPage(pages: SavedSequenceItem[] | undefined, index = 0): SavedPage {
   const page = pages?.[index];
@@ -114,7 +139,6 @@ describe("project use-case", () => {
     };
 
     readSavedProjectMock.mockResolvedValueOnce(previous);
-    const { saveProject } = await import("../use-case");
     const result = await saveProject({}, "nested/example", {
       meta: defaultMeta,
       bgm: [],
@@ -203,7 +227,6 @@ describe("project use-case", () => {
     };
 
     readSavedProjectMock.mockResolvedValueOnce(previous);
-    const { saveProject } = await import("../use-case");
     const result = await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -255,7 +278,6 @@ describe("project use-case", () => {
     synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/two.wav", 2));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -299,6 +321,96 @@ describe("project use-case", () => {
     expect(contentPage(saved.pages).tts.map((item) => item.speech.g2p)).toEqual([first, second]);
   });
 
+  it("analyzes 74 tts items in one batch", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const texts = Array.from({ length: 74 }, (_, index) => `text ${index}`);
+    analyzeTextsMock.mockResolvedValueOnce(texts.map((text) => createG2pItem(text)));
+    texts.forEach(() => {
+      synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/batch.wav", 1));
+    });
+
+    const serverEnv = {};
+    await saveProject(serverEnv, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: texts.map((text, index) => ({
+            id: `tts-${index}`,
+            provider: "voicevox" as const,
+            text,
+            voiceName: "3",
+            padBeforeSec: 0,
+            padAfterSec: 0,
+            volume: 1,
+            speech: {},
+          })),
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
+    expect(analyzeTextsMock).toHaveBeenCalledWith(serverEnv, texts);
+  });
+
+  it("does not synthesize or write when analyze fails", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockRejectedValueOnce(
+      new HaqumeiApiError({
+        type: "about:blank",
+        title: "Analysis failed",
+        status: 500,
+        code: "analysis_failed",
+        detail: 'texts[0] "Hello": mora mismatch: split=8 pitch_nuclei=7',
+        errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+      }),
+    );
+
+    await expect(
+      saveProject({}, "project", {
+        meta: defaultMeta,
+        bgm: [],
+        pages: [
+          {
+            id: "page-1",
+            title: "Page 1",
+            type: "main",
+            meta: { tags: [] },
+            padBeforeSec: 0,
+            padAfterSec: 0,
+            richText: null,
+            tts: [
+              {
+                id: "tts-1",
+                provider: "voicevox",
+                text: "Hello",
+                voiceName: "3",
+                padBeforeSec: 0,
+                padAfterSec: 0,
+                volume: 1,
+                speech: {},
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      status: 500,
+      code: "analysis_failed",
+      message: 'texts[0] "Hello": mora mismatch: split=8 pitch_nuclei=7',
+    });
+    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(writeSavedProjectMock).not.toHaveBeenCalled();
+  });
+
   it("keeps duplicate texts mapped by request index", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     const first = createG2pItem("Hello");
@@ -309,7 +421,6 @@ describe("project use-case", () => {
       .mockResolvedValueOnce(audio("/tts/one.wav"))
       .mockResolvedValueOnce(audio("/tts/two.wav"));
 
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -359,7 +470,6 @@ describe("project use-case", () => {
     synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -417,7 +527,6 @@ describe("project use-case", () => {
         synthesisSettings: { speedScale: 1.2 },
       },
     ];
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -491,7 +600,6 @@ describe("project use-case", () => {
     });
     synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
-    const { saveProject } = await import("../use-case");
     await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -562,7 +670,6 @@ describe("project use-case", () => {
     synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/voicevox.wav", 1));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -649,7 +756,6 @@ describe("project use-case", () => {
       ],
     });
 
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -688,7 +794,6 @@ describe("project use-case", () => {
     synthesizeVoicepeakMock.mockResolvedValueOnce(audio("/tts/voicepeak.wav", 1.2));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -723,6 +828,17 @@ describe("project use-case", () => {
       projectPath: "project",
       text: "Hello",
       voiceName: "Kasane Teto",
+      synthesisSettings: {
+        speed: 90,
+        pitch: 0,
+        emotion: {
+          "teto-overactive": 10,
+          "teto-low-key": 20,
+          "teto-whisper": 20,
+          "teto-powerful": 10,
+          "teto-sweet": 30,
+        },
+      },
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicepeak",
@@ -735,7 +851,6 @@ describe("project use-case", () => {
   it("saves normalized project meta", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
 
-    const { saveProject } = await import("../use-case");
     await expect(
       saveProject({}, "nested/example", {
         meta: {
@@ -797,7 +912,6 @@ describe("project use-case", () => {
     synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/new.wav", 1.5));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -871,7 +985,6 @@ describe("project use-case", () => {
     synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/new.wav", 1.5));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -948,7 +1061,6 @@ describe("project use-case", () => {
     synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/new.wav", 1.5));
 
     const serverEnv = {};
-    const { saveProject } = await import("../use-case");
     await saveProject(serverEnv, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -989,7 +1101,6 @@ describe("project use-case", () => {
       .mockResolvedValueOnce(audio("/tts/short.wav", 0.2))
       .mockResolvedValueOnce(audio("/tts/long.wav", 3));
 
-    const { saveProject } = await import("../use-case");
     await expect(
       saveProject({}, "project", {
         meta: defaultMeta,
@@ -1097,7 +1208,6 @@ describe("project use-case", () => {
 
   it("saves an endcard page without tts using the fixed duration", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
-    const { saveProject } = await import("../use-case");
     const saved = await saveProject({}, "project", {
       meta: defaultMeta,
       bgm: [],
@@ -1127,5 +1237,297 @@ describe("project use-case", () => {
       tts: [],
     });
     expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("does not analyze or synthesize an unchanged page B when only page A is upserted", async () => {
+    const pageB = {
+      id: "page-b",
+      title: "B",
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 1.2,
+      richText: "<p>B</p>",
+      tts: [
+        {
+          id: "tts-b",
+          provider: "voisona" as const,
+          text: "Keep",
+          readText: "Keep",
+          voiceName: "voice",
+          voiceVersion: "1",
+          durationSec: 1.2,
+          audio: { src: "/tts/project/b.wav" },
+          speech: { g2p: helloG2p },
+        },
+      ],
+    };
+    readSavedProjectMock.mockResolvedValueOnce({
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [],
+      pages: [
+        {
+          id: "page-a",
+          title: "A",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "<p>A</p>",
+          tts: [
+            {
+              id: "tts-a",
+              provider: "voisona",
+              text: "Old",
+              readText: "Old",
+              voiceName: "voice",
+              durationSec: 1,
+              audio: { src: "/tts/project/a.wav" },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+        pageB,
+      ],
+    });
+    analyzeTextsMock.mockResolvedValueOnce([createG2pItem("New")]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/a-new.wav"));
+    const { saveProjectChanges } = await import("../use-case");
+    const result = await saveProjectChanges({}, "project", {
+      upsertItems: [
+        {
+          id: "page-a",
+          title: "A",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>A</p>",
+          tts: [
+            {
+              id: "tts-a",
+              provider: "voisona",
+              text: "New",
+              readText: "New",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+            },
+          ],
+        },
+      ],
+      removedItemIds: [],
+    });
+
+    expect(result.updatedItemIds).toEqual(["page-a"]);
+    expect(synthesizeVoisonaMock).toHaveBeenCalledTimes(1);
+    expect(result.project.pages[1]).toMatchObject({ id: "page-b", tts: [{ id: "tts-b" }] });
+  });
+
+  it("does not process pages for meta or bgm-only changes", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [],
+      pages: [
+        {
+          id: "page-a",
+          title: "A",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "<p>A</p>",
+          tts: [
+            {
+              id: "tts-a",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              durationSec: 1,
+              audio: { src: "/tts/project/a.wav" },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+    const { saveProjectChanges } = await import("../use-case");
+    const result = await saveProjectChanges({}, "project", {
+      project: {
+        meta: { ...defaultMeta, title: "renamed" },
+        bgm: [
+          {
+            src: "/bgm/a.mp3",
+            startSec: null,
+            endSec: null,
+            fadeIn: false,
+            fadeOut: false,
+            volume: 1,
+          },
+        ],
+        voicePresets: [],
+      },
+      upsertItems: [],
+      removedItemIds: [],
+    });
+
+    expect(result.updatedItemIds).toEqual([]);
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(result.project.meta.title).toBe("renamed");
+  });
+
+  it("reprocesses only pages affected by a voice preset change", async () => {
+    const pageA = {
+      id: "page-a",
+      title: "A",
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 1,
+      richText: "<p>A</p>",
+      tts: [
+        {
+          id: "tts-a",
+          provider: "voisona" as const,
+          text: "Hello",
+          readText: "Hello",
+          voiceName: "voice",
+          durationSec: 1,
+          audio: { src: "/tts/project/a.wav" },
+          speech: { g2p: helloG2p },
+        },
+      ],
+    };
+    const pageB = {
+      id: "page-b",
+      title: "B",
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 1,
+      richText: "<p>B</p>",
+      tts: [
+        {
+          id: "tts-b",
+          provider: "voicevox" as const,
+          text: "Other",
+          readText: "Other",
+          voiceName: "3",
+          durationSec: 1,
+          audio: { src: "/tts/project/b.wav" },
+          speech: { g2p: helloG2p },
+        },
+      ],
+    };
+    readSavedProjectMock.mockResolvedValueOnce({
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [
+        {
+          provider: "voisona",
+          voiceName: "voice",
+          synthesisSettings: { speed: 1 },
+        },
+      ],
+      pages: [pageA, pageB],
+    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/a-new.wav"));
+    const { saveProjectChanges } = await import("../use-case");
+    const result = await saveProjectChanges({}, "project", {
+      project: {
+        meta: defaultMeta,
+        bgm: [],
+        voicePresets: [
+          {
+            provider: "voisona",
+            voiceName: "voice",
+            synthesisSettings: { speed: 1.4 },
+          },
+        ],
+      },
+      upsertItems: [],
+      removedItemIds: [],
+    });
+
+    expect(result.updatedItemIds).toEqual(["page-a"]);
+    expect(synthesizeVoisonaMock).toHaveBeenCalledTimes(1);
+    expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
+    expect(result.project.pages[1]).toMatchObject({ id: "page-b", tts: [{ id: "tts-b" }] });
+  });
+
+  it("resynthesizes all content pages when forceResynthesis is set", async () => {
+    const pageA = {
+      id: "page-a",
+      title: "A",
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 1,
+      richText: "<p>A</p>",
+      tts: [
+        {
+          id: "tts-a",
+          provider: "voisona" as const,
+          text: "Hello",
+          readText: "Hello",
+          voiceName: "voice",
+          durationSec: 1,
+          audio: { src: "/tts/project/a.wav" },
+          speech: { g2p: helloG2p },
+        },
+      ],
+    };
+    const pageB = {
+      id: "page-b",
+      title: "B",
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 1,
+      richText: "<p>B</p>",
+      tts: [
+        {
+          id: "tts-b",
+          provider: "voisona" as const,
+          text: "Hello",
+          readText: "Hello",
+          voiceName: "voice",
+          durationSec: 1,
+          audio: { src: "/tts/project/b.wav" },
+          speech: { g2p: helloG2p },
+        },
+      ],
+    };
+    readSavedProjectMock.mockResolvedValueOnce({
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [],
+      pages: [pageA, pageB],
+    });
+    synthesizeVoisonaMock
+      .mockResolvedValueOnce(audio("/tts/project/a-forced.wav"))
+      .mockResolvedValueOnce(audio("/tts/project/b-forced.wav"));
+    const { saveProjectChanges } = await import("../use-case");
+    const result = await saveProjectChanges({}, "project", {
+      upsertItems: [],
+      removedItemIds: [],
+      forceResynthesis: true,
+    });
+
+    expect(result.updatedItemIds).toEqual(["page-a", "page-b"]);
+    expect(synthesizeVoisonaMock).toHaveBeenCalledTimes(2);
+    expect(result.project.pages.map((page) => page.id)).toEqual(["page-a", "page-b"]);
   });
 });

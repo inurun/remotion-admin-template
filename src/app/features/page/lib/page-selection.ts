@@ -1,5 +1,6 @@
-import type { DraftSequenceItem } from "@/_schemas";
-import { isDraftContentPage } from "@/_schemas";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
+import { isContentPage } from "@/_schemas";
 
 export function resolveSelectedPageIndexAfterRemove(
   current: number | null,
@@ -49,7 +50,7 @@ export function resolveInsertPageIndex(selectedPageIndex: number | null, pageCou
 }
 
 export function getLandingPageTtsCount(
-  pageFields: DraftSequenceItem[],
+  pageFields: Array<PageFormValues | TransitionFormValues>,
   removedPageIndex: number,
   nextPageIndex: number | null,
 ): number {
@@ -59,7 +60,7 @@ export function getLandingPageTtsCount(
 
   const oldPageIndex = nextPageIndex < removedPageIndex ? nextPageIndex : nextPageIndex + 1;
   const landing = pageFields[oldPageIndex];
-  if (!landing || !isDraftContentPage(landing)) {
+  if (!landing || !isContentPage(landing)) {
     return 0;
   }
 

@@ -2,11 +2,11 @@ import { useCallback } from "react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { useFieldArray, useFormContext } from "react-hook-form";
-import type { DraftProject, DraftTts } from "@/_schemas";
-import { useSelectedPage } from "@/app/features/page";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { useSettings } from "@/app/features/settings";
 import {
-  createDraftTts,
+  createTtsInput,
   getTtsMoveState,
   resolveTtsIndexAfterInsert,
   resolveTtsIndexAfterRemove,
@@ -14,7 +14,7 @@ import {
   useTtsTextFocus,
 } from "@/app/features/tts";
 
-function cloneTtsItem(item: DraftTts): DraftTts {
+function cloneTtsItem(item: TtsFormValues): TtsFormValues {
   return {
     ...item,
     speech: { ...item.speech },
@@ -22,20 +22,20 @@ function cloneTtsItem(item: DraftTts): DraftTts {
 }
 
 export function useTtsList() {
-  const form = useFormContext<DraftProject>();
-  const { selectedPageIndex } = useSelectedPage();
-  const { selectedTtsIndex, selectTts, clearSelection } = useTts();
+  const form = useFormContext<PageFormValues>();
+  const { selectedTtsId, selectTts, clearSelection } = useTts();
   const { options } = useSettings();
   const { requestTextFocus } = useTtsTextFocus();
   const { fields, move, insert, remove, append } = useFieldArray({
     control: form.control,
     keyName: "fieldKey",
-    name: `pages.${selectedPageIndex}.tts`,
+    name: "tts",
   });
+  const selectedTtsIndex = fields.findIndex((field) => field.id === selectedTtsId);
 
   const removeTts = useCallback(
     (index: number) => {
-      const ttsBefore = form.getValues(`pages.${selectedPageIndex}.tts`) ?? [];
+      const ttsBefore = form.getValues("tts") ?? [];
       if (index < 0 || index >= ttsBefore.length) {
         return;
       }
@@ -47,63 +47,57 @@ export function useTtsList() {
         clearSelection();
       } else {
         const nextTts = ttsAfter[nextTtsIndex];
-        selectTts(nextTtsIndex);
         if (nextTts) {
+          selectTts(nextTts.id);
           requestTextFocus(nextTts.id);
         }
       }
 
       remove(index);
     },
-    [clearSelection, form, remove, requestTextFocus, selectTts, selectedPageIndex],
+    [clearSelection, form, remove, requestTextFocus, selectTts],
   );
 
   const insertTtsAfter = useCallback(
     (index: number) => {
-      const ttsBefore = form.getValues(`pages.${selectedPageIndex}.tts`) ?? [];
+      const ttsBefore = form.getValues("tts") ?? [];
       if (index < 0 || index >= ttsBefore.length) {
         return;
       }
 
       const nextTtsIndex = resolveTtsIndexAfterInsert(index);
-      const nextTts = createDraftTts(options, ttsBefore[index]);
-
+      const nextTts = createTtsInput(options, ttsBefore[index]);
       insert(nextTtsIndex, nextTts);
-      selectTts(nextTtsIndex);
+      selectTts(nextTts.id);
       requestTextFocus(nextTts.id);
     },
-    [form, insert, options, requestTextFocus, selectTts, selectedPageIndex],
+    [form, insert, options, requestTextFocus, selectTts],
   );
 
   const appendTts = useCallback(() => {
-    const ttsBefore = form.getValues(`pages.${selectedPageIndex}.tts`) ?? [];
-    const sourceTts = selectedTtsIndex !== null ? ttsBefore[selectedTtsIndex] : ttsBefore.at(-1);
-    const nextTts = createDraftTts(options, sourceTts);
-    const nextTtsIndex = ttsBefore.length;
+    const ttsBefore = form.getValues("tts") ?? [];
+    const sourceTts = selectedTtsIndex >= 0 ? ttsBefore[selectedTtsIndex] : ttsBefore.at(-1);
+    const nextTts = createTtsInput(options, sourceTts);
     append(nextTts);
-    selectTts(nextTtsIndex);
+    selectTts(nextTts.id);
     requestTextFocus(nextTts.id);
-  }, [append, form, options, requestTextFocus, selectTts, selectedPageIndex, selectedTtsIndex]);
+  }, [append, form, options, requestTextFocus, selectTts, selectedTtsIndex]);
 
   const moveTts = useCallback(
     (fromIndex: number, toIndex: number) => {
       const ttsMove = getTtsMoveState(
         fields.map((field) => field.id),
-        selectedTtsIndex,
+        selectedTtsIndex >= 0 ? selectedTtsIndex : null,
         fromIndex,
         toIndex,
       );
-
       if (!ttsMove) {
         return;
       }
 
       move(ttsMove.fromIndex, ttsMove.toIndex);
-      if (ttsMove.nextSelectedTtsIndex !== null) {
-        selectTts(ttsMove.nextSelectedTtsIndex);
-      }
     },
-    [fields, move, selectTts, selectedTtsIndex],
+    [fields, move, selectedTtsIndex],
   );
 
   const handleDragEnd = useCallback(
@@ -111,12 +105,10 @@ export function useTtsList() {
       if (event.canceled) {
         return;
       }
-
       const { source } = event.operation;
       if (!isSortable(source)) {
         return;
       }
-
       moveTts(source.initialIndex, source.index);
     },
     [moveTts],
@@ -124,19 +116,27 @@ export function useTtsList() {
 
   const selectTtsOnFocus = useCallback(
     (index: number) => {
-      selectTts(index);
+      const field = fields[index];
+      if (field) {
+        selectTts(field.id);
+      }
     },
-    [selectTts],
+    [fields, selectTts],
   );
 
   return {
-    selectedTtsIndex,
+    selectedTtsIndex: selectedTtsIndex >= 0 ? selectedTtsIndex : null,
     fields,
     removeTts,
     insertTtsAfter,
     appendTts,
     handleDragEnd,
     selectTtsOnFocus,
-    selectTts,
+    selectTts: (index: number) => {
+      const field = fields[index];
+      if (field) {
+        selectTts(field.id);
+      }
+    },
   };
 }

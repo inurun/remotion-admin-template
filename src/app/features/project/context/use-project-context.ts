@@ -1,28 +1,19 @@
-import type { ProjectFileSummary, SavedProject } from "@/_schemas";
-import { getProjectPathFromLocation } from "@/app/features/project/lib/project-path";
-import {
-  useProjectsQuery,
-  useSelectedProjectQuery,
-} from "@/app/features/project/swr/use-project-queries";
+import type { ProjectFileSummary } from "@/_schemas";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
+import { useProjectsQuery } from "@/app/features/project/swr/use-project-queries";
 
 export type ProjectContextValue = {
   projects: ProjectFileSummary[];
   projectPath: string | null;
-  project: SavedProject;
   reloadProjects: () => Promise<void>;
-  mutateProject: (project: SavedProject) => Promise<void>;
-  reloadProject: () => Promise<void>;
 };
 
 export function useProjectProviderValue(): ProjectContextValue {
-  const projectPath = getProjectPathFromLocation(window.location.pathname);
-
+  const { projectPath } = useProjectRoute();
   const projects = useProjectsQuery();
-  const selectedProject = useSelectedProjectQuery(projectPath);
 
   return {
     projectPath,
     ...projects,
-    ...selectedProject,
   };
 }

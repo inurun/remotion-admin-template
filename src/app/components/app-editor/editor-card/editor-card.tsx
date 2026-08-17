@@ -6,7 +6,9 @@ import { EndcardEditor } from "@/app/components/app-editor/editor-card/endcard-e
 import { OutroBlocks } from "@/app/components/app-editor/editor-card/outro-blocks/outro-blocks";
 import { TtsList } from "@/app/components/app-editor/editor-card/tts-list/tts-list";
 import { ZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/zen-dialog";
-import { SelectedPageContextProvider, usePage } from "@/app/features/page";
+import { PageSwitchFade } from "@/app/components/app-editor/page-switch-fade/page-switch-fade";
+import { SelectedPageContextProvider } from "@/app/features/page";
+import { useEditorCard } from "@/app/components/app-editor/editor-card/use-editor-card";
 import type { PageType } from "@/_schemas";
 
 function SelectedPageEditor({ type }: { type: PageType }) {
@@ -47,8 +49,8 @@ function SelectedPageEditor({ type }: { type: PageType }) {
 }
 
 export function EditorCard() {
-  const { pageFields, selectedPageIndex } = usePage();
-  const selectedPage = selectedPageIndex !== null ? pageFields[selectedPageIndex] : undefined;
+  const { selectedPageId, selectedPageType, selectedTransitionVariant, showPageForm } =
+    useEditorCard();
 
   return (
     <Card>
@@ -61,20 +63,20 @@ export function EditorCard() {
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-[minmax(50px,180px)_minmax(200px,1fr)]">
           <PageList />
-          {selectedPageIndex !== null && selectedPage && (
-            <SelectedPageContextProvider pageIndex={selectedPageIndex}>
-              <div key={selectedPage.id} className="flex flex-col gap-2">
-                {selectedPage.type === "transition" ? (
+          {showPageForm && selectedPageId && selectedPageType ? (
+            <SelectedPageContextProvider pageId={selectedPageId}>
+              <PageSwitchFade pageId={selectedPageId} className="flex flex-col gap-2">
+                {selectedPageType === "transition" ? (
                   <>
                     <PageHeader />
-                    <p className="text-sm text-muted-foreground">{selectedPage.variant}</p>
+                    <p className="text-sm text-muted-foreground">{selectedTransitionVariant}</p>
                   </>
                 ) : (
-                  <SelectedPageEditor type={selectedPage.type} />
+                  <SelectedPageEditor type={selectedPageType} />
                 )}
-              </div>
+              </PageSwitchFade>
             </SelectedPageContextProvider>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>
