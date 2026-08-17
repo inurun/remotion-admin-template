@@ -15,6 +15,14 @@ export function getPreviewPageStartFrame(
   return clampFrame(Math.round((startSec ?? 0) * fps), durationInFrames);
 }
 
+export function getPageIdToSeek(previousPageId: string | null, selectedPageId: string | null) {
+  if (selectedPageId === null || previousPageId === selectedPageId) {
+    return null;
+  }
+
+  return selectedPageId;
+}
+
 export function formatFrameTime(frame: number, fps: number) {
   const totalMs = Math.max(0, Math.round((frame / fps) * 1000));
   const minutes = Math.floor(totalMs / 60_000);
