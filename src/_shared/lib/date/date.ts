@@ -30,6 +30,20 @@ export function formatTokyoDate(value: string | number | Date) {
   };
 }
 
+/** e.g. `2026-08-18` */
+export function formatTokyoYmd(value: string | number | Date): string {
+  return format(toTokyoDate(value), "yyyy-MM-dd");
+}
+
+/** e.g. `2026-08` */
+export function formatTokyoYearMonth(value: string | number | Date): string {
+  return format(toTokyoDate(value), "yyyy-MM");
+}
+
+export function tokyoDateFromYmd(ymd: string): TZDate {
+  return new TZDate(`${ymd}T00:00:00+09:00`, TOKYO_TIME_ZONE);
+}
+
 /** e.g. `2026年8月9日の日記` */
 export function formatTokyoDiaryLabel(value: string | number | Date): string {
   return format(toTokyoDate(value), "yyyy年M月d日の日記", { locale: ja });

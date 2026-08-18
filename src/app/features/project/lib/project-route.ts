@@ -1,4 +1,5 @@
 export type ProjectRoute =
+  | { type: "schedules" }
   | { type: "project"; projectPath: string }
   | { type: "page"; projectPath: string; pageId: string }
   | { type: "settings"; projectPath: string }
@@ -86,8 +87,20 @@ export function resolvePageFallbackHref(
   return resolveProjectLandingHref(projectPath, sequenceOrder, lastPageId);
 }
 
+export function getSchedulesHref() {
+  return "/schedules";
+}
+
+export function isSchedulesRoute(route: ProjectRoute) {
+  return route.type === "schedules";
+}
+
 export function parseProjectRoute(pathname: string): ProjectRoute {
   const normalized = pathname.replace(/\/+$/u, "") || "/";
+  if (normalized === "/schedules") {
+    return { type: "schedules" };
+  }
+
   if (!normalized.startsWith(PROJECTS_PREFIX)) {
     return { type: "unknown" };
   }
@@ -128,7 +141,9 @@ export function parseProjectRoute(pathname: string): ProjectRoute {
 }
 
 export function getProjectPathFromRoute(route: ProjectRoute) {
-  return route.type === "unknown" ? null : route.projectPath;
+  return route.type === "project" || route.type === "page" || route.type === "settings"
+    ? route.projectPath
+    : null;
 }
 
 export function getProjectSettingsDialogHref(
@@ -155,7 +170,7 @@ export function resolveProjectRouteRedirect(input: {
   sequenceOrder: string[];
   hasProjectData: boolean;
 }): ProjectRouteRedirectDecision {
-  if (!input.hasProjectData || input.route.type === "unknown") {
+  if (!input.hasProjectData || input.route.type === "unknown" || input.route.type === "schedules") {
     return { action: "none" };
   }
 

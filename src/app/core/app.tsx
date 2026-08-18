@@ -9,7 +9,9 @@ import { SettingsContextProvider } from "@/app/features/settings";
 import { EditorSessionStoreProvider, SavedProjectStoreProvider } from "@/app/features/editor";
 import { useSelectedProjectQuery } from "@/app/features/project/swr/use-project-queries";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
+import { isSchedulesRoute } from "@/app/features/project/lib/project-route";
 import { AppHeader } from "../components/app-header/app-header";
+import { AppSchedule } from "../components/app-schedule/app-schedule";
 
 function ProjectStores({ children }: { children: React.ReactNode }) {
   const { projectPath } = useProjectRoute();
@@ -46,14 +48,28 @@ function AppProviders({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AppMain() {
+  const { route } = useProjectRoute();
+
+  if (isSchedulesRoute(route)) {
+    return <AppSchedule />;
+  }
+
+  return (
+    <>
+      <AppHeader />
+      <AppEditor />
+    </>
+  );
+}
+
 export default function App() {
   return (
     <AppProviders>
       <AppSidebar>
         <SidebarInset>
           <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-2 p-2">
-            <AppHeader />
-            <AppEditor />
+            <AppMain />
           </main>
         </SidebarInset>
       </AppSidebar>

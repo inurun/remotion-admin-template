@@ -4,18 +4,21 @@ import { pageFormSchema } from "@/app/features/page/model/page-form-schema";
 import { transitionFormSchema } from "@/app/features/page/model/transition-form-schema";
 import { ttsFormSchema } from "@/app/features/tts/model/tts-form-schema";
 import { projectSettingsFormSchema } from "@/app/features/project/model/project-settings-form-schema";
+import { scheduleFormSchema } from "@/app/features/schedule/model/schedule-form-schema";
 import {
   savedPageSchema,
   savedProjectSchema,
+  savedScheduleItemSchema,
   savedTransitionSchema,
   savedTtsSchema,
-} from "@/_schemas/project";
+} from "@/_schemas";
 import {
   savePageItemSchema,
   saveProjectSettingsSchema,
   saveTtsItemSchema,
   saveTransitionItemSchema,
 } from "@/server/features/project/contract";
+import { saveScheduleItemSchema } from "@/server/features/schedule/contract";
 
 function source(path: string) {
   return readFileSync(path, "utf8");
@@ -38,6 +41,8 @@ describe("schema boundaries", () => {
     expect(transitionFormSchema).not.toBe(saveTransitionItemSchema);
     expect(transitionFormSchema).not.toBe(savedTransitionSchema);
     expect(projectSettingsFormSchema).not.toBe(saveProjectSettingsSchema);
+    expect(scheduleFormSchema).not.toBe(saveScheduleItemSchema);
+    expect(scheduleFormSchema).not.toBe(savedScheduleItemSchema);
   });
 
   it("keeps Feature form and ChangeSet sources from importing input or saved aggregates", () => {
@@ -46,14 +51,20 @@ describe("schema boundaries", () => {
       "src/app/features/page/model/transition-form-schema.ts",
       "src/app/features/tts/model/tts-form-schema.ts",
       "src/app/features/project/model/project-settings-form-schema.ts",
+      "src/app/features/schedule/model/schedule-form-schema.ts",
     ];
-    for (const file of [...formFiles, "src/server/features/project/contract.ts"]) {
+    for (const file of [
+      ...formFiles,
+      "src/server/features/project/contract.ts",
+      "src/server/features/schedule/contract.ts",
+    ]) {
       const contents = source(file);
       for (const name of inputContractNames) {
         expect(contents).not.toMatch(name);
       }
       expect(contents).not.toMatch("savedPageSchema");
       expect(contents).not.toMatch("savedTtsSchema");
+      expect(contents).not.toMatch("savedScheduleItemSchema");
       expect(contents).not.toMatch(/from ["']@\/_schemas\/project\/page["']/);
       expect(contents).not.toMatch(/from ["']@\/_schemas\/project\/tts["']/);
     }
@@ -70,6 +81,7 @@ describe("schema boundaries", () => {
       "src/_schemas/project/tts.ts",
       "src/_schemas/project/primitives.ts",
       "src/_schemas/project/project.ts",
+      "src/_schemas/schedule/schedule.ts",
     ];
     for (const file of files) {
       const contents = source(file);
@@ -100,6 +112,11 @@ describe("schema boundaries", () => {
     expect(contract).toContain("export const savePageItemSchema");
     expect(contract).toContain("export const saveProjectChangesRequestSchema");
     expect(contract).not.toMatch(/from ["']@\/app\/features/);
+
+    const scheduleForm = source("src/app/features/schedule/model/schedule-form-schema.ts");
+    expect(scheduleForm).toContain("date: z.iso.date()");
+    expect(scheduleForm).toContain("title: z.string().min(1)");
+    expect(scheduleForm).toContain("description: z.string()");
   });
 
   it("keeps generated audio fields on saved TTS and out of form TTS", () => {
@@ -174,6 +191,7 @@ describe("schema boundaries", () => {
     expect(publicApi).toHaveProperty("savedProjectSchema");
     expect(publicApi).toHaveProperty("savedPageSchema");
     expect(publicApi).toHaveProperty("savedTtsSchema");
+    expect(publicApi).toHaveProperty("savedSchedulesSchema");
     expect(projectApi).toHaveProperty("savedProjectSchema");
   });
 

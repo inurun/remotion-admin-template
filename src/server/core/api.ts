@@ -21,6 +21,7 @@ import { renderApp } from "@/server/features/render";
 import { ttsApp } from "@/server/features/tts";
 import { uploadsApp } from "@/server/features/uploads";
 import { voicepeakApp } from "@/server/features/voicepeak";
+import { scheduleApp } from "@/server/features/schedule";
 import { weatherApp } from "@/server/features/weather";
 
 const CONTENT_TYPES = new Map([
@@ -63,6 +64,10 @@ async function resolveRootProjectPath() {
 
 async function assertProjectRouteExists(requestPath: string) {
   const route = parseProjectRoute(requestPath);
+  if (route.type === "schedules") {
+    return;
+  }
+
   if (route.type === "unknown") {
     throw new InvalidProjectPathError("Invalid project path");
   }
@@ -81,7 +86,8 @@ function createApi() {
     .route("/", bgmApp)
     .route("/", weatherApp)
     .route("/", ogpApp)
-    .route("/", nicoadApp);
+    .route("/", nicoadApp)
+    .route("/", scheduleApp);
 }
 
 export type ApiApp = ReturnType<typeof createApi>;

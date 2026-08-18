@@ -3,10 +3,13 @@ import {
   decodeProjectPathSegment,
   encodeProjectPathSegment,
   getProjectPageHref,
+  getProjectPathFromRoute,
   getProjectRootHref,
   getProjectSettingsDialogHref,
   getProjectSettingsHref,
+  getSchedulesHref,
   isProjectSettingsRoute,
+  isSchedulesRoute,
   parseProjectRoute,
   resolvePageFallbackHref,
   resolveProjectLandingHref,
@@ -38,6 +41,11 @@ describe("project route parser", () => {
       type: "settings",
       projectPath: "nested/example",
     });
+    expect(parseProjectRoute("/schedules")).toEqual({ type: "schedules" });
+    expect(parseProjectRoute("/schedules/")).toEqual({ type: "schedules" });
+    expect(getSchedulesHref()).toBe("/schedules");
+    expect(isSchedulesRoute(parseProjectRoute("/schedules"))).toBe(true);
+    expect(getProjectPathFromRoute(parseProjectRoute("/schedules"))).toBeNull();
     expect(getProjectPageHref("nested/example", "page 1")).toBe(
       "/projects/nested%2Fexample/pages/page%201",
     );
@@ -87,6 +95,14 @@ describe("project route parser", () => {
         route,
         sequenceOrder: [],
         hasProjectData: false,
+      }),
+    ).toEqual({ action: "none" });
+
+    expect(
+      resolveProjectRouteRedirect({
+        route: { type: "schedules" },
+        sequenceOrder: ["page-a"],
+        hasProjectData: true,
       }),
     ).toEqual({ action: "none" });
 

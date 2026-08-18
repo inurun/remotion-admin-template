@@ -17,6 +17,8 @@ import {
   useAppSidebarContent,
   useAppSidebarShell,
 } from "@/app/components/app-sidebar/use-app-sidebar";
+import { CalendarDays } from "lucide-react";
+import { Button } from "@/_shared/components/ui/button";
 
 function AppSidebarContent() {
   const { projects, projectPath, groups } = useAppSidebarContent();
@@ -55,9 +57,23 @@ function AppSidebarContent() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="flex-row items-center justify-end gap-1 px-3 py-3 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:px-2">
-          <SettingsDialog />
-          <SidebarTrigger />
+        <SidebarFooter className="gap-1 px-3 py-3 group-data-[collapsible=icon]:px-2">
+          <div className="flex flex-row items-center justify-end gap-1 group-data-[collapsible=icon]:flex-col">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              title="Settings"
+              aria-label="Settings"
+              render={
+                <a href="/schedules">
+                  <CalendarDays className="size-4" />
+                </a>
+              }
+            />
+            <SettingsDialog />
+            <SidebarTrigger />
+          </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarRail />

@@ -1,6 +1,12 @@
 export * from "./g2p";
 export * from "./guards";
 export {
+  savedScheduleItemSchema,
+  savedSchedulesSchema,
+  type SavedScheduleItem,
+  type SavedSchedules,
+} from "./schedule";
+export {
   avatarOptions,
   avatarSettingsSchema,
   bgmTrackSchema,

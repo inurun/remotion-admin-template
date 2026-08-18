@@ -6,8 +6,10 @@ import { randomUUID } from "node:crypto";
 import {
   projectFileSummarySchema,
   savedProjectSchema,
+  savedSchedulesSchema,
   type ProjectFileSummary,
   type SavedProject,
+  type SavedSchedules,
 } from "@/_schemas";
 import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
 import {
@@ -24,6 +26,7 @@ export const MUSICS_DIR = path.join(PUBLIC_DIR, "bgm");
 export const OUT_DIR = path.join(PROJECT_ROOT, "out");
 export const RENDER_STATE_PATH = path.join(DATA_DIR, "render-state.json");
 export const PUBLISH_STATE_PATH = path.join(DATA_DIR, "publish-state.json");
+export const SCHEDULES_PATH = path.join(DATA_DIR, "schedules.json");
 export const LATEST_VIDEO_PATH = path.join(OUT_DIR, "latest.mp4");
 
 const DEFAULT_PROJECT_PATH = "project";
@@ -31,6 +34,7 @@ const PROJECT_FILE_EXTENSION = ".json";
 const PROJECT_LIST_EXCLUDE = new Set([
   path.basename(RENDER_STATE_PATH),
   path.basename(PUBLISH_STATE_PATH),
+  path.basename(SCHEDULES_PATH),
 ]);
 const INVALID_PROJECT_PATH_MESSAGE = "Invalid project path";
 
@@ -283,13 +287,11 @@ export function createProjectWriteTempPath(filePath: string) {
   return `${filePath}.${process.pid}.${randomUUID()}.tmp`;
 }
 
-export async function writeSavedProject(projectPath: string, project: SavedProject) {
-  await ensureProjectDirs();
-  const filePath = createProjectFilePath(projectPath);
+async function writeJsonAtomic(filePath: string, value: unknown) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const tempPath = createProjectWriteTempPath(filePath);
   try {
-    await fs.writeFile(tempPath, JSON.stringify(project, null, 2));
+    await fs.writeFile(tempPath, JSON.stringify(value, null, 2));
     await fs.rename(tempPath, filePath);
   } catch (error) {
     try {
@@ -299,6 +301,37 @@ export async function writeSavedProject(projectPath: string, project: SavedProje
     }
     throw error;
   }
+}
+
+export async function writeSavedProject(projectPath: string, project: SavedProject) {
+  await ensureProjectDirs();
+  await writeJsonAtomic(createProjectFilePath(projectPath), project);
+}
+
+function createEmptySchedules() {
+  return savedSchedulesSchema.parse({ items: [] });
+}
+
+export async function readSavedSchedules(): Promise<SavedSchedules> {
+  await ensureProjectDirs();
+
+  try {
+    const content = await fs.readFile(SCHEDULES_PATH, "utf8");
+    return savedSchedulesSchema.parse(JSON.parse(content));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      const empty = createEmptySchedules();
+      await writeJsonAtomic(SCHEDULES_PATH, empty);
+      return empty;
+    }
+    throw error;
+  }
+}
+
+export async function writeSavedSchedules(schedules: SavedSchedules) {
+  await ensureProjectDirs();
+  const parsed = savedSchedulesSchema.parse(schedules);
+  await writeJsonAtomic(SCHEDULES_PATH, parsed);
 }
 
 export async function createSavedProject(projectPath: string, project: SavedProject) {

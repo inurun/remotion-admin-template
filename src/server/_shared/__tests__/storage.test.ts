@@ -199,4 +199,63 @@ describe("storage", () => {
     expect(getProjectFileStem("nested/example")).toBe("example");
     expect(getProjectOutputVideoPath("nested/example")).toBe(path.join(OUT_DIR, "example.mp4"));
   });
+
+  it("excludes schedules.json from the project list", async () => {
+    readdirMock.mockResolvedValueOnce([
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "schedules.json",
+      },
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "project.json",
+      },
+    ]);
+    statMock.mockResolvedValueOnce({ mtimeMs: 42 });
+
+    const { listSavedProjects } = await import("../storage");
+    const projects = await listSavedProjects();
+
+    expect(projects).toEqual([
+      {
+        path: "project",
+        name: "project",
+        segments: ["project"],
+        updatedAt: 42,
+      },
+    ]);
+    expect(writeFileMock).not.toHaveBeenCalled();
+  });
+
+  it("creates an empty schedules file when none exists", async () => {
+    readFileMock.mockRejectedValueOnce({ code: "ENOENT" });
+
+    const { readSavedSchedules } = await import("../storage");
+    await expect(readSavedSchedules()).resolves.toEqual({ items: [] });
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(renameMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes schedules JSON through unique temp files then rename", async () => {
+    const { writeSavedSchedules } = await import("../storage");
+    await writeSavedSchedules({
+      items: [
+        {
+          id: "schedule-1",
+          date: "2026-08-18",
+          color: "#3b82f6",
+          title: "Release",
+          description: "",
+        },
+      ],
+    });
+
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(String(writeFileMock.mock.calls[0]?.[0])).toMatch(
+      /schedules\.json\.\d+\.[0-9a-f-]+\.tmp$/,
+    );
+    expect(renameMock).toHaveBeenCalledTimes(1);
+  });
 });
