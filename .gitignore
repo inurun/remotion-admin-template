@@ -10,11 +10,6 @@ dist
 *.log
 *.tsbuildinfo
 
-# data
-data/*
-!data/project.json
-!data/schedules.json
-
 .npmrc
 
 # Coverage

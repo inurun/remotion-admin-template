@@ -7,8 +7,9 @@ import {
   ProjectNotFoundError,
 } from "@/server/_shared/storage";
 import { jsonError } from "@/server/_shared/http";
-import { readRenderSnapshot, startRender } from "./render-state";
+import { cancelRender, readRenderSnapshot, startRender } from "./render-state";
 import {
+  renderCancelResponseSchema,
   renderSnapshotSchema,
   renderStartRequestSchema,
   renderStartResponseSchema,
@@ -54,6 +55,13 @@ export const renderApp = new Hono()
       return c.json(result);
     } catch (error) {
       return createRenderStartErrorResponse(c, error);
+    }
+  })
+  .post("/render/cancel", (c) => {
+    try {
+      return c.json(renderCancelResponseSchema.parse(cancelRender()));
+    } catch (error) {
+      return jsonError(c, 500, error, "Render cancel failed");
     }
   })
   .get("/render/stream", async (c) => {

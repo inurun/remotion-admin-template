@@ -9,7 +9,7 @@ import {
 
 const initialRenderState: RenderState = {
   status: "idle",
-  logs: [],
+  progress: 0,
   videoPath: null,
   lastError: null,
 };

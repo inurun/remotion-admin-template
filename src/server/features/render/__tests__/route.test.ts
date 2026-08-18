@@ -3,22 +3,28 @@ import { renderApp } from "../route";
 
 const snapshot = {
   status: "idle" as const,
-  logs: ["hello"],
+  progress: 0,
   videoPath: null,
   updatedAt: 1,
   lastError: null,
 };
 
-const { readRenderSnapshotMock, startRenderMock, subscribeRenderMock, readFileMock } = vi.hoisted(
-  () => ({
-    readRenderSnapshotMock: vi.fn(),
-    startRenderMock: vi.fn(),
-    subscribeRenderMock: vi.fn(),
-    readFileMock: vi.fn(),
-  }),
-);
+const {
+  cancelRenderMock,
+  readRenderSnapshotMock,
+  startRenderMock,
+  subscribeRenderMock,
+  readFileMock,
+} = vi.hoisted(() => ({
+  cancelRenderMock: vi.fn(),
+  readRenderSnapshotMock: vi.fn(),
+  startRenderMock: vi.fn(),
+  subscribeRenderMock: vi.fn(),
+  readFileMock: vi.fn(),
+}));
 
 vi.mock("../render-state", () => ({
+  cancelRender: cancelRenderMock,
   readRenderSnapshot: readRenderSnapshotMock,
   startRender: startRenderMock,
   subscribeRender: subscribeRenderMock,
@@ -32,7 +38,7 @@ vi.mock("node:fs/promises", () => ({
 
 describe("render routes", () => {
   it("returns the current snapshot", async () => {
-    readRenderSnapshotMock.mockResolvedValue(snapshot);
+    readRenderSnapshotMock.mockReturnValue(snapshot);
 
     const response = await renderApp.request("/render");
     expect(response.status).toBe(200);
@@ -40,7 +46,7 @@ describe("render routes", () => {
   });
 
   it("streams snapshots over SSE", async () => {
-    readRenderSnapshotMock.mockResolvedValue(snapshot);
+    readRenderSnapshotMock.mockReturnValue(snapshot);
     subscribeRenderMock.mockImplementation((listener: (value: typeof snapshot) => void) => {
       listener(snapshot);
       return () => undefined;
@@ -75,5 +81,24 @@ describe("render routes", () => {
 
     expect(response.status).toBe(200);
     expect(startRenderMock).toHaveBeenCalledWith("nested/example");
+  });
+
+  it("cancels a running render", async () => {
+    cancelRenderMock.mockReturnValueOnce({ canceled: true });
+
+    const response = await renderApp.request("/render/cancel", { method: "POST" });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ canceled: true });
+    expect(cancelRenderMock).toHaveBeenCalled();
+  });
+
+  it("returns not_running when nothing is rendering", async () => {
+    cancelRenderMock.mockReturnValueOnce({ canceled: false, reason: "not_running" });
+
+    const response = await renderApp.request("/render/cancel", { method: "POST" });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ canceled: false, reason: "not_running" });
   });
 });

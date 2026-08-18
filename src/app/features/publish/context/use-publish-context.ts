@@ -98,7 +98,7 @@ export function usePublishProviderValue(): PublishContextValue {
           });
       }
 
-      if (renderState.status === "error") {
+      if (renderState.status === "error" || renderState.status === "canceled") {
         waitingForRenderSuccessRef.current = false;
         intendPublishRef.current = false;
       }

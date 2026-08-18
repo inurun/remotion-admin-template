@@ -4,7 +4,8 @@ import { getErrorMessage } from "@/_shared/lib/error-message";
 import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
 import { usePublish } from "@/app/features/publish";
-import { startRender, type RenderState } from "@/app/features/render/api/render-api";
+import { cancelPublish } from "@/app/features/publish/api/publish-api";
+import { cancelRender, startRender, type RenderState } from "@/app/features/render/api/render-api";
 import { useRenderStateQuery } from "@/app/features/render/swr/use-render-query";
 import { useSettings } from "@/app/features/settings";
 
@@ -45,9 +46,11 @@ export type RenderContextValue = {
   renderError: string | null;
   renderExecuteDisabled: boolean;
   renderExecuteLabel: string;
+  cancelDisabled: boolean;
   openRenderDialog: () => void;
   setAlsoPublish: (value: boolean) => void;
   setRenderDialogOpen: (open: boolean) => void;
+  handleCancel: () => void;
   handleRenderExecute: () => void;
   handlePublishExecute: () => void;
 };
@@ -140,8 +143,29 @@ export function useRenderProviderValue(): RenderContextValue {
     executePublish();
   }, [executePublish]);
 
+  const handleCancel = useCallback(() => {
+    void (async () => {
+      try {
+        if (renderState.status === "running") {
+          await cancelRender();
+          void reloadRenderState();
+          toast.success("Render をキャンセルした。");
+          return;
+        }
+
+        if (publishState.status === "running") {
+          await cancelPublish();
+          toast.success("Publish をキャンセルした。");
+        }
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Cancel failed"));
+      }
+    })();
+  }, [publishState.status, reloadRenderState, renderState.status]);
+
   return {
     alsoPublish,
+    cancelDisabled: !isBusy,
     dialogJobPhase,
     renderState,
     publishState,
@@ -155,6 +179,7 @@ export function useRenderProviderValue(): RenderContextValue {
     openRenderDialog,
     setAlsoPublish,
     setRenderDialogOpen,
+    handleCancel,
     handleRenderExecute,
     handlePublishExecute,
   };

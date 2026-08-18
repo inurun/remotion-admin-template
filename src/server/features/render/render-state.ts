@@ -1,40 +1,40 @@
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
   LATEST_VIDEO_PATH,
   OUT_DIR,
   PROJECT_ROOT,
-  RENDER_STATE_PATH,
   getProjectOutputVideoPath,
   readSavedProject,
 } from "@/server/_shared/storage";
+import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 
-type RenderStatus = "idle" | "running" | "success" | "error";
+type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
 
 export type RenderSnapshot = {
   status: RenderStatus;
-  logs: string[];
+  progress: number;
   videoPath: string | null;
   updatedAt: number;
   lastError: string | null;
 };
 
-const MAX_LOGS = 500;
+const KILL_TIMEOUT_MS = 5_000;
+const REMOTION_BIN = path.join(PROJECT_ROOT, "node_modules", ".bin", "remotion");
+
 const state: RenderSnapshot = {
   status: "idle",
-  logs: [],
+  progress: 0,
   videoPath: null,
   updatedAt: Date.now(),
   lastError: null,
 };
 
 const listeners = new Set<(snapshot: RenderSnapshot) => void>();
-
-async function persist() {
-  await fs.mkdir(path.dirname(RENDER_STATE_PATH), { recursive: true });
-  await fs.writeFile(RENDER_STATE_PATH, JSON.stringify(getRenderSnapshot(), null, 2));
-}
+let activeChild: ChildProcess | null = null;
+let cancelRequested = false;
+let killTimer: ReturnType<typeof setTimeout> | null = null;
 
 function emit() {
   state.updatedAt = Date.now();
@@ -42,27 +42,12 @@ function emit() {
   for (const listener of listeners) {
     listener(snapshot);
   }
-
-  void persist();
-}
-
-function appendLog(line: string) {
-  const trimmed = line.replace(/\r/g, "");
-  if (!trimmed) {
-    return;
-  }
-
-  state.logs.push(trimmed);
-  if (state.logs.length > MAX_LOGS) {
-    state.logs.splice(0, state.logs.length - MAX_LOGS);
-  }
-  emit();
 }
 
 function getRenderSnapshot(): RenderSnapshot {
   return {
     status: state.status,
-    logs: [...state.logs],
+    progress: state.progress,
     videoPath: state.videoPath,
     updatedAt: state.updatedAt,
     lastError: state.lastError,
@@ -78,19 +63,58 @@ export function subscribeRender(listener: (snapshot: RenderSnapshot) => void) {
   };
 }
 
-export async function readRenderSnapshot() {
-  try {
-    const content = await fs.readFile(RENDER_STATE_PATH, "utf8");
-    return JSON.parse(content) as RenderSnapshot;
-  } catch {
-    return getRenderSnapshot();
-  }
+export function readRenderSnapshot() {
+  return getRenderSnapshot();
 }
 
 function resetRenderState() {
-  state.logs = [];
+  state.progress = 0;
   state.videoPath = null;
   state.lastError = null;
+}
+
+function setProgress(next: number) {
+  if (next <= state.progress) {
+    return;
+  }
+
+  state.progress = next;
+  emit();
+}
+
+function clearKillTimer() {
+  if (!killTimer) {
+    return;
+  }
+
+  clearTimeout(killTimer);
+  killTimer = null;
+}
+
+function stopChild(signal: NodeJS.Signals) {
+  const child = activeChild;
+  if (!child?.pid) {
+    return;
+  }
+
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    child.kill(signal);
+  }
+}
+
+function handleOutputLine(line: string) {
+  const cleaned = stripAnsi(line).replaceAll("\r", "").trim();
+  if (!cleaned) {
+    return;
+  }
+
+  console.info("[render]", cleaned);
+  const parsed = parseRenderProgress(cleaned);
+  if (parsed !== null) {
+    setProgress(parsed);
+  }
 }
 
 function pipeOutput(stream: NodeJS.ReadableStream | null, onLine: (line: string) => void) {
@@ -101,7 +125,7 @@ function pipeOutput(stream: NodeJS.ReadableStream | null, onLine: (line: string)
   let buffer = "";
   stream.on("data", (chunk) => {
     buffer += String(chunk);
-    const lines = buffer.split("\n");
+    const lines = buffer.split(/\r|\n/);
     buffer = lines.pop() ?? "";
     for (const line of lines) {
       onLine(line);
@@ -126,14 +150,14 @@ export async function startRender(projectPath: string) {
   const project = await readSavedProject(projectPath);
   const outputPath = getProjectOutputVideoPath(projectPath);
   resetRenderState();
+  cancelRequested = false;
   state.status = "running";
-  appendLog(`Starting render for ${projectPath}...`);
+  emit();
+  console.info("[render]", `Starting render for ${projectPath}...`);
 
   const child = spawn(
-    "pnpm",
+    REMOTION_BIN,
     [
-      "exec",
-      "remotion",
       "render",
       "src/remotion/core/runtime.ts",
       "Video",
@@ -143,20 +167,40 @@ export async function startRender(projectPath: string) {
     ],
     {
       cwd: PROJECT_ROOT,
+      detached: true,
       env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
+  activeChild = child;
 
-  pipeOutput(child.stdout, (line) => appendLog(line));
-  pipeOutput(child.stderr, (line) => appendLog(line));
+  pipeOutput(child.stdout, handleOutputLine);
+  pipeOutput(child.stderr, handleOutputLine);
 
   child.on("error", (error) => {
+    if (state.status !== "running") {
+      return;
+    }
+
     state.status = "error";
     state.lastError = error.message;
-    appendLog(`Render process error: ${error.message}`);
+    console.info("[render]", `Render process error: ${error.message}`);
+    emit();
   });
 
   child.on("close", async (code) => {
+    clearKillTimer();
+    activeChild = null;
+
+    if (cancelRequested) {
+      cancelRequested = false;
+      state.status = "canceled";
+      state.lastError = null;
+      console.info("[render]", "Render canceled.");
+      emit();
+      return;
+    }
+
     if (code === 0) {
       try {
         if (outputPath !== LATEST_VIDEO_PATH) {
@@ -164,22 +208,44 @@ export async function startRender(projectPath: string) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        appendLog(`Failed to update latest.mp4: ${message}`);
+        console.info("[render]", `Failed to update latest.mp4: ${message}`);
       }
       state.status = "success";
+      state.progress = 100;
       state.videoPath = "/api/render/video";
-      appendLog("Render completed.");
+      console.info("[render]", "Render completed.");
       emit();
       return;
     }
 
     state.status = "error";
     state.lastError = `Render exited with code ${code ?? "unknown"}`;
-    appendLog(state.lastError);
+    console.info("[render]", state.lastError);
     emit();
   });
 
   return {
     started: true as const,
+  };
+}
+
+export function cancelRender() {
+  if (state.status !== "running" || !activeChild?.pid) {
+    return {
+      canceled: false as const,
+      reason: "not_running",
+    };
+  }
+
+  cancelRequested = true;
+  stopChild("SIGTERM");
+  clearKillTimer();
+  killTimer = setTimeout(() => {
+    stopChild("SIGKILL");
+  }, KILL_TIMEOUT_MS);
+  console.info("[render]", "Cancel requested.");
+
+  return {
+    canceled: true as const,
   };
 }

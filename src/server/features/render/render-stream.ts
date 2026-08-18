@@ -36,12 +36,7 @@ export function createRenderStream(signal: AbortSignal) {
         pushSnapshot(controller, encoder, lastUpdatedAtRef, closedRef, snapshot);
       };
       const unsubscribe = subscribeRender(enqueueSnapshot);
-
-      void readRenderSnapshot().then(enqueueSnapshot);
-
-      const polling = setInterval(() => {
-        void readRenderSnapshot().then(enqueueSnapshot);
-      }, 500);
+      enqueueSnapshot(readRenderSnapshot());
 
       const heartbeat = setInterval(() => {
         if (!closedRef.value) {
@@ -55,7 +50,6 @@ export function createRenderStream(signal: AbortSignal) {
         }
 
         closedRef.value = true;
-        clearInterval(polling);
         clearInterval(heartbeat);
         unsubscribe();
         controller.close();

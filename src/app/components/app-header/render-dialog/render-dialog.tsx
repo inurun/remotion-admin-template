@@ -1,4 +1,4 @@
-import { Clapperboard, Upload } from "lucide-react";
+import { Ban, Clapperboard, Upload } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
 } from "@/_shared/components/ui/dialog";
 import { cn } from "@/_shared/lib/utils";
 import { JobLogPanel } from "@/app/components/app-header/job-log-panel/job-log-panel";
+import { RenderProgress } from "@/app/components/app-header/render-dialog/render-progress/render-progress";
 import { RenderVideoLink } from "@/app/components/app-header/render-dialog/render-video-link/render-video-link";
 import { useRenderDialog } from "@/app/components/app-header/render-dialog/use-render-dialog";
 
@@ -57,7 +58,11 @@ export function RenderDialog() {
               {dialog.publishResultUrl}
             </a>
           )}
-          <JobLogPanel logs={dialog.activeLogs} />
+          {dialog.dialogJobPhase === "publish" ? (
+            <JobLogPanel logs={dialog.publishLogs} />
+          ) : (
+            <RenderProgress progress={dialog.renderState.progress} />
+          )}
           {dialog.errorMessage && (
             <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {dialog.errorMessage}
@@ -66,6 +71,15 @@ export function RenderDialog() {
         </div>
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>閉じる</DialogClose>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={dialog.cancelDisabled}
+            onClick={dialog.handleCancel}
+          >
+            <Ban />
+            Cancel
+          </Button>
           <Button
             type="button"
             variant="secondary"

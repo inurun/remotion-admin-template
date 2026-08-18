@@ -1,27 +1,11 @@
 import { getProjectOutputVideoFileName } from "@/_shared/project/project-path";
-import type { PublishState } from "@/app/features/publish";
 import { useProject } from "@/app/features/project";
-import type { RenderState } from "@/app/features/render";
 import { useRender } from "@/app/features/render";
-
-function getStatusChipClass(status: RenderState["status"] | PublishState["status"]) {
-  return {
-    error: "border-destructive/20 bg-destructive/10 text-destructive",
-    idle: "border-border bg-secondary text-secondary-foreground",
-    loading: "border-primary/20 bg-primary/10 text-primary",
-    ready: "border-emerald-600/20 bg-emerald-600/10 text-emerald-700",
-    running: "border-primary/20 bg-primary/10 text-primary",
-    success: "border-emerald-600/20 bg-emerald-600/10 text-emerald-700",
-  }[status];
-}
-
-function getVideoHref(renderState: RenderState) {
-  if (!renderState.videoPath) {
-    return undefined;
-  }
-
-  return `${renderState.videoPath}?t=${renderState.logs.length}`;
-}
+import {
+  getJobStatusLabel,
+  getStatusChipClass,
+  getVideoHref,
+} from "@/app/components/app-header/render-dialog/use-render-dialog.lib";
 
 function getVideoFileName(projectPath: string | null) {
   return projectPath ? getProjectOutputVideoFileName(projectPath) : "latest.mp4";
@@ -31,7 +15,9 @@ export function useRenderDialog() {
   const { projectPath } = useProject();
   const {
     alsoPublish,
+    cancelDisabled,
     dialogJobPhase,
+    handleCancel,
     handlePublishExecute,
     handleRenderExecute,
     publishError,
@@ -48,16 +34,17 @@ export function useRenderDialog() {
   } = useRender();
 
   const activeStatus = dialogJobPhase === "publish" ? publishState.status : renderState.status;
-  const activeLogs = dialogJobPhase === "publish" ? publishState.logs : renderState.logs;
-  const statusLabel =
-    dialogJobPhase === "publish" ? `publish:${activeStatus}` : `render:${activeStatus}`;
 
   return {
     alsoPublish,
+    cancelDisabled,
+    dialogJobPhase,
+    handleCancel,
     handlePublishExecute,
     handleRenderExecute,
     publishExecuteDisabled,
     publishExecuteLabel,
+    publishLogs: publishState.logs,
     renderDialogOpen,
     renderExecuteDisabled,
     renderExecuteLabel,
@@ -65,8 +52,7 @@ export function useRenderDialog() {
     setAlsoPublish,
     setRenderDialogOpen,
     statusChipClass: getStatusChipClass(activeStatus),
-    statusLabel,
-    activeLogs,
+    statusLabel: getJobStatusLabel(dialogJobPhase, activeStatus),
     videoHref: getVideoHref(renderState),
     videoFileName: getVideoFileName(projectPath),
     publishResultUrl: publishState.resultUrl,

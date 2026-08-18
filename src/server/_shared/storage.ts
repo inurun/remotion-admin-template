@@ -24,7 +24,6 @@ export const TTS_DIR = path.join(PUBLIC_DIR, "tts");
 export const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 export const MUSICS_DIR = path.join(PUBLIC_DIR, "bgm");
 export const OUT_DIR = path.join(PROJECT_ROOT, "out");
-export const RENDER_STATE_PATH = path.join(DATA_DIR, "render-state.json");
 export const PUBLISH_STATE_PATH = path.join(DATA_DIR, "publish-state.json");
 export const SCHEDULES_PATH = path.join(DATA_DIR, "schedules.json");
 export const LATEST_VIDEO_PATH = path.join(OUT_DIR, "latest.mp4");
@@ -32,7 +31,6 @@ export const LATEST_VIDEO_PATH = path.join(OUT_DIR, "latest.mp4");
 const DEFAULT_PROJECT_PATH = "project";
 const PROJECT_FILE_EXTENSION = ".json";
 const PROJECT_LIST_EXCLUDE = new Set([
-  path.basename(RENDER_STATE_PATH),
   path.basename(PUBLISH_STATE_PATH),
   path.basename(SCHEDULES_PATH),
 ]);
