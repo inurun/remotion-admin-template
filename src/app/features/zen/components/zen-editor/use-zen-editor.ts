@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { autocompletion } from "@codemirror/autocomplete";
 import { lintGutter } from "@codemirror/lint";
 import { EditorView, scrollPastEnd, tooltips } from "@codemirror/view";
@@ -16,9 +16,19 @@ const WRAP_GUIDE_PX = 180;
 export function useZenEditor(
   aliases: ZenCompletionAlias[],
   lintAliases: Map<string, ZenAliasTarget>,
+  value: string,
+  onChange: (value: string) => void,
 ) {
   const { resolvedTheme } = useTheme();
   const theme = resolvedTheme === "dark" ? ("dark" as const) : ("light" as const);
+  const [doc, setDoc] = useState(value);
+  const handleChange = useCallback(
+    (next: string) => {
+      setDoc(next);
+      onChange(next);
+    },
+    [onChange],
+  );
 
   const extensions = useMemo(
     () => [
@@ -63,7 +73,9 @@ export function useZenEditor(
   );
 
   return {
+    doc,
     extensions,
+    handleChange,
     theme,
   };
 }

@@ -31,12 +31,14 @@ export function ZenDialog() {
         </DialogHeader>
 
         <div className="min-h-0 flex-1">
-          <ZenEditor
-            aliases={dialog.completionAliases}
-            lintAliases={dialog.aliases}
-            value={dialog.source}
-            onChange={dialog.setSource}
-          />
+          {dialog.open ? (
+            <ZenEditor
+              aliases={dialog.completionAliases}
+              lintAliases={dialog.aliases}
+              value={dialog.source}
+              onChange={dialog.setSource}
+            />
+          ) : null}
         </div>
 
         <div className="grid gap-1 text-sm">

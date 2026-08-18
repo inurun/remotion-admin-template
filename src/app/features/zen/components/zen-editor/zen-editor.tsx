@@ -14,11 +14,11 @@ export function ZenEditor({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const editor = useZenEditor(aliases, lintAliases);
+  const editor = useZenEditor(aliases, lintAliases, value, onChange);
 
   return (
     <CodeMirror
-      value={value}
+      value={editor.doc}
       height="100%"
       theme={editor.theme}
       extensions={editor.extensions}
@@ -28,7 +28,7 @@ export function ZenEditor({
         highlightActiveLine: true,
       }}
       className="h-full overflow-hidden rounded-lg border border-border"
-      onChange={onChange}
+      onChange={editor.handleChange}
     />
   );
 }
