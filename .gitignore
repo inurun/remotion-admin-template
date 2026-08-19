@@ -25,3 +25,4 @@ src/_shared/lib/assets/types.ts
 # niconico publish
 .agent-browser/
 .logs/
+data/publish-state.json
