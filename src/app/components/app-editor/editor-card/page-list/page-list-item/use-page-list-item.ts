@@ -1,6 +1,8 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import type { PageType } from "@/_schemas";
-import { getPageListStaggerDelayMs } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
+import {
+  getPageListStaggerDelayMs,
+  resolvePageListItemPresentation,
+} from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import type { PageThumbnailProps } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-thumbnail/use-page-thumbnail";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
@@ -17,10 +19,7 @@ export type PageListItemProps = {
 export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "index" | "pageId">) {
   const width = useSavedProject((state) => state.project.meta.width);
   const height = useSavedProject((state) => state.project.meta.height);
-  const pageType = useEditorSession((state) => state.itemsById[pageId]?.type) as
-    | PageType
-    | "transition"
-    | undefined;
+  const item = useEditorSession((state) => state.itemsById[pageId]);
   const dirty = useEditorSession((state) => (state.dirty.itemIds[pageId] ?? 0) > 0);
   const { ref, handleRef, isDragging } = useSortable({
     id: pageId,
@@ -38,7 +37,7 @@ export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "inde
     isDragging,
     aspectRatio: `${width} / ${height}`,
     dirty,
-    pageType,
+    presentation: resolvePageListItemPresentation(item),
     staggerDelayMs: getPageListStaggerDelayMs(index),
   };
 }

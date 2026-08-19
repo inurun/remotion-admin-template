@@ -24,7 +24,7 @@ export function PageList() {
         </div>
       ) : (
         <DragDropProvider onDragEnd={handleDragEnd}>
-          <div className="flex max-w-full gap-2 overflow-x-auto sm:grid">
+          <div className="flex max-w-full items-start gap-2 overflow-x-auto sm:grid">
             {sequenceOrder.map((pageId, index) => (
               <PageListItem
                 key={pageId}

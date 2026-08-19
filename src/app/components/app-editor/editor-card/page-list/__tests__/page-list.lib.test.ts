@@ -6,6 +6,7 @@ import {
   getPageMoveState,
   PAGE_LIST_STAGGER_MAX_MS,
   PAGE_LIST_STAGGER_STEP_MS,
+  resolvePageListItemPresentation,
 } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 
 describe("page list", () => {
@@ -142,5 +143,26 @@ describe("page list", () => {
     expect(getPageListStaggerDelayMs(3)).toBe(3 * PAGE_LIST_STAGGER_STEP_MS);
     expect(getPageListStaggerDelayMs(10)).toBe(PAGE_LIST_STAGGER_MAX_MS);
     expect(getPageListStaggerDelayMs(-1)).toBe(0);
+  });
+
+  it("presents transitions without a thumbnail title", () => {
+    expect(resolvePageListItemPresentation({ type: "transition", variant: "slide" })).toEqual({
+      kind: "transition",
+      variant: "slide",
+    });
+  });
+
+  it("presents page titles only when they are non-empty", () => {
+    expect(resolvePageListItemPresentation(undefined)).toBeNull();
+    expect(resolvePageListItemPresentation({ type: "main", title: "  Opening  " })).toEqual({
+      kind: "page",
+      pageType: "main",
+      title: "Opening",
+    });
+    expect(resolvePageListItemPresentation({ type: "intro", title: "   " })).toEqual({
+      kind: "page",
+      pageType: "intro",
+      title: null,
+    });
   });
 });

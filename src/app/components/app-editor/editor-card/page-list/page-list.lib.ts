@@ -1,6 +1,46 @@
-import type { SavedProject } from "@/_schemas";
+import type { PageType, SavedProject, TransitionVariant } from "@/_schemas";
 import { getProjectSequenceTimings } from "@/_shared/project/project-timing";
 import { moveItem } from "@/app/features/ui/lib/reorder";
+
+export type PageListItemPresentation =
+  | {
+      kind: "page";
+      pageType: PageType;
+      title: string | null;
+    }
+  | {
+      kind: "transition";
+      variant: TransitionVariant;
+    };
+
+type PageListItemSource =
+  | {
+      type: PageType;
+      title: string;
+    }
+  | {
+      type: "transition";
+      variant: TransitionVariant;
+    };
+
+export function resolvePageListItemPresentation(
+  item: PageListItemSource | undefined,
+): PageListItemPresentation | null {
+  if (!item) {
+    return null;
+  }
+
+  if (item.type === "transition") {
+    return { kind: "transition", variant: item.variant };
+  }
+
+  const title = item.title.trim();
+  return {
+    kind: "page",
+    pageType: item.type,
+    title: title === "" ? null : title,
+  };
+}
 
 type PageTiming = {
   id?: string;
