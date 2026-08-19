@@ -8,12 +8,13 @@ import {
 } from "./parse-nicoad-source";
 
 const NICOAD_CONTENTS_URL = "https://api.nicoad.nicovideo.jp/v1/contents/video";
+const NICOAD_ADVERTISER_LIMIT = 1000;
 
 export const nicoadApp = new Hono().post("/nicoad", async (c) => {
   try {
     const { source } = nicoadRequestSchema.parse(await c.req.json());
     const videoId = parseNicoadVideoId(source);
-    const url = `${NICOAD_CONTENTS_URL}/${videoId}/thanks`;
+    const url = `${NICOAD_CONTENTS_URL}/${videoId}/thanks?limit=${NICOAD_ADVERTISER_LIMIT}`;
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",

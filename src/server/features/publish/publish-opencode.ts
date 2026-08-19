@@ -1,11 +1,15 @@
+import { execFile, spawn } from "node:child_process";
 import { appendFileSync, mkdirSync } from "node:fs";
 import fs from "node:fs/promises";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { createOpencode } from "@opencode-ai/sdk/v2";
 import { nowIso, toIso } from "@/_shared/lib/date";
 import { PROJECT_ROOT } from "@/server/_shared/storage";
 import { extractNiconicoVideoId } from "@/_shared/project/project-meta";
+import { toNiconicoDescriptionHtml } from "./niconico-description-html";
 import {
   normalizeLogMessage,
   type VerifiedPublishPrepResult,
@@ -57,13 +61,9 @@ const JOB_LISTENERS_KEY = "__niconicoPublishPrepJobListeners";
 const NICONICO_UPLOAD_URL = "https://garage.nicovideo.jp/niconico-garage/video/videos/upload";
 const ALLOWED_DOMAINS = "*";
 const AGENT_BROWSER_SESSION = "niconico-publish";
-const AGENT_BROWSER_SESSION_NAME = "niconico-auth";
-const AGENT_BROWSER_ARGS = [
-  "--disable-breakpad",
-  "--disable-crash-reporter",
-  "--disable-crashpad",
-  "--noerrdialogs",
-].join(",");
+const NICONICO_CHROME_CDP_PORT = 9222;
+const NICONICO_CHROME_READY_TIMEOUT_MS = 15_000;
+const execFileAsync = promisify(execFile);
 const DEFAULT_CHROME_EXECUTABLE_PATHS = [
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
@@ -310,6 +310,10 @@ function shouldUseOpenCodeStructuredOutput(): boolean {
   return process.env.OPENCODE_USE_STRUCTURED_OUTPUT === "1";
 }
 
+function getAgentBrowserCliPrefix(rootDir: string): string {
+  return `pnpm --dir ${rootDir} exec agent-browser --session "${AGENT_BROWSER_SESSION}" --cdp ${NICONICO_CHROME_CDP_PORT}`;
+}
+
 function getOpenCodeConfig(rootDir: string) {
   const agentBrowserCommand = `pnpm --dir ${rootDir} exec agent-browser *`;
   const legacyAgentBrowserCommand = "pnpm exec agent-browser *";
@@ -366,14 +370,77 @@ function getOpenCodeConfig(rootDir: string) {
   };
 }
 
-async function getAgentBrowserEnv(): Promise<Record<string, string>> {
-  if (!process.env.AGENT_BROWSER_ENCRYPTION_KEY) {
-    throw new Error(
-      "AGENT_BROWSER_ENCRYPTION_KEY is required for encrypted agent-browser auth state",
-    );
-  }
-  const executablePath = await resolveAgentBrowserExecutablePath();
+function isCdpPortListening(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host: "127.0.0.1", port });
+    socket.once("connect", () => {
+      socket.end();
+      resolve(true);
+    });
+    socket.once("error", () => {
+      resolve(false);
+    });
+  });
+}
 
+async function waitForCdpPort(port: number, timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await isCdpPortListening(port)) return;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`Niconico Chrome CDP port ${port} did not become ready`);
+}
+
+async function ensureNiconicoChrome() {
+  if (await isCdpPortListening(NICONICO_CHROME_CDP_PORT)) return;
+  const executablePath = await resolveAgentBrowserExecutablePath();
+  if (!executablePath) {
+    throw new Error("Google Chrome is required for Niconico publish");
+  }
+  const child = spawn(
+    executablePath,
+    [
+      `--user-data-dir=${getProfileDir()}`,
+      `--remote-debugging-port=${NICONICO_CHROME_CDP_PORT}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--noerrdialogs",
+      NICONICO_UPLOAD_URL,
+    ],
+    {
+      detached: true,
+      stdio: "ignore",
+    },
+  );
+  child.unref();
+  await waitForCdpPort(NICONICO_CHROME_CDP_PORT, NICONICO_CHROME_READY_TIMEOUT_MS);
+}
+
+async function attachAgentBrowserToNiconicoChrome() {
+  await execFileAsync(
+    "pnpm",
+    [
+      "--dir",
+      getRootDir(),
+      "exec",
+      "agent-browser",
+      "--session",
+      AGENT_BROWSER_SESSION,
+      "--cdp",
+      String(NICONICO_CHROME_CDP_PORT),
+      "get",
+      "url",
+    ],
+    {
+      cwd: getRootDir(),
+      env: await getAgentBrowserEnv(),
+      timeout: 15_000,
+    },
+  );
+}
+
+async function getAgentBrowserEnv(): Promise<Record<string, string>> {
   const env: Record<string, string> = Object.fromEntries(
     Object.entries(process.env).filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -383,13 +450,14 @@ async function getAgentBrowserEnv(): Promise<Record<string, string>> {
   const agentBrowserEnv: Record<string, string> = {
     ...env,
     HOME: process.env.HOME ?? os.homedir(),
-    AGENT_BROWSER_HEADED: "true",
-    AGENT_BROWSER_PROFILE: getProfileDir(),
     AGENT_BROWSER_SESSION,
-    AGENT_BROWSER_SESSION_NAME,
-    AGENT_BROWSER_ARGS,
-    ...(executablePath ? { AGENT_BROWSER_EXECUTABLE_PATH: executablePath } : {}),
+    AGENT_BROWSER_CDP: String(NICONICO_CHROME_CDP_PORT),
   };
+  delete agentBrowserEnv.AGENT_BROWSER_SESSION_NAME;
+  delete agentBrowserEnv.AGENT_BROWSER_PROFILE;
+  delete agentBrowserEnv.AGENT_BROWSER_EXECUTABLE_PATH;
+  delete agentBrowserEnv.AGENT_BROWSER_HEADED;
+  delete agentBrowserEnv.AGENT_BROWSER_ARGS;
   if (ALLOWED_DOMAINS !== "*") {
     agentBrowserEnv.AGENT_BROWSER_ALLOWED_DOMAINS = ALLOWED_DOMAINS;
   }
@@ -902,12 +970,12 @@ async function runOpenCodePublishPrep(
     AGENT_BROWSER_ALLOWED_DOMAINS: process.env.AGENT_BROWSER_ALLOWED_DOMAINS,
     AGENT_BROWSER_ARGS: process.env.AGENT_BROWSER_ARGS,
     AGENT_BROWSER_EXECUTABLE_PATH: process.env.AGENT_BROWSER_EXECUTABLE_PATH,
+    AGENT_BROWSER_CDP: process.env.AGENT_BROWSER_CDP,
   };
+  await ensureNiconicoChrome();
   Object.assign(process.env, await getAgentBrowserEnv());
-  pushLog(
-    job,
-    `Agent-browser executable: ${process.env.AGENT_BROWSER_EXECUTABLE_PATH ?? "(default Chrome for Testing)"}`,
-  );
+  await attachAgentBrowserToNiconicoChrome();
+  pushLog(job, `Attached to existing Chrome via CDP port ${NICONICO_CHROME_CDP_PORT}`);
 
   let opencode: OpenCodeInstance | undefined;
   try {
@@ -1024,25 +1092,28 @@ async function runOpenCodePublishPrep(
         "One or more Niconico parent work URLs do not contain a valid sm/ss video ID",
       );
     }
+    const descriptionHtml = toNiconicoDescriptionHtml(videoMeta.description);
     const prompt = `
 ${procedure}
 
 ## 実行時の設定値
 
 - リポジトリルート: ${JSON.stringify(rootDir)}
-- agent-browserコマンドの接頭辞: ${JSON.stringify(`pnpm --dir ${rootDir} exec agent-browser`)}
+- agent-browserコマンドの接頭辞: ${JSON.stringify(getAgentBrowserCliPrefix(rootDir))}
 - ブラウザーセッション: ${JSON.stringify(AGENT_BROWSER_SESSION)}
-- 暗号化認証状態のセッション名: ${JSON.stringify(AGENT_BROWSER_SESSION_NAME)}
-- ブラウザー起動設定は環境変数で適用済み。CLIに --browser-args、--args、--executable-path、--allowed-domains を追加しない。
+- 既存のヘッド付きChromeにCDPで接続する。新しいChromeは起動しない。
+- 開始URLがすでに開いている場合は open しない。
+- ブラウザーは閉じない。
+- 接頭辞以外に --browser-args、--args、--executable-path、--allowed-domains、--session-name、--cdp を追加しない。
 
 ## 作業入力
 
 - 開始URL: ${JSON.stringify(NICONICO_UPLOAD_URL)}
 - 対象mp4: ${JSON.stringify(videoPath)}
 - 動画タイトル: ${JSON.stringify(videoMeta.title)}
-- 動画説明文: ${JSON.stringify(videoMeta.description)}
+- 動画説明文: ${JSON.stringify(descriptionHtml)}
 - 動画タイトル(Base64 UTF-8): ${Buffer.from(videoMeta.title, "utf-8").toString("base64")}
-- 動画説明文(Base64 UTF-8): ${Buffer.from(videoMeta.description, "utf-8").toString("base64")}
+- 動画説明文(Base64 UTF-8): ${Buffer.from(descriptionHtml, "utf-8").toString("base64")}
 - サムネイル時刻: ${JSON.stringify(videoMeta.thumbnailTime)}
 - 確認前に登録する親作品: ${JSON.stringify(parentWorks)}
 - 確認する親作品ID: ${JSON.stringify(parentWorkIds)}

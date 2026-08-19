@@ -33,7 +33,7 @@ describe("nicoad routes", () => {
       advertisers: [{ name: "Ada", message: "hello" }],
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.nicoad.nicovideo.jp/v1/contents/video/sm46665240/thanks",
+      "https://api.nicoad.nicovideo.jp/v1/contents/video/sm46665240/thanks?limit=1000",
       expect.objectContaining({ redirect: "follow" }),
     );
   });
