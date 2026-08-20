@@ -8,6 +8,8 @@ import {
   getProjectSettingsDialogHref,
   getProjectSettingsHref,
   getSchedulesHref,
+  getDictionaryHref,
+  isDictionaryRoute,
   isProjectSettingsRoute,
   isSchedulesRoute,
   parseProjectRoute,
@@ -43,9 +45,13 @@ describe("project route parser", () => {
     });
     expect(parseProjectRoute("/schedules")).toEqual({ type: "schedules" });
     expect(parseProjectRoute("/schedules/")).toEqual({ type: "schedules" });
+    expect(parseProjectRoute("/dictionary/")).toEqual({ type: "dictionary" });
     expect(getSchedulesHref()).toBe("/schedules");
     expect(isSchedulesRoute(parseProjectRoute("/schedules"))).toBe(true);
     expect(getProjectPathFromRoute(parseProjectRoute("/schedules"))).toBeNull();
+    expect(getDictionaryHref()).toBe("/dictionary");
+    expect(isDictionaryRoute(parseProjectRoute("/dictionary"))).toBe(true);
+    expect(getProjectPathFromRoute(parseProjectRoute("/dictionary"))).toBeNull();
     expect(getProjectPageHref("nested/example", "page 1")).toBe(
       "/projects/nested%2Fexample/pages/page%201",
     );

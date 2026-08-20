@@ -1,4 +1,5 @@
 export * from "./g2p";
+export * from "./dictionary";
 export * from "./guards";
 export {
   savedScheduleItemSchema,

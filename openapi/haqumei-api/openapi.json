@@ -135,9 +135,354 @@
         }
       }
     },
+    "/v1/dictionary": {
+      "get": {
+        "tags": [],
+        "operationId": "dictionary_list",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryListResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dictionary/entries": {
+      "post": {
+        "tags": [],
+        "operationId": "dictionary_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictionaryEntryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryMutationResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dictionary/entries/batch": {
+      "post": {
+        "tags": [],
+        "operationId": "dictionary_create_batch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictionaryBatchInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryBatchResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dictionary/entries/{id}": {
+      "get": {
+        "tags": [],
+        "operationId": "dictionary_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryMutationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [],
+        "operationId": "dictionary_update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictionaryEntryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DictionaryMutationResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [],
+        "operationId": "dictionary_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/synthesis/voicevox": {
       "post": {
-        "tags": ["crate::synthesis"],
+        "tags": [
+          "crate::synthesis"
+        ],
         "operationId": "synthesis_voicevox",
         "requestBody": {
           "content": {
@@ -225,7 +570,9 @@
     },
     "/v1/synthesis/voisona": {
       "post": {
-        "tags": ["crate::synthesis"],
+        "tags": [
+          "crate::synthesis"
+        ],
         "operationId": "synthesis_voisona",
         "requestBody": {
           "content": {
@@ -323,7 +670,9 @@
     },
     "/v1/voices/voicevox": {
       "get": {
-        "tags": ["crate::synthesis"],
+        "tags": [
+          "crate::synthesis"
+        ],
         "operationId": "voices_voicevox",
         "responses": {
           "200": {
@@ -361,7 +710,9 @@
     },
     "/v1/voices/voisona": {
       "get": {
-        "tags": ["crate::synthesis"],
+        "tags": [
+          "crate::synthesis"
+        ],
         "operationId": "voices_voisona",
         "responses": {
           "200": {
@@ -487,7 +838,9 @@
       },
       "AnalyzeRequest": {
         "type": "object",
-        "required": ["texts"],
+        "required": [
+          "texts"
+        ],
         "properties": {
           "options": {
             "$ref": "#/components/schemas/AnalyzeRequestOptions"
@@ -505,15 +858,24 @@
         "type": "object",
         "properties": {
           "enable_final_glottal_stop": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "modify_acc_after_chaining": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "modify_filler_accent": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "normalize_iu": {
@@ -539,55 +901,94 @@
             "default": null
           },
           "predict_kana_english": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "predict_nani": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "process_odoriji": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "retreat_acc_nuc": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "revert_long_vowels": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "revert_yotsugana": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "split_n_allophones": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "split_n_before_palatal_affricate": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "split_n_before_r": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "split_q_allophones": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "use_allophones": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "use_read_as_pron": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           },
           "use_unidic_yomi": {
-            "type": ["boolean", "null"],
+            "type": [
+              "boolean",
+              "null"
+            ],
             "default": null
           }
         },
@@ -595,7 +996,12 @@
       },
       "AnalyzeResponse": {
         "type": "object",
-        "required": ["schema_version", "haqumei_version", "options", "items"],
+        "required": [
+          "schema_version",
+          "haqumei_version",
+          "options",
+          "items"
+        ],
         "properties": {
           "haqumei_version": {
             "type": "string"
@@ -616,11 +1022,262 @@
       },
       "Boundary": {
         "type": "string",
-        "enum": ["none", "pause", "question", "exclamation"]
+        "enum": [
+          "none",
+          "pause",
+          "question",
+          "exclamation"
+        ]
+      },
+      "ContextCandidate": {
+        "type": "object",
+        "required": [
+          "morphemes"
+        ],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "morphemes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Morpheme"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContextualEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "surface",
+          "candidates",
+          "enabled"
+        ],
+        "properties": {
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContextCandidate"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "surface": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DictionaryBatchInput": {
+        "type": "object",
+        "required": [
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryEntryInput"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "DictionaryBatchResponse": {
+        "type": "object",
+        "required": [
+          "revision",
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryEntry"
+            }
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "DictionaryEntry": {
+        "oneOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FixedEntry"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "fixed"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContextualEntry"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "contextual"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "DictionaryEntryInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "surface",
+              "reading",
+              "accent_nucleus",
+              "part_of_speech",
+              "kind"
+            ],
+            "properties": {
+              "accent_nucleus": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "fixed"
+                ]
+              },
+              "part_of_speech": {
+                "$ref": "#/components/schemas/PartOfSpeech"
+              },
+              "pronunciation": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reading": {
+                "type": "string"
+              },
+              "surface": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "surface",
+              "candidates",
+              "kind"
+            ],
+            "properties": {
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ContextCandidate"
+                }
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "contextual"
+                ]
+              },
+              "surface": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "DictionaryListResponse": {
+        "type": "object",
+        "required": [
+          "revision",
+          "entries"
+        ],
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DictionaryEntry"
+            }
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "DictionaryMutationResponse": {
+        "type": "object",
+        "required": [
+          "revision",
+          "entry"
+        ],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/DictionaryEntry"
+          },
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
       },
       "FieldError": {
         "type": "object",
-        "required": ["path", "reason"],
+        "required": [
+          "path",
+          "reason"
+        ],
         "properties": {
           "path": {
             "type": "string"
@@ -630,9 +1287,54 @@
           }
         }
       },
+      "FixedEntry": {
+        "type": "object",
+        "required": [
+          "id",
+          "surface",
+          "reading",
+          "accent_nucleus",
+          "part_of_speech",
+          "enabled"
+        ],
+        "properties": {
+          "accent_nucleus": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "part_of_speech": {
+            "$ref": "#/components/schemas/PartOfSpeech"
+          },
+          "pronunciation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reading": {
+            "type": "string"
+          },
+          "surface": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "G2pItem": {
         "type": "object",
-        "required": ["text", "segments", "warnings"],
+        "required": [
+          "text",
+          "segments",
+          "warnings"
+        ],
         "properties": {
           "segments": {
             "type": "array",
@@ -654,7 +1356,12 @@
       },
       "G2pWord": {
         "type": "object",
-        "required": ["surface", "chain", "moras", "metadata"],
+        "required": [
+          "surface",
+          "chain",
+          "moras",
+          "metadata"
+        ],
         "properties": {
           "chain": {
             "type": "boolean"
@@ -676,11 +1383,19 @@
       },
       "IuPronunciation": {
         "type": "string",
-        "enum": ["iu", "yuu", "kanji_iu", "kanji_yuu"]
+        "enum": [
+          "iu",
+          "yuu",
+          "kanji_iu",
+          "kanji_yuu"
+        ]
       },
       "Mora": {
         "type": "object",
-        "required": ["text", "pitch"],
+        "required": [
+          "text",
+          "pitch"
+        ],
         "properties": {
           "pitch": {
             "$ref": "#/components/schemas/Pitch"
@@ -691,13 +1406,63 @@
         },
         "additionalProperties": false
       },
+      "Morpheme": {
+        "type": "object",
+        "required": [
+          "surface",
+          "reading",
+          "accent_nucleus",
+          "part_of_speech"
+        ],
+        "properties": {
+          "accent_nucleus": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "part_of_speech": {
+            "$ref": "#/components/schemas/PartOfSpeech"
+          },
+          "pronunciation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reading": {
+            "type": "string"
+          },
+          "surface": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PartOfSpeech": {
+        "type": "string",
+        "enum": [
+          "proper_noun",
+          "common_noun",
+          "adjective",
+          "particle",
+          "filler"
+        ]
+      },
       "Pitch": {
         "type": "string",
-        "enum": ["low", "high"]
+        "enum": [
+          "low",
+          "high"
+        ]
       },
       "ProblemDetails": {
         "type": "object",
-        "required": ["type", "title", "status", "code", "detail"],
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "detail"
+        ],
         "properties": {
           "code": {
             "type": "string"
@@ -726,7 +1491,10 @@
       },
       "Segment": {
         "type": "object",
-        "required": ["words", "boundary"],
+        "required": [
+          "words",
+          "boundary"
+        ],
         "properties": {
           "boundary": {
             "$ref": "#/components/schemas/Boundary"
@@ -742,7 +1510,10 @@
       },
       "SourceSpan": {
         "type": "object",
-        "required": ["start_utf16", "end_utf16"],
+        "required": [
+          "start_utf16",
+          "end_utf16"
+        ],
         "properties": {
           "end_utf16": {
             "type": "integer",
@@ -757,11 +1528,20 @@
       },
       "UnicodeNormalization": {
         "type": "string",
-        "enum": ["none", "nfc", "nfkc"]
+        "enum": [
+          "none",
+          "nfc",
+          "nfkc"
+        ]
       },
       "VersionResponse": {
         "type": "object",
-        "required": ["name", "version", "schema_version", "haqumei_version"],
+        "required": [
+          "name",
+          "version",
+          "schema_version",
+          "haqumei_version"
+        ],
         "properties": {
           "haqumei_version": {
             "type": "string"
@@ -779,7 +1559,11 @@
       },
       "VoicevoxSynthesisRequest": {
         "type": "object",
-        "required": ["schema_version", "item", "speaker"],
+        "required": [
+          "schema_version",
+          "item",
+          "speaker"
+        ],
         "properties": {
           "item": {
             "$ref": "#/components/schemas/G2pItem"
@@ -816,7 +1600,10 @@
             "default": null
           },
           "pauseLength": {
-            "type": ["number", "null"],
+            "type": [
+              "number",
+              "null"
+            ],
             "format": "double",
             "default": null
           },
@@ -855,7 +1642,13 @@
       },
       "VoicevoxVoice": {
         "type": "object",
-        "required": ["speaker", "speaker_name", "style_name", "speaker_uuid", "version"],
+        "required": [
+          "speaker",
+          "speaker_name",
+          "style_name",
+          "speaker_uuid",
+          "version"
+        ],
         "properties": {
           "speaker": {
             "type": "integer",
@@ -877,7 +1670,9 @@
       },
       "VoicevoxVoicesResponse": {
         "type": "object",
-        "required": ["voices"],
+        "required": [
+          "voices"
+        ],
         "properties": {
           "voices": {
             "type": "array",
@@ -889,7 +1684,10 @@
       },
       "VoisonaDisplayName": {
         "type": "object",
-        "required": ["language", "name"],
+        "required": [
+          "language",
+          "name"
+        ],
         "properties": {
           "language": {
             "type": "string"
@@ -901,7 +1699,11 @@
       },
       "VoisonaSynthesisRequest": {
         "type": "object",
-        "required": ["schema_version", "item", "voice_name"],
+        "required": [
+          "schema_version",
+          "item",
+          "voice_name"
+        ],
         "properties": {
           "item": {
             "$ref": "#/components/schemas/G2pItem"
@@ -979,7 +1781,10 @@
       },
       "VoisonaVoice": {
         "type": "object",
-        "required": ["voice_name", "voice_version"],
+        "required": [
+          "voice_name",
+          "voice_version"
+        ],
         "properties": {
           "display_names": {
             "type": "array",
@@ -1003,7 +1808,9 @@
       },
       "VoisonaVoicesResponse": {
         "type": "object",
-        "required": ["voices"],
+        "required": [
+          "voices"
+        ],
         "properties": {
           "voices": {
             "type": "array",
@@ -1015,7 +1822,9 @@
       },
       "Warning": {
         "type": "object",
-        "required": ["code"],
+        "required": [
+          "code"
+        ],
         "properties": {
           "code": {
             "$ref": "#/components/schemas/WarningCode"
@@ -1045,11 +1854,17 @@
       },
       "WarningCode": {
         "type": "string",
-        "enum": ["unknown_word", "ignored_token"]
+        "enum": [
+          "unknown_word",
+          "ignored_token"
+        ]
       },
       "WarningLocation": {
         "type": "object",
-        "required": ["segment_index", "word_index"],
+        "required": [
+          "segment_index",
+          "word_index"
+        ],
         "properties": {
           "segment_index": {
             "type": "integer",

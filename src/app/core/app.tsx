@@ -9,7 +9,8 @@ import { SettingsContextProvider } from "@/app/features/settings";
 import { EditorSessionStoreProvider, SavedProjectStoreProvider } from "@/app/features/editor";
 import { useSelectedProjectQuery } from "@/app/features/project/swr/use-project-queries";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
-import { isSchedulesRoute } from "@/app/features/project/lib/project-route";
+import { isDictionaryRoute, isSchedulesRoute } from "@/app/features/project/lib/project-route";
+import { AppDictionary } from "@/app/components/app-dictionary/app-dictionary";
 import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
 
@@ -53,6 +54,9 @@ function AppMain() {
 
   if (isSchedulesRoute(route)) {
     return <AppSchedule />;
+  }
+  if (isDictionaryRoute(route)) {
+    return <AppDictionary />;
   }
 
   return (

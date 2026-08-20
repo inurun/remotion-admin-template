@@ -52,6 +52,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/dictionary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dictionary_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dictionary/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["dictionary_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dictionary/entries/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["dictionary_create_batch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dictionary/entries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["dictionary_get"];
+        put: operations["dictionary_update"];
+        post?: never;
+        delete: operations["dictionary_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/synthesis/voicevox": {
         parameters: {
             query?: never;
@@ -199,9 +263,72 @@ export interface components {
         };
         /** @enum {string} */
         Boundary: "none" | "pause" | "question" | "exclamation";
+        ContextCandidate: {
+            description?: string;
+            examples?: string[];
+            morphemes: components["schemas"]["Morpheme"][];
+        };
+        ContextualEntry: {
+            candidates: components["schemas"]["ContextCandidate"][];
+            enabled: boolean;
+            /** Format: int64 */
+            id: number;
+            surface: string;
+        };
+        DictionaryBatchInput: {
+            entries: components["schemas"]["DictionaryEntryInput"][];
+        };
+        DictionaryBatchResponse: {
+            entries: components["schemas"]["DictionaryEntry"][];
+            /** Format: int64 */
+            revision: number;
+        };
+        DictionaryEntry: (components["schemas"]["FixedEntry"] & {
+            /** @enum {string} */
+            kind: "fixed";
+        }) | (components["schemas"]["ContextualEntry"] & {
+            /** @enum {string} */
+            kind: "contextual";
+        });
+        DictionaryEntryInput: {
+            accent_nucleus: number;
+            enabled?: boolean;
+            /** @enum {string} */
+            kind: "fixed";
+            part_of_speech: components["schemas"]["PartOfSpeech"];
+            pronunciation?: string | null;
+            reading: string;
+            surface: string;
+        } | {
+            candidates: components["schemas"]["ContextCandidate"][];
+            enabled?: boolean;
+            /** @enum {string} */
+            kind: "contextual";
+            surface: string;
+        };
+        DictionaryListResponse: {
+            entries: components["schemas"]["DictionaryEntry"][];
+            /** Format: int64 */
+            revision: number;
+        };
+        DictionaryMutationResponse: {
+            entry: components["schemas"]["DictionaryEntry"];
+            /** Format: int64 */
+            revision: number;
+        };
         FieldError: {
             path: string;
             reason: string;
+        };
+        FixedEntry: {
+            accent_nucleus: number;
+            enabled: boolean;
+            /** Format: int64 */
+            id: number;
+            part_of_speech: components["schemas"]["PartOfSpeech"];
+            pronunciation?: string | null;
+            reading: string;
+            surface: string;
         };
         G2pItem: {
             segments: components["schemas"]["Segment"][];
@@ -220,6 +347,15 @@ export interface components {
             pitch: components["schemas"]["Pitch"];
             text: string;
         };
+        Morpheme: {
+            accent_nucleus: number;
+            part_of_speech: components["schemas"]["PartOfSpeech"];
+            pronunciation?: string | null;
+            reading: string;
+            surface: string;
+        };
+        /** @enum {string} */
+        PartOfSpeech: "proper_noun" | "common_noun" | "adjective" | "particle" | "filler";
         /** @enum {string} */
         Pitch: "low" | "high";
         ProblemDetails: {
@@ -516,6 +652,280 @@ export interface operations {
                      *       "type": "about:blank"
                      *     }
                      */
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryListResponse"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictionaryEntryInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryMutationResponse"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_create_batch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictionaryBatchInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryBatchResponse"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryMutationResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DictionaryEntryInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryMutationResponse"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    dictionary_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };

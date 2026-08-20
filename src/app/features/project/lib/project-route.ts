@@ -1,5 +1,6 @@
 export type ProjectRoute =
   | { type: "schedules" }
+  | { type: "dictionary" }
   | { type: "project"; projectPath: string }
   | { type: "page"; projectPath: string; pageId: string }
   | { type: "settings"; projectPath: string }
@@ -91,6 +92,14 @@ export function getSchedulesHref() {
   return "/schedules";
 }
 
+export function getDictionaryHref() {
+  return "/dictionary";
+}
+
+export function isDictionaryRoute(route: ProjectRoute) {
+  return route.type === "dictionary";
+}
+
 export function isSchedulesRoute(route: ProjectRoute) {
   return route.type === "schedules";
 }
@@ -99,6 +108,9 @@ export function parseProjectRoute(pathname: string): ProjectRoute {
   const normalized = pathname.replace(/\/+$/u, "") || "/";
   if (normalized === "/schedules") {
     return { type: "schedules" };
+  }
+  if (normalized === "/dictionary") {
+    return { type: "dictionary" };
   }
 
   if (!normalized.startsWith(PROJECTS_PREFIX)) {
@@ -170,7 +182,12 @@ export function resolveProjectRouteRedirect(input: {
   sequenceOrder: string[];
   hasProjectData: boolean;
 }): ProjectRouteRedirectDecision {
-  if (!input.hasProjectData || input.route.type === "unknown" || input.route.type === "schedules") {
+  if (
+    !input.hasProjectData ||
+    input.route.type === "unknown" ||
+    input.route.type === "schedules" ||
+    input.route.type === "dictionary"
+  ) {
     return { action: "none" };
   }
 

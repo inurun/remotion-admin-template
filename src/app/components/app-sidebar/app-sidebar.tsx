@@ -17,7 +17,7 @@ import {
   useAppSidebarContent,
   useAppSidebarShell,
 } from "@/app/components/app-sidebar/use-app-sidebar";
-import { CalendarDays } from "lucide-react";
+import { BookOpen, CalendarDays } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
 
 function AppSidebarContent() {
@@ -59,6 +59,18 @@ function AppSidebarContent() {
         </SidebarContent>
         <SidebarFooter className="gap-1 px-3 py-3 group-data-[collapsible=icon]:px-2">
           <div className="flex flex-row items-center justify-end gap-1 group-data-[collapsible=icon]:flex-col">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              title="Dictionary"
+              aria-label="Dictionary"
+              render={
+                <a href="/dictionary" target="_blank" rel="noreferrer">
+                  <BookOpen className="size-4" />
+                </a>
+              }
+            />
             <Button
               type="button"
               size="icon-sm"
