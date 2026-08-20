@@ -10,12 +10,6 @@ export function OutroBlocks() {
 
   return (
     <FieldGroup className="gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={addBlock}>
-          <Plus />
-          Add block
-        </Button>
-      </div>
       {fields.length === 0 ? (
         <p className="text-sm text-muted-foreground">No blocks</p>
       ) : (
@@ -32,6 +26,10 @@ export function OutroBlocks() {
           </div>
         </DragDropProvider>
       )}
+      <Button type="button" size="sm" variant="outline" onClick={addBlock}>
+        <Plus />
+        Add block
+      </Button>
     </FieldGroup>
   );
 }
