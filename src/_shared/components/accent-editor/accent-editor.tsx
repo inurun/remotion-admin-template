@@ -14,45 +14,29 @@ export function AccentEditor({
   const pitches = pitchesForAccent(moras.length, accent);
 
   return (
-    <div className="grid gap-2">
-      <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-center gap-1">
+      <Button
+        type="button"
+        size="xs"
+        variant={accent === 0 ? "default" : "outline"}
+        disabled={moras.length === 0}
+        onClick={() => onChange(0)}
+      >
+        Flat
+      </Button>
+      {moras.map((mora, index) => (
         <Button
+          key={`${mora}-${index}`}
           type="button"
           size="xs"
-          variant={accent === 0 ? "default" : "outline"}
-          disabled={moras.length === 0}
-          onClick={() => onChange(0)}
+          variant={pitches[index] === "high" ? "default" : "outline"}
+          className={accent === index + 1 ? "ring-2 ring-primary ring-offset-1" : undefined}
+          title={`Accent nucleus ${index + 1}`}
+          onClick={() => onChange(index + 1)}
         >
-          Flat
+          {mora}
         </Button>
-        {moras.map((mora, index) => (
-          <Button
-            key={`${mora}-${index}`}
-            type="button"
-            size="xs"
-            variant={accent === index + 1 ? "default" : "outline"}
-            onClick={() => onChange(index + 1)}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </div>
-      {moras.length > 0 && (
-        <div className="flex flex-wrap gap-1 text-xs">
-          {moras.map((mora, index) => (
-            <span
-              key={`${mora}-${index}`}
-              className={
-                pitches[index] === "high"
-                  ? "rounded bg-primary px-2 py-1 text-primary-foreground"
-                  : "rounded border px-2 py-1"
-              }
-            >
-              {mora}
-            </span>
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }

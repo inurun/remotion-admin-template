@@ -4,7 +4,7 @@ import path from "node:path";
 import type { Connect, Plugin } from "vite";
 
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
-const UPLOADS_PREFIX = "/uploads/";
+const RUNTIME_PREFIXES = ["/uploads/", "/tts/"];
 
 const CONTENT_TYPES = new Map([
   [".gif", "image/gif"],
@@ -15,6 +15,7 @@ const CONTENT_TYPES = new Map([
   [".png", "image/png"],
   [".webm", "video/webm"],
   [".webp", "image/webp"],
+  [".wav", "audio/wav"],
 ]);
 
 function getRequestPathname(url: string | undefined) {
@@ -29,8 +30,8 @@ function getRequestPathname(url: string | undefined) {
   }
 }
 
-function resolveUploadsFile(pathname: string) {
-  if (!pathname.startsWith(UPLOADS_PREFIX)) {
+export function resolveRuntimePublicFile(pathname: string) {
+  if (!RUNTIME_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
   }
 
@@ -42,7 +43,7 @@ function resolveUploadsFile(pathname: string) {
   return path.join(PUBLIC_DIR, relativePath);
 }
 
-async function sendUploadsFile(
+async function sendRuntimePublicFile(
   filePath: string,
   res: ServerResponse<IncomingMessage>,
   next: Connect.NextFunction,
@@ -71,13 +72,13 @@ export const serveRuntimePublicAssetsPlugin = (): Plugin => ({
         return;
       }
 
-      const filePath = resolveUploadsFile(pathname);
+      const filePath = resolveRuntimePublicFile(pathname);
       if (!filePath) {
         next();
         return;
       }
 
-      void sendUploadsFile(filePath, res, next);
+      void sendRuntimePublicFile(filePath, res, next);
     });
   },
 });
