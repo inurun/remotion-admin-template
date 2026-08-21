@@ -1,4 +1,5 @@
 import type { G2pSourceSpan } from "@/_schemas";
+import { DictionarySelectionPopover } from "./dictionary-selection-popover/dictionary-selection-popover";
 
 function getHighlightParts(text: string, spans: G2pSourceSpan[]) {
   const parts: Array<{ key: string; text: string; marked: boolean }> = [];
@@ -33,21 +34,21 @@ function getHighlightParts(text: string, spans: G2pSourceSpan[]) {
 }
 
 export function G2pTextHighlight({ spans, text }: { spans: G2pSourceSpan[]; text: string }) {
-  if (spans.length === 0) {
-    return <p className="text-sm text-muted-foreground">{text}</p>;
-  }
-
   return (
-    <p className="text-sm text-muted-foreground">
-      {getHighlightParts(text, spans).map((part) =>
-        part.marked ? (
-          <mark key={part.key} className="rounded-sm bg-destructive/20 text-foreground">
-            {part.text}
-          </mark>
-        ) : (
-          <span key={part.key}>{part.text}</span>
-        ),
-      )}
-    </p>
+    <DictionarySelectionPopover>
+      <p className="text-sm text-muted-foreground">
+        {spans.length === 0
+          ? text
+          : getHighlightParts(text, spans).map((part) =>
+              part.marked ? (
+                <mark key={part.key} className="rounded-sm bg-destructive/20 text-foreground">
+                  {part.text}
+                </mark>
+              ) : (
+                <span key={part.key}>{part.text}</span>
+              ),
+            )}
+      </p>
+    </DictionarySelectionPopover>
   );
 }
