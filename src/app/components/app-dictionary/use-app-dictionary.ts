@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { DictionaryEntryInput, G2pItem } from "@/_schemas";
+import type { DictionaryEntry, DictionaryEntryInput, G2pItem } from "@/_schemas";
 import { dictionaryEntryInputSchema } from "@/_schemas";
 import {
   analyzeDictionaryText,
@@ -154,6 +154,38 @@ export function useAppDictionary() {
     [reload, run, selectedId],
   );
 
+  const toggleEntry = useCallback(
+    (entry: DictionaryEntry, enabled: boolean) =>
+      run(async () => {
+        const result = await updateDictionaryEntry(entry.id, {
+          ...entryToInput(entry),
+          enabled,
+        });
+        if (selectedId === entry.id) {
+          setDraft((current) => (current ? { ...current, enabled } : current));
+          setSavedDraft(JSON.stringify(entryToInput(result.entry)));
+        }
+        await reload();
+      }),
+    [reload, run, selectedId],
+  );
+
+  const removeEntry = useCallback(
+    (id: number) =>
+      run(async () => {
+        await deleteDictionaryEntry(id);
+        if (selectedId === id) {
+          setSelectedId(null);
+          setDraft(null);
+          setSavedDraft("");
+          setAnalysis(null);
+        }
+        await reload();
+        toast.success("Dictionary entry deleted");
+      }),
+    [reload, run, selectedId],
+  );
+
   return {
     dictionary,
     isLoading,
@@ -177,5 +209,7 @@ export function useAppDictionary() {
     saveOnly,
     saveAndPreview,
     remove,
+    toggleEntry,
+    removeEntry,
   };
 }

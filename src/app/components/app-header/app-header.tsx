@@ -2,16 +2,18 @@ import { Clapperboard, Save } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
 import { SidebarTrigger } from "@/_shared/components/ui/sidebar";
 import { BgmDialog } from "@/app/components/app-header/bgm-dialog/bgm-dialog";
+import { NiconicoDialog } from "@/app/components/app-header/niconico-dialog/niconico-dialog";
 import { RenderDialog } from "@/app/components/app-header/render-dialog/render-dialog";
 import { useEditor } from "@/app/features/editor";
 import { useRender } from "@/app/features/render";
 import { ProjectSettingsDialog } from "@/app/components/app-header/project-settings-dialog/project-settings-dialog";
 import { WeatherDialog } from "@/app/components/app-header/weather-dialog/weather-dialog";
 import { useEditorSession } from "@/app/features/editor";
+import { formatProjectTitleForUi } from "@/app/features/project/lib/project-title";
 
 export function AppHeader() {
   const { save: onSave, isPending: saving } = useEditor();
-  const title = useEditorSession((state) => state.project.meta.title);
+  const title = useEditorSession((state) => formatProjectTitleForUi(state.project.meta.title));
   const { openRenderDialog } = useRender();
 
   return (
@@ -26,6 +28,7 @@ export function AppHeader() {
         <div className="flex items-center justify-end gap-2">
           <BgmDialog />
           <WeatherDialog />
+          <NiconicoDialog />
           <ProjectSettingsDialog />
           <Button
             type="button"

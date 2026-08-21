@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
 import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -41,7 +40,7 @@ export function ProjectSettingsDialog() {
           <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
             <label className="grid gap-2 text-sm font-medium">
               Title
-              <Input autoFocus {...dialog.form.register("title")} />
+              <Textarea autoFocus rows={2} {...dialog.form.register("title")} />
             </label>
             <FieldError errors={[dialog.form.formState.errors.title]} />
           </Field>
@@ -76,41 +75,6 @@ export function ProjectSettingsDialog() {
               </Field>
             )}
           />
-          <div className="grid gap-3 rounded-xl border border-border p-3">
-            <div className="text-sm font-medium">Niconico</div>
-            <Field data-invalid={Boolean(dialog.form.formState.errors.niconicoTitle)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Title
-                <Input {...dialog.form.register("niconicoTitle")} />
-              </label>
-              <FieldError errors={[dialog.form.formState.errors.niconicoTitle]} />
-            </Field>
-            <Field data-invalid={Boolean(dialog.form.formState.errors.niconicoDescription)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Description
-                <Textarea rows={4} {...dialog.form.register("niconicoDescription")} />
-              </label>
-              <FieldError errors={[dialog.form.formState.errors.niconicoDescription]} />
-            </Field>
-            <Field data-invalid={Boolean(dialog.form.formState.errors.niconicoThumbnailTime)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Thumbnail time
-                <Input placeholder="00:00.000" {...dialog.form.register("niconicoThumbnailTime")} />
-              </label>
-              <FieldError errors={[dialog.form.formState.errors.niconicoThumbnailTime]} />
-            </Field>
-            <Field data-invalid={Boolean(dialog.form.formState.errors.niconicoParentWorkIds)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Parent works
-                <Textarea
-                  rows={3}
-                  placeholder="sm9 ss123"
-                  {...dialog.form.register("niconicoParentWorkIds")}
-                />
-              </label>
-              <FieldError errors={[dialog.form.formState.errors.niconicoParentWorkIds]} />
-            </Field>
-          </div>
           <div className="grid gap-2 rounded-xl border border-border p-3">
             <div className="text-sm font-medium">TTS</div>
             <Button

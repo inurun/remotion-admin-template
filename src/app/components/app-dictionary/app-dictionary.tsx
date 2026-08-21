@@ -2,6 +2,7 @@ import { Plus, Save, Trash2, Volume2 } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/_shared/components/ui/card";
 import { Input } from "@/_shared/components/ui/input";
+import { Switch } from "@/_shared/components/ui/switch";
 import { Textarea } from "@/_shared/components/ui/textarea";
 import { AnalysisResult, DictionaryEditor } from "./dictionary-editor";
 import { useAppDictionary } from "./use-app-dictionary";
@@ -52,20 +53,41 @@ export function AppDictionary() {
             <div className="grid max-h-[calc(100vh-13rem)] gap-1 overflow-y-auto">
               {state.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
               {state.filteredEntries.map((entry) => (
-                <button
+                <div
                   key={entry.id}
-                  type="button"
-                  className={`grid rounded-lg px-3 py-2 text-left hover:bg-muted ${state.selectedId === entry.id ? "bg-muted" : ""}`}
-                  onClick={() => state.select(entry.id)}
+                  className={`grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 rounded-lg pr-3 hover:bg-muted ${state.selectedId === entry.id ? "bg-muted" : ""}`}
                 >
-                  <span className="truncate text-sm font-medium">{entry.surface}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {entry.kind === "fixed"
-                      ? entry.reading
-                      : `${entry.candidates.length} candidates`}
-                    {!entry.enabled && " · Disabled"}
-                  </span>
-                </button>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    disabled={state.pending}
+                    aria-label={`Delete ${entry.surface}`}
+                    onClick={() => state.removeEntry(entry.id)}
+                  >
+                    <Trash2 />
+                  </Button>
+                  <Switch
+                    size="sm"
+                    checked={entry.enabled}
+                    disabled={state.pending}
+                    aria-label={`Enable ${entry.surface}`}
+                    onCheckedChange={(checked) => state.toggleEntry(entry, checked)}
+                  />
+                  <button
+                    type="button"
+                    className="grid min-w-0 py-2 text-left"
+                    onClick={() => state.select(entry.id)}
+                  >
+                    <span className="truncate text-sm font-medium">{entry.surface}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {entry.kind === "fixed"
+                        ? entry.reading
+                        : `${entry.candidates.length} candidates`}
+                      {!entry.enabled && " · Disabled"}
+                    </span>
+                  </button>
+                </div>
               ))}
             </div>
           </CardContent>

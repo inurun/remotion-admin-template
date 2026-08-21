@@ -6,10 +6,8 @@ import { z } from "zod";
 import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
 import { VIDEO_SIZE_PRESETS } from "@/constants";
 import {
-  formatParentWorkIdsInput,
   getProjectVideoSizePresetId,
   normalizeProjectMeta,
-  parseParentWorkIdsInput,
   type VideoSizePresetId,
 } from "@/_shared/project/project-meta";
 import { useEditor, useEditorSession } from "@/app/features/editor";
@@ -24,10 +22,6 @@ const projectSettingsDialogFormSchema = z.object({
   title: z.string(),
   description: z.string(),
   videoSizePreset: z.enum(["landscape", "square", "portrait"]),
-  niconicoTitle: z.string(),
-  niconicoDescription: z.string(),
-  niconicoThumbnailTime: z.string(),
-  niconicoParentWorkIds: z.string(),
 });
 
 type ProjectSettingsDialogFormValues = z.infer<typeof projectSettingsDialogFormSchema>;
@@ -46,13 +40,9 @@ function createFormValues(
   const normalizedMeta = normalizeProjectMeta(meta);
 
   return {
-    title: normalizedMeta.title,
+    title: normalizedMeta.title.replaceAll("\\n", "\n"),
     description: normalizedMeta.description,
     videoSizePreset: getProjectVideoSizePresetId(normalizedMeta),
-    niconicoTitle: normalizedMeta.niconico.title,
-    niconicoDescription: normalizedMeta.niconico.description,
-    niconicoThumbnailTime: normalizedMeta.niconico.thumbnailTime,
-    niconicoParentWorkIds: formatParentWorkIdsInput(normalizedMeta.niconico.parentWorkIds),
   };
 }
 
@@ -96,12 +86,6 @@ export function useProjectSettingsDialog() {
           description: values.description,
           width: preset.width,
           height: preset.height,
-          niconico: {
-            title: values.niconicoTitle,
-            description: values.niconicoDescription,
-            thumbnailTime: values.niconicoThumbnailTime,
-            parentWorkIds: parseParentWorkIdsInput(values.niconicoParentWorkIds),
-          },
         },
         {
           titleFallback: getProjectTitleFallback(projectPath),
