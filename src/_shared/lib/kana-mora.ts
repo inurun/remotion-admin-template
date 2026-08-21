@@ -30,3 +30,14 @@ export function pitchesForAccent(moraCount: number, accentNucleus: number): Disp
     return accentNucleus === 0 || index < accentNucleus ? "high" : "low";
   });
 }
+
+export function accentForPitches(pitches: DisplayPitch[]) {
+  for (let accent = 0; accent <= pitches.length; accent += 1) {
+    if (
+      pitchesForAccent(pitches.length, accent).every((pitch, index) => pitch === pitches[index])
+    ) {
+      return accent;
+    }
+  }
+  return null;
+}

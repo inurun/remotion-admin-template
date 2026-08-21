@@ -39,15 +39,18 @@ export function useAppDictionary() {
     );
   }, [dictionary.entries, kindFilter, query]);
 
-  const loadDraft = useCallback((next: DictionaryEntryInput, id: number | null) => {
-    const copy = structuredClone(next);
-    setSelectedId(id);
-    setDraft(copy);
-    setSavedDraft(JSON.stringify(copy));
-    setPreviewText(getDefaultPreviewText(copy));
-    setAnalysis(null);
-    setError("");
-  }, []);
+  const loadDraft = useCallback(
+    (next: DictionaryEntryInput, id: number | null, preview?: string) => {
+      const copy = structuredClone(next);
+      setSelectedId(id);
+      setDraft(copy);
+      setSavedDraft(JSON.stringify(copy));
+      setPreviewText(preview ?? getDefaultPreviewText(copy));
+      setAnalysis(null);
+      setError("");
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!draft && dictionary.entries[0]) {
@@ -92,19 +95,22 @@ export function useAppDictionary() {
     [canDiscard, loadDraft],
   );
 
-  const save = useCallback(async () => {
-    if (!draft) throw new Error("Select an entry");
-    const normalized = normalizeDictionaryInput(draft);
-    const parsed = dictionaryEntryInputSchema.safeParse(normalized);
-    if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid entry");
-    const result = selectedId
-      ? await updateDictionaryEntry(selectedId, parsed.data)
-      : await createDictionaryEntry(parsed.data);
-    loadDraft(entryToInput(result.entry), result.entry.id);
-    await reload();
-    toast.success("Dictionary saved");
-    return result.entry;
-  }, [draft, loadDraft, reload, selectedId]);
+  const save = useCallback(
+    async (preview?: string) => {
+      if (!draft) throw new Error("Select an entry");
+      const normalized = normalizeDictionaryInput(draft);
+      const parsed = dictionaryEntryInputSchema.safeParse(normalized);
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid entry");
+      const result = selectedId
+        ? await updateDictionaryEntry(selectedId, parsed.data)
+        : await createDictionaryEntry(parsed.data);
+      loadDraft(entryToInput(result.entry), result.entry.id, preview);
+      await reload();
+      toast.success("Dictionary saved");
+      return result.entry;
+    },
+    [draft, loadDraft, reload, selectedId],
+  );
 
   const run = useCallback(async (action: () => Promise<void>) => {
     setPending(true);
@@ -125,9 +131,9 @@ export function useAppDictionary() {
   const saveAndPreview = useCallback(
     () =>
       run(async () => {
-        await save();
         const text = previewText.trim();
         if (!text) throw new Error("Enter preview text");
+        await save(previewText);
         const g2p = await analyzeDictionaryText(text);
         setAnalysis(g2p);
         const wav = await requestDictionaryPreview(g2p);

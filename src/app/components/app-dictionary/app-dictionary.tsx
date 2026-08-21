@@ -129,12 +129,7 @@ export function AppDictionary() {
           <CardContent className="grid gap-5">
             {state.draft && (
               <>
-                <DictionaryEditor
-                  draft={state.draft}
-                  setDraft={state.setDraft}
-                  selectedCandidate={state.selectedCandidate}
-                />
-                <div className="grid gap-3 border-t pt-4">
+                <div className="grid gap-3 border-b pb-4">
                   <label className="grid gap-1 text-xs font-medium text-muted-foreground">
                     Preview text
                     <Textarea
@@ -154,6 +149,11 @@ export function AppDictionary() {
                   {state.error && <p className="text-sm text-destructive">{state.error}</p>}
                   {state.analysis && <AnalysisResult analysis={state.analysis} />}
                 </div>
+                <DictionaryEditor
+                  draft={state.draft}
+                  setDraft={state.setDraft}
+                  selectedCandidate={state.selectedCandidate}
+                />
               </>
             )}
           </CardContent>

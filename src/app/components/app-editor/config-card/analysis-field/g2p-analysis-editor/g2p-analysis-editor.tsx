@@ -31,7 +31,7 @@ export function G2pAnalysisEditor({
         </ul>
       ) : null}
       {getSegmentViews().map((segment) => (
-        <G2pSegmentView key={segment.key} boundary={segment.boundary} words={segment.words} />
+        <G2pSegmentView key={segment.key} boundary={segment.boundary} phrases={segment.phrases} />
       ))}
     </div>
   );

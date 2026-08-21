@@ -1,16 +1,15 @@
 import { Button } from "@/_shared/components/ui/button";
-import { pitchesForAccent, splitKanaMoras } from "@/_shared/lib/kana-mora";
+import { pitchesForAccent } from "@/_shared/lib/kana-mora";
 
 export function AccentEditor({
-  pronunciation,
+  moras,
   value,
   onChange,
 }: {
-  pronunciation: string;
+  moras: string[];
   value: number;
   onChange: (value: number) => void;
 }) {
-  const moras = splitKanaMoras(pronunciation);
   const accent = Math.min(value, moras.length);
   const pitches = pitchesForAccent(moras.length, accent);
 

@@ -1,26 +1,28 @@
 import { useMemo } from "react";
-import { g2pItemSchema, type G2pItem, type G2pPitch } from "@/_schemas";
+import { g2pItemSchema, type G2pItem } from "@/_schemas";
+import { accentForPitches, pitchesForAccent } from "@/_shared/lib/kana-mora";
 import { getUnknownSourceSpans, getWarningsWithoutSourceSpan } from "./unknown-spans";
-
-export type G2pMoraButton = {
-  label: string;
-  pitch: G2pPitch;
-  onClick: () => void;
-};
 
 export type G2pWordView = {
   key: string;
   ignored: boolean;
   surface: string;
   isChained: boolean;
-  moraButtons: G2pMoraButton[];
   onToggleChain?: () => void;
+};
+
+export type G2pPhraseView = {
+  key: string;
+  words: G2pWordView[];
+  moras: string[];
+  accent: number;
+  onAccentChange: (accent: number) => void;
 };
 
 type G2pSegmentView = {
   key: string;
   boundary: G2pItem["segments"][number]["boundary"];
-  words: G2pWordView[];
+  phrases: G2pPhraseView[];
 };
 
 type ParsedG2pState =
@@ -40,8 +42,14 @@ function getFirstSpokenWordIndex(words: G2pItem["segments"][number]["words"]) {
   return words.findIndex((word) => !isIgnoredWord(word));
 }
 
-function togglePitch(pitch: G2pPitch): G2pPitch {
-  return pitch === "high" ? "low" : "high";
+export function groupWordsByAccentPhrase(words: Array<{ chain: boolean; ignored: boolean }>) {
+  const groups: number[][] = [];
+  for (const [wordIndex, word] of words.entries()) {
+    if (!word.ignored && (!word.chain || groups.length === 0)) groups.push([]);
+    if (groups.length === 0) groups.push([]);
+    groups.at(-1)?.push(wordIndex);
+  }
+  return groups;
 }
 
 function parseG2pState(value: G2pItem | undefined): ParsedG2pState {
@@ -84,42 +92,51 @@ export function useG2pAnalysisEditor(
 
     return parsed.item.segments.map((segment, segmentIndex) => {
       const firstSpokenIndex = getFirstSpokenWordIndex(segment.words);
+      const phraseWordIndexes = groupWordsByAccentPhrase(
+        segment.words.map((word) => ({ chain: word.chain, ignored: isIgnoredWord(word) })),
+      );
       return {
         key: `segment-${segmentIndex}`,
         boundary: segment.boundary,
-        words: segment.words.map((word, wordIndex) => {
-          const ignored = isIgnoredWord(word);
-          const canToggleChain = !ignored && wordIndex !== firstSpokenIndex;
+        phrases: phraseWordIndexes.map((wordIndexes, phraseIndex) => {
+          const phraseWords = wordIndexes.map((wordIndex) => segment.words[wordIndex]);
+          const moras = phraseWords.flatMap((word) => word?.moras ?? []);
           return {
-            key: `word-${segmentIndex}-${wordIndex}`,
-            ignored,
-            surface: word.surface,
-            isChained: word.chain,
-            moraButtons: ignored
-              ? []
-              : word.moras.map((mora, moraIndex) => ({
-                  label: mora.text,
-                  pitch: mora.pitch,
-                  onClick: () =>
-                    updateItem((item) => {
-                      const target =
-                        item.segments[segmentIndex]?.words[wordIndex]?.moras[moraIndex];
-                      if (!target) {
-                        return;
-                      }
-                      target.pitch = togglePitch(target.pitch);
-                    }),
-                })),
-            onToggleChain: canToggleChain
-              ? () =>
-                  updateItem((item) => {
-                    const target = item.segments[segmentIndex]?.words[wordIndex];
-                    if (!target) {
-                      return;
-                    }
-                    target.chain = !target.chain;
-                  })
-              : undefined,
+            key: `phrase-${segmentIndex}-${phraseIndex}`,
+            words: wordIndexes.flatMap((wordIndex) => {
+              const word = segment.words[wordIndex];
+              if (!word) return [];
+              const ignored = isIgnoredWord(word);
+              return [
+                {
+                  key: `word-${segmentIndex}-${wordIndex}`,
+                  ignored,
+                  surface: word.surface,
+                  isChained: word.chain,
+                  onToggleChain:
+                    !ignored && wordIndex !== firstSpokenIndex
+                      ? () =>
+                          updateItem((item) => {
+                            const target = item.segments[segmentIndex]?.words[wordIndex];
+                            if (target) target.chain = !target.chain;
+                          })
+                      : undefined,
+                },
+              ];
+            }),
+            moras: moras.map((mora) => mora.text),
+            accent: accentForPitches(moras.map((mora) => mora.pitch)) ?? 0,
+            onAccentChange: (accent: number) =>
+              updateItem((item) => {
+                const pitches = pitchesForAccent(moras.length, accent);
+                let moraIndex = 0;
+                for (const wordIndex of wordIndexes) {
+                  for (const mora of item.segments[segmentIndex]?.words[wordIndex]?.moras ?? []) {
+                    mora.pitch = pitches[moraIndex] ?? mora.pitch;
+                    moraIndex += 1;
+                  }
+                }
+              }),
           };
         }),
       };

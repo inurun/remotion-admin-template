@@ -11,8 +11,8 @@ import { Button } from "@/_shared/components/ui/button";
 import { Input } from "@/_shared/components/ui/input";
 import { Textarea } from "@/_shared/components/ui/textarea";
 import { splitKanaMoras } from "@/_shared/lib/kana-mora";
+import { AccentEditor } from "@/_shared/components/accent-editor/accent-editor";
 import { createCandidate, createMorpheme } from "@/app/features/dictionary";
-import { AccentEditor } from "./accent-editor";
 
 const POSITIONS: Array<{ value: DictionaryPartOfSpeech; label: string }> = [
   { value: "proper_noun", label: "Proper noun" },
@@ -112,7 +112,7 @@ function MorphemeEditor({
         <label className={labelClass}>
           Accent nucleus
           <AccentEditor
-            pronunciation={effectivePronunciation}
+            moras={splitKanaMoras(effectivePronunciation)}
             value={value.accent_nucleus}
             onChange={(accent_nucleus) => onChange({ ...value, accent_nucleus })}
           />
@@ -296,7 +296,7 @@ export function DictionaryEditor({
           <label className={labelClass}>
             Accent nucleus
             <AccentEditor
-              pronunciation={draft.pronunciation || draft.reading}
+              moras={splitKanaMoras(draft.pronunciation || draft.reading)}
               value={draft.accent_nucleus}
               onChange={(accent_nucleus) => update({ ...draft, accent_nucleus })}
             />
