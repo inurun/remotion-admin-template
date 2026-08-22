@@ -51,6 +51,7 @@ export {
   savedSequenceItemSchema,
   savedTransitionSchema,
   type SavedEndcardPage,
+  type SavedEyecatchTextPage,
   type SavedOutroPage,
   type SavedPage,
   type SavedSequenceItem,

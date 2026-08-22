@@ -74,6 +74,11 @@ export const savePageItemSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     ...savePageSharedFields,
+    type: z.literal("eyecatch-text"),
+    meta: pageTagsMetaSchema,
+  }),
+  z.object({
+    ...savePageSharedFields,
     type: z.literal("main"),
     meta: pageTagsMetaSchema,
   }),

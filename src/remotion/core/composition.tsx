@@ -19,6 +19,7 @@ function PageByType({ page }: { page: SavedPage }) {
     case "outro":
       return <OutroPage page={page} />;
     case "endcard":
+    case "eyecatch-text":
       return null;
   }
 }

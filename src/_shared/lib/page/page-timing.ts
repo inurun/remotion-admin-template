@@ -1,0 +1,1 @@
+export const EYECATCH_TEXT_MIN_DURATION_SEC = 0.5;

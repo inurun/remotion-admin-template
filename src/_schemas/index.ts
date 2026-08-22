@@ -47,6 +47,7 @@ export {
   type PageType,
   type ProjectFileSummary,
   type SavedEndcardPage,
+  type SavedEyecatchTextPage,
   type SavedOutroPage,
   type SavedPage,
   type SavedProject,

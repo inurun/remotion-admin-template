@@ -12,7 +12,7 @@ import { useEditorCard } from "@/app/components/app-editor/editor-card/use-edito
 import type { PageType } from "@/_schemas";
 
 function SelectedPageEditor({ type }: { type: PageType }) {
-  if (type === "intro") {
+  if (type === "intro" || type === "eyecatch-text") {
     return (
       <>
         <PageHeader />

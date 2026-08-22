@@ -69,7 +69,7 @@ export const voicePresetSchema = z.discriminatedUnion("provider", [
   }),
 ]);
 
-export const pageTypeSchema = z.enum(["intro", "main", "outro", "endcard"]);
+export const pageTypeSchema = z.enum(["intro", "eyecatch-text", "main", "outro", "endcard"]);
 export const transitionVariantSchema = z.enum(["slide"]);
 
 const weatherLocationSchema = z.enum(WEATHER_LOCATION_IDS);

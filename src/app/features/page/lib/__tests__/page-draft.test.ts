@@ -46,6 +46,25 @@ describe("page draft", () => {
     });
   });
 
+  it("creates a blank eyecatch-text page without tts and without pad after", () => {
+    expect(
+      createBlankPageInput({
+        id: "eyecatch-id",
+        title: "Eyecatch",
+        type: "eyecatch-text",
+      }),
+    ).toEqual({
+      id: "eyecatch-id",
+      title: "Eyecatch",
+      type: "eyecatch-text",
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    });
+  });
+
   it("keeps blank titles unchanged", () => {
     expect(
       createBlankPageInput({

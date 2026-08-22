@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
+import { EYECATCH_TEXT_MIN_DURATION_SEC } from "@/_shared/lib/page/page-timing";
 import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
 import type { SaveSequenceItem } from "@/server/features/project/contract";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
@@ -1237,6 +1238,111 @@ describe("project use-case", () => {
       tts: [],
     });
     expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("saves an eyecatch-text page without tts at the minimum duration", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "eyecatch-1",
+          title: "Eyecatch",
+          type: "eyecatch-text",
+          meta: { tags: [] },
+          padBeforeSec: 1,
+          padAfterSec: 1,
+          richText: null,
+          tts: [],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages)).toMatchObject({
+      type: "eyecatch-text",
+      durationSec: EYECATCH_TEXT_MIN_DURATION_SEC,
+      tts: [],
+    });
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("saves an eyecatch-text page duration from tts total without page pads", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/eyecatch.wav", 2));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "eyecatch-1",
+          title: "Eyecatch",
+          type: "eyecatch-text",
+          meta: { tags: [] },
+          padBeforeSec: 1,
+          padAfterSec: 1,
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages)).toMatchObject({
+      type: "eyecatch-text",
+      durationSec: 2.1,
+    });
+  });
+
+  it("clamps a short eyecatch-text tts duration to the minimum", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/eyecatch-short.wav", 0.2));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "eyecatch-1",
+          title: "Eyecatch",
+          type: "eyecatch-text",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages)).toMatchObject({
+      type: "eyecatch-text",
+      durationSec: EYECATCH_TEXT_MIN_DURATION_SEC,
+    });
   });
 
   it("does not analyze or synthesize an unchanged page B when only page A is upserted", async () => {

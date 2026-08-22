@@ -23,6 +23,11 @@ export const pageFormSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     ...pageFormSharedFields,
+    type: z.literal("eyecatch-text"),
+    meta: pageTagsMetaSchema,
+  }),
+  z.object({
+    ...pageFormSharedFields,
     type: z.literal("main"),
     meta: pageTagsMetaSchema,
   }),
@@ -39,5 +44,6 @@ export const pageFormSchema = z.discriminatedUnion("type", [
 ]);
 
 export type PageFormValues = z.infer<typeof pageFormSchema>;
+export type EyecatchTextPageFormValues = Extract<PageFormValues, { type: "eyecatch-text" }>;
 export type OutroPageFormValues = Extract<PageFormValues, { type: "outro" }>;
 export type EndcardPageFormValues = Extract<PageFormValues, { type: "endcard" }>;

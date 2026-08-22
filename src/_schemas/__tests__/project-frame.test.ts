@@ -143,4 +143,22 @@ describe("project frame schema", () => {
       },
     });
   });
+
+  it("defaults eyecatch-text meta tags", () => {
+    const page = savedPageSchema.parse({
+      id: "eyecatch",
+      title: "Eyecatch",
+      type: "eyecatch-text",
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      durationSec: 0.5,
+      richText: null,
+      tts: [],
+    });
+
+    expect(page).toMatchObject({
+      type: "eyecatch-text",
+      meta: { tags: [] },
+    });
+  });
 });

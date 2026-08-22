@@ -27,6 +27,7 @@ import {
   OUTRO_PAGE_DURATION_SEC,
 } from "@/_shared/lib/outro/outro-timing";
 import { ENDCARD_DURATION_SEC } from "@/_shared/lib/endcard/endcard-timing";
+import { EYECATCH_TEXT_MIN_DURATION_SEC } from "@/_shared/lib/page/page-timing";
 import { secondsToFrames } from "@/remotion/utils/timing";
 import { createTtsTimingSegments, getTtsTimingEndSec } from "@/_shared/lib/tts/tts-timing";
 import {
@@ -411,6 +412,25 @@ async function buildSavedPage(
         MIN_TTS_DURATION_SECONDS,
         ENDCARD_DURATION_SEC + page.padBeforeSec + page.padAfterSec,
       ),
+      richText: page.richText,
+      tts,
+    };
+  }
+
+  if (page.type === "eyecatch-text") {
+    const ttsDurationSec = getTtsTimingEndSec(
+      createTtsTimingSegments(tts, {
+        minDurationSec: MIN_TTS_DURATION_SECONDS,
+      }),
+    );
+    return {
+      id: page.id,
+      title: page.title,
+      type: page.type,
+      meta: page.meta,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      durationSec: Math.max(EYECATCH_TEXT_MIN_DURATION_SEC, ttsDurationSec),
       richText: page.richText,
       tts,
     };
