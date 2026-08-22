@@ -5,6 +5,9 @@ export type ServerEnv = {
   NEXT_PUBLIC_VIDEO_FPS?: string;
   VITE_VIDEO_FPS?: string;
   HAQUMEI_API_URL?: string;
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_G2P_MODEL?: string;
+  OPENROUTER_G2P_PROVIDER?: string;
   VOICEPEAK_PATH?: string;
 };
 
@@ -12,6 +15,9 @@ const serverEnvKeys = [
   "NEXT_PUBLIC_VIDEO_FPS",
   "VITE_VIDEO_FPS",
   "HAQUMEI_API_URL",
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_G2P_MODEL",
+  "OPENROUTER_G2P_PROVIDER",
   "VOICEPEAK_PATH",
 ] as const satisfies readonly (keyof ServerEnv)[];
 

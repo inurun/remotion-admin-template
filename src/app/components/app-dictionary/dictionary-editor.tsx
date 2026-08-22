@@ -138,26 +138,21 @@ function MorphemeEditor({
 function CandidateEditor({
   value,
   index,
-  selected,
   onChange,
   onRemove,
   removable,
 }: {
   value: DictionaryCandidate;
   index: number;
-  selected: boolean;
   onChange: (value: DictionaryCandidate) => void;
   onRemove: () => void;
   removable: boolean;
 }) {
   return (
-    <div
-      className={`grid gap-3 rounded-xl border p-3 ${selected ? "border-primary ring-1 ring-primary" : ""}`}
-    >
+    <div className="grid gap-3 rounded-xl border p-3">
       <div className="flex items-center justify-between gap-2">
         <strong>Candidate {index + 1}</strong>
         <div className="flex items-center gap-2">
-          {selected && <span className="text-xs text-primary">Selected by analysis</span>}
           <Button
             type="button"
             size="icon-sm"
@@ -223,11 +218,9 @@ function CandidateEditor({
 export function DictionaryEditor({
   draft,
   setDraft,
-  selectedCandidate,
 }: {
   draft: DictionaryEntryInput;
   setDraft: Dispatch<SetStateAction<DictionaryEntryInput | null>>;
-  selectedCandidate: number | null;
 }) {
   const update = (next: DictionaryEntryInput) => setDraft(next);
   return (
@@ -309,7 +302,6 @@ export function DictionaryEditor({
               key={index}
               value={candidate}
               index={index}
-              selected={selectedCandidate === index}
               removable={draft.candidates.length > 2}
               onRemove={() =>
                 update({
@@ -351,29 +343,15 @@ export function AnalysisResult({ analysis }: { analysis: G2pItem }) {
   return (
     <div className="grid gap-2 rounded-lg border p-3">
       <strong className="text-sm">Analysis result</strong>
-      <div className="flex flex-wrap gap-2">
-        {analysis.segments.flatMap((segment) =>
-          segment.words.map((word, index) => (
-            <div
-              key={`${word.metadata.orig}-${index}`}
-              className="grid gap-1 rounded-lg bg-muted p-2 text-xs"
-            >
-              <span>{word.metadata.orig}</span>
-              <span className="text-muted-foreground">{word.metadata.read}</span>
-              <span className="flex gap-1">
-                {word.moras.map((mora, moraIndex) => (
-                  <span
-                    key={moraIndex}
-                    className={mora.pitch === "high" ? "text-primary font-bold" : ""}
-                  >
-                    {mora.text}
-                  </span>
-                ))}
-              </span>
-            </div>
-          )),
-        )}
-      </div>
+      <p className="text-sm">{analysis.text}</p>
+      <p className="font-mono text-sm">{analysis.kana}</p>
+      {analysis.warnings.length > 0 ? (
+        <ul className="grid gap-1 text-xs text-muted-foreground">
+          {analysis.warnings.map((warning, index) => (
+            <li key={`${warning.code}-${index}`}>{warning.code}</li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }

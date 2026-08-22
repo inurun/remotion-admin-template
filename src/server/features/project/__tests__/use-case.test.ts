@@ -415,8 +415,7 @@ describe("project use-case", () => {
   it("keeps duplicate texts mapped by request index", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     const first = createG2pItem("Hello");
-    const second = createG2pItem("Hello");
-    second.segments[0]!.words[0]!.moras[0]!.pitch = "low";
+    const second = createG2pItem("Hello", "ヘ'ロ");
     analyzeTextsMock.mockResolvedValueOnce([first, second]);
     synthesizeVoicevoxMock
       .mockResolvedValueOnce(audio("/tts/one.wav"))
@@ -570,9 +569,7 @@ describe("project use-case", () => {
   });
 
   it("resynthesizes without reanalyzing when H/L or chain changes", async () => {
-    const edited = createG2pItem("Hello");
-    edited.segments[0]!.words[0]!.moras[0]!.pitch = "low";
-    edited.segments[0]!.words[0]!.chain = true;
+    const edited = createG2pItem("Hello", "ヘ'ロ");
     readSavedProjectMock.mockResolvedValueOnce({
       pages: [
         {

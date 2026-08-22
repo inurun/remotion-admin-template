@@ -16,7 +16,7 @@ describe("synthesis request builders", () => {
     });
 
     expect(request).toEqual({
-      schema_version: "1",
+      schema_version: "2",
       item,
       speaker: 3,
       synthesis_settings: {
@@ -38,7 +38,7 @@ describe("synthesis request builders", () => {
         voiceName: "futaba-minato_ja_JP",
       }),
     ).toEqual({
-      schema_version: "1",
+      schema_version: "2",
       item,
       voice_name: "futaba-minato_ja_JP",
     });
@@ -57,7 +57,7 @@ describe("synthesis request builders", () => {
     });
 
     expect(request).toEqual({
-      schema_version: "1",
+      schema_version: "2",
       item,
       voice_name: "futaba-minato_ja_JP",
       voice_version: "2.0.2",

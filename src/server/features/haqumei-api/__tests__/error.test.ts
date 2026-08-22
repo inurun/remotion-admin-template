@@ -36,14 +36,12 @@ describe("HaqumeiApiError", () => {
         status: 422,
         code: "unrepresentable_prosody",
         detail: "",
-        errors: [{ path: "item.segments.0.words.0.moras.1.pitch", reason: "unrepresentable" }],
+        errors: [{ path: "item.kana", reason: "unrepresentable" }],
       },
       500,
     );
 
-    expect(error.message).toBe(
-      "unrepresentable_prosody: item.segments.0.words.0.moras.1.pitch: unrepresentable",
-    );
+    expect(error.message).toBe("unrepresentable_prosody: item.kana: unrepresentable");
   });
 
   it("does not invent a problem body when the payload is not ProblemDetails", () => {
@@ -71,17 +69,17 @@ describe("formatHaqumeiApiLog", () => {
       title: "Invalid synthesis input",
       status: 422,
       code: "invalid_synthesis_input",
-      detail: 'item "対象テキスト": item.segments[0].words[2].moras[0].text is invalid',
+      detail: 'item "対象テキスト": item.kana is invalid',
       errors: [
         {
-          path: "item.segments[0].words[2].moras[0].text",
-          reason: "invalid_mora",
+          path: "item.kana",
+          reason: "invalid_kana_syntax",
         },
       ],
     });
 
     expect(formatHaqumeiApiLog(error)).toBe(
-      '422 invalid_synthesis_input: item "対象テキスト": item.segments[0].words[2].moras[0].text is invalid [item.segments[0].words[2].moras[0].text: invalid_mora]',
+      '422 invalid_synthesis_input: item "対象テキスト": item.kana is invalid [item.kana: invalid_kana_syntax]',
     );
   });
 

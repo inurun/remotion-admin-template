@@ -1,8 +1,9 @@
-const HAQUMEI_MAX_BATCH_SIZE = 256;
-const HAQUMEI_MAX_TEXT_CHARS = 500;
-const HAQUMEI_MAX_TOTAL_CHARS = 32_000;
+export const HAQUMEI_MAX_BATCH_SIZE = 256;
+export const HAQUMEI_MAX_TEXT_CHARS = 500;
+export const HAQUMEI_MAX_TOTAL_CHARS = 32_000;
+export const HAQUMEI_SCHEMA_VERSION = "2";
 
-function unicodeScalarCount(text: string) {
+export function unicodeScalarCount(text: string) {
   return [...text].length;
 }
 
@@ -14,6 +15,34 @@ export function assertHaqumeiTextLength(text: string, ttsId?: string) {
 
   const suffix = ttsId ? ` for tts ${ttsId}` : "";
   throw new Error(`text exceeds ${HAQUMEI_MAX_TEXT_CHARS} characters${suffix} (${count})`);
+}
+
+export function getHaqumeiValidateBatchError(texts: string[]) {
+  if (texts.length > HAQUMEI_MAX_BATCH_SIZE) {
+    return `validate exceeds ${HAQUMEI_MAX_BATCH_SIZE} items (${texts.length})`;
+  }
+
+  let total = 0;
+  for (const text of texts) {
+    const count = unicodeScalarCount(text);
+    if (count > HAQUMEI_MAX_TEXT_CHARS) {
+      return `text exceeds ${HAQUMEI_MAX_TEXT_CHARS} characters (${count})`;
+    }
+    total += count;
+  }
+
+  if (total > HAQUMEI_MAX_TOTAL_CHARS) {
+    return `validate exceeds ${HAQUMEI_MAX_TOTAL_CHARS} total characters (${total})`;
+  }
+
+  return undefined;
+}
+
+export function assertHaqumeiValidateBatch(texts: string[]) {
+  const error = getHaqumeiValidateBatchError(texts);
+  if (error) {
+    throw new Error(error);
+  }
 }
 
 export function chunkAnalyzeTexts(texts: string[]) {

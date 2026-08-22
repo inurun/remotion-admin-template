@@ -53,7 +53,11 @@ describe("analyzeTexts", () => {
       .mockReturnValueOnce({
         POST: async () => ({
           response: new Response(null, { status: 200 }),
-          data: { items: firstChunk.map((text) => createG2pItem(text)) },
+          data: {
+            schema_version: "2",
+            haqumei_version: "0.8.5",
+            items: firstChunk.map((text) => createG2pItem(text)),
+          },
         }),
       })
       .mockReturnValueOnce({

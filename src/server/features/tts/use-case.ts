@@ -2,6 +2,7 @@ import type { VoiceOption } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { clearProjectTtsCache } from "@/server/_shared/storage";
 import { analyzeText } from "@/server/features/haqumei-api/analyze";
+import { validateG2pItem } from "@/server/features/haqumei-api/validate";
 import {
   listOptionalVoisonaVoices,
   listVoicevoxVoices,
@@ -12,10 +13,13 @@ import {
   ttsAnalyzeRequestSchema,
   ttsClearCacheRequestSchema,
   ttsSynthesizeRequestSchema,
+  ttsValidateRequestSchema,
 } from "./contract";
 import { getEffectiveReadText, getUsableG2p } from "./providers/comparison";
 import { getTtsProvider } from "./providers/registry";
 import type { TtsSynthesisInput } from "./providers/types";
+
+export { analyzeTtsPageWithLlm } from "./llm-analysis";
 
 async function loadProviderVoices<T>(label: string, baseUrl: string, task: Promise<T>): Promise<T> {
   try {
@@ -57,8 +61,12 @@ export async function listTtsVoices(serverEnv: ServerEnv) {
 
 export async function analyzeTts(serverEnv: ServerEnv, input: unknown) {
   const parsed = ttsAnalyzeRequestSchema.parse(input);
-  const text = parsed.text.trim();
-  return { g2p: await analyzeText(serverEnv, text) };
+  return { g2p: await analyzeText(serverEnv, parsed.text) };
+}
+
+export async function validateTtsG2p(serverEnv: ServerEnv, input: unknown) {
+  const parsed = ttsValidateRequestSchema.parse(input);
+  return { g2p: await validateG2pItem(serverEnv, parsed) };
 }
 
 export async function synthesizeTts(serverEnv: ServerEnv, input: unknown) {

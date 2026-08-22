@@ -22,7 +22,6 @@ describe("unknown source spans", () => {
     item.warnings = [
       {
         code: "unknown_word",
-        location: { segment_index: 0, word_index: 0 },
         source_span: { start_utf16: 1, end_utf16: 3 },
       },
     ];
@@ -36,7 +35,6 @@ describe("unknown source spans", () => {
     item.warnings = [
       {
         code: "unknown_word",
-        location: { segment_index: 0, word_index: 0 },
       },
     ];
 
@@ -48,7 +46,6 @@ describe("unknown source spans", () => {
     item.warnings = [
       {
         code: "unknown_word",
-        location: null,
         source_span: { start_utf16: 1, end_utf16: 2 },
       },
     ];

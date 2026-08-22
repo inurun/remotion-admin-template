@@ -2,13 +2,16 @@ import { g2pItemSchema, type G2pItem } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { getHaqumeiApiClient, unwrapHaqumeiData } from "./client";
 import { HaqumeiApiError } from "./error";
-import { assertHaqumeiTextLength, chunkAnalyzeTexts } from "./limits";
+import { assertHaqumeiTextLength, chunkAnalyzeTexts, HAQUMEI_SCHEMA_VERSION } from "./limits";
 
 async function requestAnalyze(serverEnv: ServerEnv, texts: string[]): Promise<G2pItem[]> {
   const response = await getHaqumeiApiClient(serverEnv).POST("/v1/analyze", {
     body: { texts },
   });
   const data = unwrapHaqumeiData(response);
+  if (data.schema_version !== HAQUMEI_SCHEMA_VERSION) {
+    throw new Error(`haqumei-api analyze returned schema_version ${data.schema_version}`);
+  }
   if (data.items.length !== texts.length) {
     throw new Error(
       `haqumei-api analyze returned ${data.items.length} items for ${texts.length} texts`,

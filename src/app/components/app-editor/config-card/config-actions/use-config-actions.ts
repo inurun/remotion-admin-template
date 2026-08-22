@@ -19,7 +19,7 @@ function isVoiceActionDisabled({
 }
 
 export function useConfigTtsActions() {
-  const { analyze, canRunTts, isAnalyzing, preview } = useTts();
+  const { analyze, analyzeWithLlm, canRunTts, isAnalyzing, isLlmAnalyzing, preview } = useTts();
   const { ttsId } = useSelectedTts();
   const ttsIndex = useTtsFormIndex(ttsId);
   const { control } = useFormContext<PageFormValues>();
@@ -31,11 +31,20 @@ export function useConfigTtsActions() {
     control,
     name: `tts.${Math.max(ttsIndex, 0)}.voiceName`,
   });
+  const provider = useWatch({
+    control,
+    name: `tts.${Math.max(ttsIndex, 0)}.provider`,
+  });
   const actionDisabled = ttsIndex < 0 || isVoiceActionDisabled({ canRunTts, text, voiceName });
+  const busy = isAnalyzing || isLlmAnalyzing;
 
   const analyzeSelected = useCallback(() => {
     void analyze(ttsId);
   }, [analyze, ttsId]);
+
+  const llmAnalyzeSelected = useCallback(() => {
+    void analyzeWithLlm(ttsId);
+  }, [analyzeWithLlm, ttsId]);
 
   const previewSelected = useCallback(() => {
     void preview(ttsId);
@@ -43,8 +52,11 @@ export function useConfigTtsActions() {
 
   return {
     analyzeSelected,
-    analyzeDisabled: actionDisabled || isAnalyzing,
+    analyzeDisabled: actionDisabled || busy,
     isAnalyzing,
+    llmAnalyzeSelected,
+    llmAnalyzeDisabled: actionDisabled || busy || provider === "voicepeak",
+    isLlmAnalyzing,
     previewDisabled: actionDisabled,
     previewSelected,
   };

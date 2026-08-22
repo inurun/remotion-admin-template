@@ -149,11 +149,7 @@ export function AppDictionary() {
                   {state.error && <p className="text-sm text-destructive">{state.error}</p>}
                   {state.analysis && <AnalysisResult analysis={state.analysis} />}
                 </div>
-                <DictionaryEditor
-                  draft={state.draft}
-                  setDraft={state.setDraft}
-                  selectedCandidate={state.selectedCandidate}
-                />
+                <DictionaryEditor draft={state.draft} setDraft={state.setDraft} />
               </>
             )}
           </CardContent>

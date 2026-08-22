@@ -10,6 +10,7 @@ const defaultHaqumeiApiUrl = "http://127.0.0.1:8080";
 
 const requiredPaths = [
   "/v1/analyze",
+  "/v1/g2p/validate",
   "/v1/dictionary",
   "/v1/dictionary/entries",
   "/v1/dictionary/entries/batch",

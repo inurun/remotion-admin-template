@@ -1,56 +1,20 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { g2pItemSchema, type G2pItem } from "@/_schemas";
-import { accentForPitches, pitchesForAccent } from "@/_shared/lib/kana-mora";
+import { getErrorMessage } from "@/_shared/lib/error-message";
+import { requestValidateG2p } from "@/app/features/tts/api/tts-api";
+import {
+  canToggleChain,
+  parseKanaView,
+  phraseBoundaryLabel,
+  setPhraseAccent,
+  togglePhraseChain,
+} from "./g2p-kana-view";
 import { getUnknownSourceSpans, getWarningsWithoutSourceSpan } from "./unknown-spans";
-
-export type G2pWordView = {
-  key: string;
-  ignored: boolean;
-  surface: string;
-  isChained: boolean;
-  onToggleChain?: () => void;
-};
-
-export type G2pPhraseView = {
-  key: string;
-  words: G2pWordView[];
-  moras: string[];
-  accent: number;
-  onAccentChange: (accent: number) => void;
-};
-
-type G2pSegmentView = {
-  key: string;
-  boundary: G2pItem["segments"][number]["boundary"];
-  phrases: G2pPhraseView[];
-};
 
 type ParsedG2pState =
   | { status: "empty" }
   | { status: "error"; message: string }
   | { status: "ready"; item: G2pItem };
-
-function cloneG2pItem(item: G2pItem): G2pItem {
-  return structuredClone(item);
-}
-
-function isIgnoredWord(word: G2pItem["segments"][number]["words"][number]) {
-  return word.metadata.is_ignored;
-}
-
-function getFirstSpokenWordIndex(words: G2pItem["segments"][number]["words"]) {
-  return words.findIndex((word) => !isIgnoredWord(word));
-}
-
-export function groupWordsByAccentPhrase(words: Array<{ chain: boolean; ignored: boolean }>) {
-  const groups: number[][] = [];
-  for (const [wordIndex, word] of words.entries()) {
-    if (!word.ignored && (!word.chain || groups.length === 0)) groups.push([]);
-    if (groups.length === 0) groups.push([]);
-    groups.at(-1)?.push(wordIndex);
-  }
-  return groups;
-}
 
 function parseG2pState(value: G2pItem | undefined): ParsedG2pState {
   if (!value) {
@@ -65,88 +29,119 @@ function parseG2pState(value: G2pItem | undefined): ParsedG2pState {
   return { status: "ready", item: parsed.data };
 }
 
+export function shouldApplyValidatedG2p(
+  started: { text: string; kana: string },
+  latest: G2pItem | undefined,
+  requestId: number,
+  latestRequestId: number,
+) {
+  if (requestId !== latestRequestId) {
+    return false;
+  }
+
+  const parsed = parseG2pState(latest);
+  return (
+    parsed.status === "ready" &&
+    parsed.item.text === started.text &&
+    parsed.item.kana === started.kana
+  );
+}
+
 export function useG2pAnalysisEditor(
   value: G2pItem | undefined,
   onChange: (value: G2pItem) => void,
 ) {
   const parsed = useMemo(() => parseG2pState(value), [value]);
+  const committedKana = parsed.status === "ready" ? parsed.item.kana : "";
+  const committedText = parsed.status === "ready" ? parsed.item.text : "";
+  const [draft, setDraft] = useState(committedKana);
+  const [error, setError] = useState<string>();
+  const [pending, setPending] = useState(false);
+  const valueRef = useRef(value);
+  const requestIdRef = useRef(0);
+  valueRef.current = value;
 
-  function updateItem(mutate: (item: G2pItem) => void) {
-    if (parsed.status !== "ready") {
-      return;
-    }
-
-    const next = cloneG2pItem(parsed.item);
-    mutate(next);
-    onChange(next);
-  }
+  useEffect(() => {
+    setDraft(committedKana);
+    setError(undefined);
+  }, [committedKana, committedText]);
 
   const unknownSpans = parsed.status === "ready" ? getUnknownSourceSpans(parsed.item) : [];
   const warningsWithoutSpan =
     parsed.status === "ready" ? getWarningsWithoutSourceSpan(parsed.item) : [];
+  const phrases = useMemo(() => parseKanaView(draft), [draft]);
 
-  function getSegmentViews(): G2pSegmentView[] {
-    if (parsed.status !== "ready") {
+  async function commitKana(nextKana: string) {
+    if (parsed.status !== "ready" || pending) {
+      return;
+    }
+    if (nextKana === parsed.item.kana) {
+      setDraft(nextKana);
+      return;
+    }
+
+    const started = { text: parsed.item.text, kana: parsed.item.kana };
+    const requestId = ++requestIdRef.current;
+    setDraft(nextKana);
+    setPending(true);
+    try {
+      const g2p = await requestValidateG2p({ text: started.text, kana: nextKana });
+      if (!shouldApplyValidatedG2p(started, valueRef.current, requestId, requestIdRef.current)) {
+        return;
+      }
+      onChange(g2p);
+      setDraft(g2p.kana);
+      setError(undefined);
+    } catch (cause) {
+      if (!shouldApplyValidatedG2p(started, valueRef.current, requestId, requestIdRef.current)) {
+        return;
+      }
+      setError(getErrorMessage(cause, "Validate failed"));
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setPending(false);
+      }
+    }
+  }
+
+  function getPhraseViews() {
+    if (!phrases) {
       return [];
     }
 
-    return parsed.item.segments.map((segment, segmentIndex) => {
-      const firstSpokenIndex = getFirstSpokenWordIndex(segment.words);
-      const phraseWordIndexes = groupWordsByAccentPhrase(
-        segment.words.map((word) => ({ chain: word.chain, ignored: isIgnoredWord(word) })),
-      );
-      return {
-        key: `segment-${segmentIndex}`,
-        boundary: segment.boundary,
-        phrases: phraseWordIndexes.map((wordIndexes, phraseIndex) => {
-          const phraseWords = wordIndexes.map((wordIndex) => segment.words[wordIndex]);
-          const moras = phraseWords.flatMap((word) => word?.moras ?? []);
-          return {
-            key: `phrase-${segmentIndex}-${phraseIndex}`,
-            words: wordIndexes.flatMap((wordIndex) => {
-              const word = segment.words[wordIndex];
-              if (!word) return [];
-              const ignored = isIgnoredWord(word);
-              return [
-                {
-                  key: `word-${segmentIndex}-${wordIndex}`,
-                  ignored,
-                  surface: word.surface,
-                  isChained: word.chain,
-                  onToggleChain:
-                    !ignored && wordIndex !== firstSpokenIndex
-                      ? () =>
-                          updateItem((item) => {
-                            const target = item.segments[segmentIndex]?.words[wordIndex];
-                            if (target) target.chain = !target.chain;
-                          })
-                      : undefined,
-                },
-              ];
-            }),
-            moras: moras.map((mora) => mora.text),
-            accent: accentForPitches(moras.map((mora) => mora.pitch)) ?? 0,
-            onAccentChange: (accent: number) =>
-              updateItem((item) => {
-                const pitches = pitchesForAccent(moras.length, accent);
-                let moraIndex = 0;
-                for (const wordIndex of wordIndexes) {
-                  for (const mora of item.segments[segmentIndex]?.words[wordIndex]?.moras ?? []) {
-                    mora.pitch = pitches[moraIndex] ?? mora.pitch;
-                    moraIndex += 1;
-                  }
-                }
-              }),
-          };
-        }),
-      };
-    });
+    return phrases.map((phrase, phraseIndex) => ({
+      key: `phrase-${phraseIndex}`,
+      accent: phrase.accent,
+      moras: phrase.words.flatMap((word) => word.moras),
+      boundary: phraseBoundaryLabel(phrase.closer),
+      words: phrase.words.map((word, wordIndex) => ({
+        key: `word-${phraseIndex}-${wordIndex}`,
+        label: word.moras.join(""),
+        chained: wordIndex > 0,
+        onToggleChain: canToggleChain(phrases, phraseIndex, wordIndex)
+          ? () => {
+              const next = togglePhraseChain(phrases, phraseIndex, wordIndex);
+              if (next) void commitKana(next);
+            }
+          : undefined,
+      })),
+      onAccentChange: (accent: number) => {
+        const next = setPhraseAccent(phrases, phraseIndex, accent);
+        if (next) void commitKana(next);
+      },
+    }));
   }
 
   return {
     parsed,
+    draft,
+    error,
+    pending,
     unknownSpans,
     warningsWithoutSpan,
-    getSegmentViews,
+    phrases,
+    getPhraseViews,
+    setDraft,
+    commit: () => commitKana(draft),
   };
 }

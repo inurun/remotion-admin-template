@@ -1,14 +1,25 @@
 import { Hono } from "hono";
 import { jsonError } from "@/server/_shared/http";
 import { getServerEnv } from "@/server/core/env";
-import { analyzeTts, clearTtsCache, listTtsVoices, synthesizeTts } from "./use-case";
+import {
+  analyzeTts,
+  analyzeTtsPageWithLlm,
+  clearTtsCache,
+  listTtsVoices,
+  synthesizeTts,
+  validateTtsG2p,
+} from "./use-case";
 import {
   synthesizeResponseSchema,
   ttsAnalyzeRequestSchema,
   ttsAnalyzeResponseSchema,
+  ttsLlmAnalysisRequestSchema,
+  ttsLlmAnalysisResponseSchema,
   ttsClearCacheRequestSchema,
   ttsClearCacheResponseSchema,
   ttsSynthesizeRequestSchema,
+  ttsValidateRequestSchema,
+  ttsValidateResponseSchema,
   voicesResponseSchema,
 } from "./contract";
 
@@ -26,6 +37,24 @@ export const ttsApp = new Hono()
       return c.json(ttsAnalyzeResponseSchema.parse(await analyzeTts(getServerEnv(c), json)));
     } catch (error) {
       return jsonError(c, 500, error, "Analyze failed");
+    }
+  })
+  .post("/tts/g2p/validate", async (c) => {
+    try {
+      const json = ttsValidateRequestSchema.parse(await c.req.json());
+      return c.json(ttsValidateResponseSchema.parse(await validateTtsG2p(getServerEnv(c), json)));
+    } catch (error) {
+      return jsonError(c, 500, error, "Validate failed");
+    }
+  })
+  .post("/tts/analyze/llm", async (c) => {
+    try {
+      const json = ttsLlmAnalysisRequestSchema.parse(await c.req.json());
+      return c.json(
+        ttsLlmAnalysisResponseSchema.parse(await analyzeTtsPageWithLlm(getServerEnv(c), json)),
+      );
+    } catch (error) {
+      return jsonError(c, 500, error, "LLM analyze failed");
     }
   })
   .post("/tts/synthesize", async (c) => {

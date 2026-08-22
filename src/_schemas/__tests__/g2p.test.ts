@@ -4,7 +4,9 @@ import { createG2pItem } from "./g2p-fixture";
 
 describe("g2pItemSchema", () => {
   it("accepts a valid item", () => {
-    expect(g2pItemSchema.parse(createG2pItem("こんにちは")).text).toBe("こんにちは");
+    expect(g2pItemSchema.parse(createG2pItem("こんにちは", "コンニチワ'")).kana).toBe(
+      "コンニチワ'",
+    );
   });
 
   it("rejects a source_span outside the UTF-16 text", () => {
@@ -12,7 +14,6 @@ describe("g2pItemSchema", () => {
     item.warnings = [
       {
         code: "unknown_word",
-        location: { segment_index: 0, word_index: 0 },
         source_span: { start_utf16: 0, end_utf16: 4 },
       },
     ];
@@ -26,7 +27,6 @@ describe("g2pItemSchema", () => {
     item.warnings = [
       {
         code: "unknown_word",
-        location: { segment_index: 0, word_index: 0 },
         source_span: { start_utf16: 1, end_utf16: 3 },
       },
     ];
@@ -38,20 +38,18 @@ describe("g2pItemSchema", () => {
     expect(text.slice(1, 3)).toBe("𰻞");
   });
 
-  it("accepts an unknown boundary warning without a word location", () => {
+  it("accepts an unknown boundary warning without a source_span", () => {
     const text = "前⋯後";
     const item = createG2pItem(text);
     item.warnings = [
       {
         code: "unknown_word",
-        location: null,
         source_span: { start_utf16: 1, end_utf16: 2 },
       },
     ];
 
     const warning = g2pItemSchema.parse(item).warnings[0];
     const span = warning?.source_span;
-    expect(warning?.location).toBeNull();
     expect(span).toEqual({ start_utf16: 1, end_utf16: 2 });
     expect(span && text.slice(span.start_utf16, span.end_utf16)).toBe("⋯");
   });

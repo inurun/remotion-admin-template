@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/g2p/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["validate_g2p"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/synthesis/voicevox": {
         parameters: {
             query?: never;
@@ -200,69 +216,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AnalyzeOptions: {
-            modify_acc_after_chaining: boolean;
-            modify_filler_accent: boolean;
-            normalize_iu?: null | components["schemas"]["IuPronunciation"];
-            normalize_unicode: components["schemas"]["UnicodeNormalization"];
-            predict_kana_english: boolean;
-            predict_nani: boolean;
-            process_odoriji: boolean;
-            retreat_acc_nuc: boolean;
-            revert_long_vowels: boolean;
-            revert_yotsugana: boolean;
-            use_read_as_pron: boolean;
-        };
         AnalyzeRequest: {
-            options?: components["schemas"]["AnalyzeRequestOptions"];
             texts: string[];
-        };
-        AnalyzeRequestOptions: {
-            /** @default null */
-            enable_final_glottal_stop: boolean | null;
-            /** @default null */
-            modify_acc_after_chaining: boolean | null;
-            /** @default null */
-            modify_filler_accent: boolean | null;
-            /** @default null */
-            normalize_iu: null | components["schemas"]["IuPronunciation"];
-            /** @default null */
-            normalize_unicode: null | components["schemas"]["UnicodeNormalization"];
-            /** @default null */
-            predict_kana_english: boolean | null;
-            /** @default null */
-            predict_nani: boolean | null;
-            /** @default null */
-            process_odoriji: boolean | null;
-            /** @default null */
-            retreat_acc_nuc: boolean | null;
-            /** @default null */
-            revert_long_vowels: boolean | null;
-            /** @default null */
-            revert_yotsugana: boolean | null;
-            /** @default null */
-            split_n_allophones: boolean | null;
-            /** @default null */
-            split_n_before_palatal_affricate: boolean | null;
-            /** @default null */
-            split_n_before_r: boolean | null;
-            /** @default null */
-            split_q_allophones: boolean | null;
-            /** @default null */
-            use_allophones: boolean | null;
-            /** @default null */
-            use_read_as_pron: boolean | null;
-            /** @default null */
-            use_unidic_yomi: boolean | null;
         };
         AnalyzeResponse: {
             haqumei_version: string;
             items: components["schemas"]["G2pItem"][];
-            options: components["schemas"]["AnalyzeOptions"];
             schema_version: string;
         };
-        /** @enum {string} */
-        Boundary: "none" | "pause" | "question" | "exclamation";
         ContextCandidate: {
             description?: string;
             examples?: string[];
@@ -331,21 +292,9 @@ export interface components {
             surface: string;
         };
         G2pItem: {
-            segments: components["schemas"]["Segment"][];
+            kana: string;
             text: string;
-            warnings: components["schemas"]["Warning"][];
-        };
-        G2pWord: {
-            chain: boolean;
-            metadata: components["schemas"]["WordMetadata"];
-            moras: components["schemas"]["Mora"][];
-            surface: string;
-        };
-        /** @enum {string} */
-        IuPronunciation: "iu" | "yuu" | "kanji_iu" | "kanji_yuu";
-        Mora: {
-            pitch: components["schemas"]["Pitch"];
-            text: string;
+            warnings?: components["schemas"]["Warning"][];
         };
         Morpheme: {
             accent_nucleus: number;
@@ -356,8 +305,6 @@ export interface components {
         };
         /** @enum {string} */
         PartOfSpeech: "proper_noun" | "common_noun" | "adjective" | "particle" | "filler";
-        /** @enum {string} */
-        Pitch: "low" | "high";
         ProblemDetails: {
             code: string;
             detail: string;
@@ -367,16 +314,18 @@ export interface components {
             title: string;
             type: string;
         };
-        Segment: {
-            boundary: components["schemas"]["Boundary"];
-            words: components["schemas"]["G2pWord"][];
-        };
         SourceSpan: {
             end_utf16: number;
             start_utf16: number;
         };
-        /** @enum {string} */
-        UnicodeNormalization: "none" | "nfc" | "nfkc";
+        ValidateRequest: {
+            items: components["schemas"]["G2pItem"][];
+        };
+        ValidateResponse: {
+            haqumei_version: string;
+            items: components["schemas"]["G2pItem"][];
+            schema_version: string;
+        };
         VersionResponse: {
             haqumei_version: string;
             name: string;
@@ -506,29 +455,12 @@ export interface components {
         };
         Warning: {
             code: components["schemas"]["WarningCode"];
-            location?: null | components["schemas"]["WarningLocation"];
             source_span?: null | components["schemas"]["SourceSpan"];
         };
         /** @enum {string} */
         WarningCode: "unknown_word" | "ignored_token";
-        WarningLocation: {
-            segment_index: number;
-            word_index: number;
-        };
         /** Format: binary */
         WavFile: string;
-        WordMetadata: {
-            cform: string;
-            ctype: string;
-            is_ignored: boolean;
-            is_unknown: boolean;
-            orig: string;
-            pos: string;
-            pos_group1: string;
-            pos_group2: string;
-            pos_group3: string;
-            read: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -914,6 +846,61 @@ export interface operations {
                 content?: never;
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    validate_g2p: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidateResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
