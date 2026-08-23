@@ -8,7 +8,12 @@ import {
   normalizeHotkey,
   type AppHotkeys,
 } from "@/app/features/settings/lib/hotkeys";
-import { mergeVoiceOrder } from "@/app/features/settings/lib/settings";
+import {
+  getDefaultVoiceOptions,
+  getDefaultVoiceOrder,
+  getDefaultVoiceSettings,
+} from "@/app/features/settings/lib/default-voices";
+import { mergeCatalogVoices, mergeVoiceOrder } from "@/app/features/settings/lib/settings";
 
 export const SETTINGS_STORAGE_KEY = "remotion-voisona-settings";
 
@@ -33,11 +38,42 @@ type SettingsState = SettingsSnapshot & {
 
 export function getDefaultSettings(): SettingsSnapshot {
   return {
-    voices: [],
-    voiceOrder: [],
-    voiceSettings: {},
+    voices: getDefaultVoiceOptions(),
+    voiceOrder: getDefaultVoiceOrder(),
+    voiceSettings: getDefaultVoiceSettings(),
     hotkeys: { ...DEFAULT_HOTKEYS },
   };
+}
+
+function resolvePersistedSettings(persisted: Partial<SettingsSnapshot>): SettingsSnapshot {
+  const defaults = getDefaultSettings();
+  const hotkeys = {
+    ...DEFAULT_HOTKEYS,
+    ...persisted.hotkeys,
+  };
+
+  if (persisted.voiceOrder?.length) {
+    return {
+      voices: persisted.voices ?? [],
+      voiceOrder: persisted.voiceOrder,
+      voiceSettings: persisted.voiceSettings ?? {},
+      hotkeys,
+    };
+  }
+
+  if (persisted.voices?.length) {
+    return {
+      ...mergeCatalogVoices({
+        catalog: persisted.voices,
+        selectedVoices: defaults.voices,
+        voiceOrder: defaults.voiceOrder,
+        voiceSettings: defaults.voiceSettings,
+      }),
+      hotkeys,
+    };
+  }
+
+  return { ...defaults, hotkeys };
 }
 
 function normalizeHotkeys(hotkeys: AppHotkeys): AppHotkeys {
@@ -84,10 +120,14 @@ export const useSettingsStore = create<SettingsState>()(
       },
       mergeFetchedVoices: (voices) => {
         const current = get();
-        set({
-          voices,
-          voiceOrder: mergeVoiceOrder(current.voiceOrder, voices),
-        });
+        set(
+          mergeCatalogVoices({
+            catalog: voices,
+            selectedVoices: current.voices,
+            voiceOrder: current.voiceOrder,
+            voiceSettings: current.voiceSettings,
+          }),
+        );
       },
       resetHotkeys: () => {
         set({ hotkeys: { ...DEFAULT_HOTKEYS } });
@@ -106,14 +146,7 @@ export const useSettingsStore = create<SettingsState>()(
         const persistedState = persisted as Partial<SettingsSnapshot>;
         return {
           ...current,
-          ...normalizeSettings({
-            ...getDefaultSettings(),
-            ...persistedState,
-            hotkeys: {
-              ...DEFAULT_HOTKEYS,
-              ...persistedState.hotkeys,
-            },
-          }),
+          ...normalizeSettings(resolvePersistedSettings(persistedState)),
         };
       },
     },

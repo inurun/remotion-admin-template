@@ -42,6 +42,10 @@ describe("useUiPreferencesStore", () => {
 
     expect(hasStoredUiPreferences()).toBe(false);
     expect(useUiPreferencesStore.getState().sidebarOpen).toBe(true);
+    expect(useUiPreferencesStore.getState().sidebarWidth).toBe(256);
+    expect(useUiPreferencesStore.getState().editorOpen).toBe(true);
+    expect(useUiPreferencesStore.getState().previewOpen).toBe(true);
+    expect(useUiPreferencesStore.getState().configOpen).toBe(true);
   });
 
   it("hydrates sidebarOpen from localStorage", async () => {
@@ -58,6 +62,28 @@ describe("useUiPreferencesStore", () => {
     expect(useUiPreferencesStore.persist.getOptions().name).toBe(UI_PREFERENCES_STORAGE_KEY);
   });
 
+  it("hydrates panel and sidebar width preferences from localStorage", async () => {
+    const { useUiPreferencesStore } = await importStoreWithStorage(
+      createLocalStorageMock({
+        "remotion-voisona-ui-preferences": JSON.stringify({
+          state: {
+            sidebarOpen: true,
+            sidebarWidth: 320,
+            editorOpen: false,
+            previewOpen: false,
+            configOpen: true,
+          },
+          version: 0,
+        }),
+      }),
+    );
+
+    expect(useUiPreferencesStore.getState().sidebarWidth).toBe(320);
+    expect(useUiPreferencesStore.getState().editorOpen).toBe(false);
+    expect(useUiPreferencesStore.getState().previewOpen).toBe(false);
+    expect(useUiPreferencesStore.getState().configOpen).toBe(true);
+  });
+
   it("persists sidebarOpen updates", async () => {
     const storage = createLocalStorageMock();
     const { UI_PREFERENCES_STORAGE_KEY, useUiPreferencesStore } =
@@ -68,6 +94,24 @@ describe("useUiPreferencesStore", () => {
     expect(storage.setItem).toHaveBeenCalledWith(
       UI_PREFERENCES_STORAGE_KEY,
       expect.stringContaining('"sidebarOpen":false'),
+    );
+  });
+
+  it("persists panel and sidebar width updates", async () => {
+    const storage = createLocalStorageMock();
+    const { UI_PREFERENCES_STORAGE_KEY, useUiPreferencesStore } =
+      await importStoreWithStorage(storage);
+
+    useUiPreferencesStore.getState().setPanelOpen("editor", false);
+    useUiPreferencesStore.getState().setSidebarWidth(400);
+
+    expect(storage.setItem).toHaveBeenCalledWith(
+      UI_PREFERENCES_STORAGE_KEY,
+      expect.stringContaining('"editorOpen":false'),
+    );
+    expect(storage.setItem).toHaveBeenCalledWith(
+      UI_PREFERENCES_STORAGE_KEY,
+      expect.stringContaining('"sidebarWidth":400'),
     );
   });
 });

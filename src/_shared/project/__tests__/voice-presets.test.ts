@@ -27,9 +27,9 @@ describe("voice presets", () => {
     expect(defaults).toHaveLength(7);
     expect(defaults.map((preset) => `${preset.provider}:${preset.voiceName}`)).toEqual([
       "voicevox:3",
+      "voicevox:14",
       "voicevox:46",
       "voicevox:43",
-      "voicevox:14",
       "voicevox:113",
       "voicepeak:Kasane Teto",
       "voisona:futaba-minato_ja_JP",

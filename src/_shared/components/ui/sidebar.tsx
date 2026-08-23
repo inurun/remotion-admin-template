@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { useIsMobile } from "@/_shared/hooks/use-mobile";
 import { cn } from "@/_shared/lib/utils";
+import { isSidebarResizeDrag, nextSidebarWidth } from "@/_shared/lib/sidebar-width";
 import { Button } from "@/_shared/components/ui/button";
 import { Input } from "@/_shared/components/ui/input";
 import { Separator } from "@/_shared/components/ui/separator";
@@ -291,7 +292,7 @@ function DesktopSidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="relative flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
           {children}
         </div>
@@ -349,23 +350,79 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
   );
 }
 
-function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
-  const { toggleSidebar } = useSidebar();
+function SidebarRail({
+  className,
+  onWidthChange,
+  width,
+  onClick,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  ...props
+}: React.ComponentProps<"button"> & {
+  onWidthChange?: (width: number) => void;
+  width?: number;
+}) {
+  const { toggleSidebar, state } = useSidebar();
+  const dragStartRef = React.useRef<{ startX: number; startWidth: number } | null>(null);
+  const draggedRef = React.useRef(false);
+
   return (
     <button
       data-sidebar="rail"
       data-slot="sidebar-rail"
-      aria-label="Toggle Sidebar"
+      aria-label="Resize Sidebar"
       tabIndex={-1}
-      onClick={toggleSidebar}
-      title="Toggle Sidebar"
+      title="Resize Sidebar"
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        draggedRef.current = false;
+        if (
+          event.defaultPrevented ||
+          !onWidthChange ||
+          width === undefined ||
+          state !== "expanded"
+        ) {
+          return;
+        }
+        dragStartRef.current = {
+          startX: event.clientX,
+          startWidth: width,
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        onPointerMove?.(event);
+        const drag = dragStartRef.current;
+        if (!drag || !onWidthChange) {
+          return;
+        }
+        if (!isSidebarResizeDrag(drag.startX, event.clientX) && !draggedRef.current) {
+          return;
+        }
+        draggedRef.current = true;
+        onWidthChange(nextSidebarWidth(drag.startWidth, drag.startX, event.clientX));
+      }}
+      onPointerUp={(event) => {
+        onPointerUp?.(event);
+        dragStartRef.current = null;
+      }}
+      onClick={(event) => {
+        onClick?.(event);
+        if (event.defaultPrevented || draggedRef.current) {
+          event.preventDefault();
+          draggedRef.current = false;
+          return;
+        }
+        toggleSidebar();
+      }}
       className={cn(
-        "absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2",
-        "in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
+        "absolute inset-y-0 z-20 hidden w-4 sm:flex",
+        "group-data-[side=left]:right-0 group-data-[side=right]:left-0",
+        "after:absolute after:inset-y-0 after:w-0.5 after:bg-transparent hover:after:bg-sidebar-border",
+        "group-data-[side=left]:after:right-0 group-data-[side=right]:after:left-0",
+        "cursor-ew-resize",
         "[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
-        "group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar",
-        "[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
-        "[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
         className,
       )}
       {...props}

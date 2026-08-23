@@ -30,6 +30,16 @@ const DEFAULT_VOICE_PRESETS = [
   },
   {
     provider: "voicevox" as const,
+    voiceName: "14",
+    synthesisSettings: {
+      speedScale: 1.3,
+      intonationScale: 1,
+      pitchScale: -0.02,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  {
+    provider: "voicevox" as const,
     voiceName: "46",
     synthesisSettings: {
       speedScale: 1.3,
@@ -43,16 +53,6 @@ const DEFAULT_VOICE_PRESETS = [
     synthesisSettings: {
       speedScale: 1.3,
       intonationScale: 1.2,
-      ...DEFAULT_VOICEVOX_TIMING,
-    },
-  },
-  {
-    provider: "voicevox" as const,
-    voiceName: "14",
-    synthesisSettings: {
-      speedScale: 1.3,
-      intonationScale: 1,
-      pitchScale: -0.02,
       ...DEFAULT_VOICEVOX_TIMING,
     },
   },

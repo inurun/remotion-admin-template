@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  getConfigPaneClassName,
   getPreviewConfigColumnClassName,
-  getPreviewConfigScrollClassName,
 } from "@/app/components/app-editor/app-editor.lib";
 import {
   DESKTOP_EDITOR_LAYOUT_QUERY,
@@ -26,14 +26,12 @@ describe("desktop editor layout", () => {
     ).toBe(false);
   });
 
-  it("keeps the preview config column sticky and viewport-capped", () => {
-    expect(getPreviewConfigColumnClassName(true)).toContain("sticky");
-    expect(getPreviewConfigColumnClassName(true)).toContain("max-h-[calc(100dvh-2rem)]");
-    expect(getPreviewConfigColumnClassName(false)).not.toContain("sticky");
-  });
-
-  it("scrolls config inside the sticky column", () => {
-    expect(getPreviewConfigScrollClassName(true)).toContain("overflow-y-auto");
-    expect(getPreviewConfigScrollClassName(false)).not.toContain("overflow-y-auto");
+  it("fills the preview config column and scrolls open config", () => {
+    expect(getPreviewConfigColumnClassName(true)).toContain("h-full");
+    expect(getPreviewConfigColumnClassName(true)).toContain("overflow-hidden");
+    expect(getPreviewConfigColumnClassName(false)).not.toContain("h-full");
+    expect(getConfigPaneClassName(true, true)).toContain("overflow-y-auto");
+    expect(getConfigPaneClassName(true, false)).toContain("shrink-0");
+    expect(getConfigPaneClassName(false, true)).not.toContain("overflow-y-auto");
   });
 });

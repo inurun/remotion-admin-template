@@ -5,10 +5,14 @@ import { groupProjectsByDirectory } from "@/app/components/app-sidebar/directory
 export function useAppSidebarShell() {
   const open = useUiPreferencesStore((state) => state.sidebarOpen);
   const onOpenChange = useUiPreferencesStore((state) => state.setSidebarOpen);
+  const sidebarWidth = useUiPreferencesStore((state) => state.sidebarWidth);
+  const onSidebarWidthChange = useUiPreferencesStore((state) => state.setSidebarWidth);
 
   return {
     open,
     onOpenChange,
+    sidebarWidth,
+    onSidebarWidthChange,
   };
 }
 

@@ -4,6 +4,7 @@ import { eventMatchesHotkey, findDuplicateHotkeys } from "@/app/features/setting
 import {
   getDefaultVoice,
   getVisibleVoiceOptions,
+  mergeCatalogVoices,
   mergeVoiceOrder,
 } from "@/app/features/settings/lib/settings";
 
@@ -67,6 +68,28 @@ describe("settings voices", () => {
     });
 
     expect(getDefaultVoice(options)?.voiceName).toBe("b");
+  });
+
+  it("remaps selected ids onto versioned catalog voices and keeps missing stubs", () => {
+    const selected = {
+      provider: "voicevox" as const,
+      voiceName: "3",
+      displayName: "ずんだもん / ノーマル",
+    };
+    const stub = voice("b", "B");
+    const next = mergeCatalogVoices({
+      catalog: [{ ...selected, voiceVersion: "0.15.0" }, voice("c", "C")],
+      selectedVoices: [selected, stub],
+      voiceOrder: ["voicevox::3::", "voisona::b::"],
+      voiceSettings: {
+        "voicevox::3::": { label: "🫛 ずんだ", alias: "zunda", hotkey: "ctrl+1" },
+        "voisona::b::": { label: "B", alias: "b", hotkey: "ctrl+2" },
+      },
+    });
+
+    expect(next.voiceOrder).toEqual(["voicevox::3::0.15.0", "voisona::b::"]);
+    expect(next.voices.map((item) => item.voiceName)).toEqual(["3", "c", "b"]);
+    expect(next.voiceSettings["voicevox::3::0.15.0"]?.alias).toBe("zunda");
   });
 });
 

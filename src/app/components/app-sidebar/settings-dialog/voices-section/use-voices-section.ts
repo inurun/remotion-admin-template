@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { VoiceOption } from "@/_schemas";
 import { fetchVoices } from "@/app/features/settings/api/settings-api";
 import { getVoiceId } from "@/app/features/settings";
-import { mergeVoiceOrder } from "@/app/features/settings/lib/settings";
+import { mergeCatalogVoices, mergeVoiceOrder } from "@/app/features/settings/lib/settings";
 import { moveItem } from "@/app/features/ui/lib/reorder";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
 
@@ -61,12 +61,33 @@ export function appendMissingVoiceSettings(
 }
 
 export function applyFetchedCatalog(
-  values: Pick<SettingsFormValues, "voiceOrder">,
+  values: Pick<SettingsFormValues, "voiceOrder"> &
+    Partial<Pick<SettingsFormValues, "voices" | "voiceSettings">>,
   options: VoiceOption[],
 ) {
+  const merged = mergeCatalogVoices({
+    catalog: options,
+    selectedVoices: values.voices ?? [],
+    voiceOrder: values.voiceOrder,
+    voiceSettings: Object.fromEntries(
+      (values.voiceSettings ?? []).map((setting) => [
+        setting.voiceId,
+        {
+          label: setting.label,
+          alias: setting.alias,
+          hotkey: setting.hotkey,
+        },
+      ]),
+    ),
+  });
+
   return {
-    voices: options,
-    voiceOrder: mergeVoiceOrder(values.voiceOrder, options),
+    voices: merged.voices,
+    voiceOrder: merged.voiceOrder,
+    voiceSettings: Object.entries(merged.voiceSettings).map(([voiceId, value]) => ({
+      voiceId,
+      ...value,
+    })),
   };
 }
 
@@ -200,6 +221,7 @@ async function loadVoiceCatalog(
       shouldDirty: true,
       shouldValidate: true,
     });
+    form.setValue("voiceSettings", next.voiceSettings, { shouldDirty: true });
     setSelectedVoiceIds([]);
   } finally {
     setIsLoadingCatalog(false);

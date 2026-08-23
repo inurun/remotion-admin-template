@@ -18,7 +18,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+      <header className="grid shrink-0 gap-3 bg-background sm:grid-cols-[auto_1fr_auto] sm:items-center">
         <div className="sm:hidden">
           <SidebarTrigger />
         </div>

@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from "react";
 import { Accordion } from "@/_shared/components/ui/accordion";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import { Button } from "@/_shared/components/ui/button";
 
 function AppSidebarContent() {
   const { projects, projectPath, groups } = useAppSidebarContent();
+  const { sidebarWidth, onSidebarWidthChange } = useAppSidebarShell();
 
   return (
     <>
@@ -87,17 +89,22 @@ function AppSidebarContent() {
             <SidebarTrigger />
           </div>
         </SidebarFooter>
+        <SidebarRail width={sidebarWidth} onWidthChange={onSidebarWidthChange} />
       </Sidebar>
-      <SidebarRail />
     </>
   );
 }
 
-export function AppSidebar({ children }: { children: React.ReactNode }) {
-  const { open, onOpenChange } = useAppSidebarShell();
+export function AppSidebar({ children }: { children: ReactNode }) {
+  const { open, onOpenChange, sidebarWidth } = useAppSidebarShell();
 
   return (
-    <SidebarProvider open={open} onOpenChange={onOpenChange}>
+    <SidebarProvider
+      open={open}
+      onOpenChange={onOpenChange}
+      className="h-svh overflow-hidden"
+      style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
+    >
       <AppSidebarContent />
       {children}
     </SidebarProvider>

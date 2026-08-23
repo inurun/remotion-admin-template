@@ -1,12 +1,20 @@
 import { cn } from "@/_shared/lib/utils";
 
-export function getPreviewConfigColumnClassName(sticky: boolean) {
+export function getPreviewConfigColumnClassName(fillHeight: boolean) {
+  return cn("flex min-h-0 flex-col gap-4", fillHeight && "h-full overflow-hidden");
+}
+
+export function getPreviewPaneClassName() {
+  return "shrink-0";
+}
+
+export function getConfigPaneClassName(fillHeight: boolean, configOpen: boolean) {
   return cn(
-    "flex min-h-0 flex-col gap-4",
-    sticky && "sticky top-6 max-h-[calc(100dvh-2rem)] overflow-hidden",
+    fillHeight && configOpen && "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+    (!fillHeight || !configOpen) && "shrink-0",
   );
 }
 
-export function getPreviewConfigScrollClassName(sticky: boolean) {
-  return cn(sticky && "min-h-0 flex-1 overflow-y-auto overscroll-contain");
+export function getEditorColumnClassName() {
+  return "flex h-full min-h-0 max-w-full flex-col gap-4 overflow-y-auto";
 }

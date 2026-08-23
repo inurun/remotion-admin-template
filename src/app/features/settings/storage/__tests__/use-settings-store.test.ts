@@ -44,14 +44,41 @@ describe("useSettingsStore", () => {
   it("uses default settings when no persisted value exists", async () => {
     const storage = createLocalStorageMock();
     const { DEFAULT_HOTKEYS } = await import("@/app/features/settings/lib/hotkeys");
-    const { hasStoredSettings, useSettingsStore } = await importStoreWithStorage(storage);
+    const { getDefaultSettings, hasStoredSettings, useSettingsStore } =
+      await importStoreWithStorage(storage);
+    const defaults = getDefaultSettings();
 
     expect(hasStoredSettings()).toBe(false);
-    expect(useSettingsStore.getState().voices).toEqual([]);
+    expect(useSettingsStore.getState().voices).toEqual(defaults.voices);
+    expect(useSettingsStore.getState().voiceOrder).toEqual(defaults.voiceOrder);
+    expect(useSettingsStore.getState().voiceSettings).toEqual(defaults.voiceSettings);
     expect(useSettingsStore.getState().hotkeys).toEqual(DEFAULT_HOTKEYS);
   });
 
-  it("hydrates settings from localStorage", async () => {
+  it("seeds default voices when persisted voice order is empty", async () => {
+    const { DEFAULT_HOTKEYS } = await import("@/app/features/settings/lib/hotkeys");
+    const { getDefaultSettings, useSettingsStore } = await importStoreWithStorage(
+      createLocalStorageMock({
+        "remotion-voisona-settings": JSON.stringify({
+          state: {
+            voices: [],
+            voiceOrder: [],
+            voiceSettings: {},
+            hotkeys: { save: "CTRL+S" },
+          },
+          version: 0,
+        }),
+      }),
+    );
+    const defaults = getDefaultSettings();
+
+    expect(useSettingsStore.getState().voiceOrder).toEqual(defaults.voiceOrder);
+    expect(useSettingsStore.getState().voices).toEqual(defaults.voices);
+    expect(useSettingsStore.getState().hotkeys.save).toBe("ctrl+s");
+    expect(useSettingsStore.getState().hotkeys.addTts).toBe(DEFAULT_HOTKEYS.addTts);
+  });
+
+  it("keeps a persisted voice order", async () => {
     const { DEFAULT_HOTKEYS } = await import("@/app/features/settings/lib/hotkeys");
     const { SETTINGS_STORAGE_KEY, useSettingsStore } = await importStoreWithStorage(
       createLocalStorageMock({
@@ -134,12 +161,47 @@ describe("useSettingsStore", () => {
     });
     useSettingsStore.getState().mergeFetchedVoices([voice("a", "A"), voice("c", "C")]);
 
-    expect(useSettingsStore.getState().voices.map((item) => item.voiceName)).toEqual(["a", "c"]);
-    expect(useSettingsStore.getState().voiceOrder).toEqual(["voisona::a::"]);
+    expect(useSettingsStore.getState().voices.map((item) => item.voiceName)).toEqual([
+      "a",
+      "c",
+      "b",
+    ]);
+    expect(useSettingsStore.getState().voiceOrder).toEqual(["voisona::b::", "voisona::a::"]);
     expect(useSettingsStore.getState().voiceSettings["voisona::b::"]).toEqual({
       label: "Actor B",
       alias: "anko",
       hotkey: "ctrl+2",
+    });
+  });
+
+  it("remaps selected voice ids when the catalog includes a version", async () => {
+    const storage = createLocalStorageMock();
+    const { useSettingsStore } = await importStoreWithStorage(storage);
+    const selected = {
+      provider: "voicevox" as const,
+      voiceName: "3",
+      displayName: "ずんだもん / ノーマル",
+    };
+
+    useSettingsStore.getState().saveSettings({
+      voices: [selected],
+      voiceOrder: ["voicevox::3::"],
+      voiceSettings: { "voicevox::3::": { label: "🫛 ずんだ", alias: "zunda", hotkey: "ctrl+1" } },
+      hotkeys: {
+        save: "ctrl+s",
+        analyze: "ctrl+shift+s",
+        addTts: "ctrl+enter",
+        deleteTts: "ctrl+shift+delete",
+        addPage: "ctrl+t",
+      },
+    });
+    useSettingsStore.getState().mergeFetchedVoices([{ ...selected, voiceVersion: "0.15.0" }]);
+
+    expect(useSettingsStore.getState().voiceOrder).toEqual(["voicevox::3::0.15.0"]);
+    expect(useSettingsStore.getState().voiceSettings["voicevox::3::0.15.0"]).toEqual({
+      label: "🫛 ずんだ",
+      alias: "zunda",
+      hotkey: "ctrl+1",
     });
   });
 });

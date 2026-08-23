@@ -51,6 +51,7 @@ describe("useVoicesSection helpers", () => {
     ).toEqual({
       voices: [voice("a", "A"), voice("c", "C")],
       voiceOrder: ["voisona::a::"],
+      voiceSettings: [],
     });
   });
 

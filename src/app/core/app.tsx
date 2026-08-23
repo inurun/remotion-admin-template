@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { SidebarInset } from "@/_shared/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar/app-sidebar";
 import { AppEditor } from "@/app/components/app-editor/app-editor";
@@ -15,7 +16,7 @@ import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
 import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
 
-function ProjectStores({ children }: { children: React.ReactNode }) {
+function ProjectStores({ children }: { children: ReactNode }) {
   const { projectPath } = useProjectRoute();
   const { project, hasData } = useSelectedProjectQuery(projectPath);
 
@@ -34,7 +35,7 @@ function ProjectStores({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AppProviders({ children }: { children: React.ReactNode }) {
+function AppProviders({ children }: { children: ReactNode }) {
   return (
     <SettingsContextProvider>
       <ProjectRouteProvider>
@@ -54,16 +55,28 @@ function AppMain() {
   const { route } = useProjectRoute();
 
   if (isSchedulesRoute(route)) {
-    return <AppSchedule />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+        <AppSchedule />
+      </div>
+    );
   }
   if (isDictionaryRoute(route)) {
-    return <AppDictionary />;
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+        <AppDictionary />
+      </div>
+    );
   }
 
   return (
     <RemotionPlayerControlProvider>
-      <AppHeader />
-      <AppEditor />
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+        <AppHeader />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <AppEditor />
+        </div>
+      </div>
     </RemotionPlayerControlProvider>
   );
 }
@@ -72,8 +85,8 @@ export default function App() {
   return (
     <AppProviders>
       <AppSidebar>
-        <SidebarInset>
-          <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-2 p-2">
+        <SidebarInset className="min-h-0 overflow-hidden">
+          <main className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col gap-2 overflow-hidden p-2">
             <AppMain />
           </main>
         </SidebarInset>
