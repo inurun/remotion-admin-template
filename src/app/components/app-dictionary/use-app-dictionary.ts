@@ -15,13 +15,38 @@ import {
   useDictionaryQuery,
 } from "@/app/features/dictionary";
 
+export type DictionaryKind = DictionaryEntryInput["kind"];
+
+export function filterDictionaryEntries(
+  entries: DictionaryEntry[],
+  kind: DictionaryKind,
+  query: string,
+) {
+  const needle = query.trim().toLocaleLowerCase();
+  return entries.filter(
+    (entry) =>
+      entry.kind === kind && (!needle || entry.surface.toLocaleLowerCase().includes(needle)),
+  );
+}
+
+export function pickEntryForKind(entries: DictionaryEntry[], kind: DictionaryKind) {
+  return entries.find((entry) => entry.kind === kind) ?? null;
+}
+
+export function shouldReplaceDraftForKind(
+  draft: DictionaryEntryInput | null,
+  kind: DictionaryKind,
+) {
+  return !draft || draft.kind !== kind;
+}
+
 export function useAppDictionary() {
   const { dictionary, isLoading, reload } = useDictionaryQuery();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<DictionaryEntryInput | null>(null);
   const [savedDraft, setSavedDraft] = useState("");
   const [query, setQuery] = useState("");
-  const [kindFilter, setKindFilter] = useState<"all" | DictionaryEntryInput["kind"]>("all");
+  const [kind, setKindState] = useState<DictionaryKind>("fixed");
   const [previewText, setPreviewText] = useState("");
   const [analysis, setAnalysis] = useState<G2pItem | null>(null);
   const [pending, setPending] = useState(false);
@@ -29,14 +54,10 @@ export function useAppDictionary() {
   const audioUrlRef = useRef<string | null>(null);
 
   const dirty = Boolean(draft && JSON.stringify(draft) !== savedDraft);
-  const filteredEntries = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase();
-    return dictionary.entries.filter(
-      (entry) =>
-        (kindFilter === "all" || entry.kind === kindFilter) &&
-        (!needle || entry.surface.toLocaleLowerCase().includes(needle)),
-    );
-  }, [dictionary.entries, kindFilter, query]);
+  const filteredEntries = useMemo(
+    () => filterDictionaryEntries(dictionary.entries, kind, query),
+    [dictionary.entries, kind, query],
+  );
 
   const loadDraft = useCallback(
     (next: DictionaryEntryInput, id: number | null, preview?: string) => {
@@ -51,11 +72,26 @@ export function useAppDictionary() {
     [],
   );
 
+  const clearDraft = useCallback(() => {
+    setSelectedId(null);
+    setDraft(null);
+    setSavedDraft("");
+    setAnalysis(null);
+    setError("");
+  }, []);
+
+  const loadKindDraft = useCallback(
+    (nextKind: DictionaryKind) => {
+      const entry = pickEntryForKind(dictionary.entries, nextKind);
+      if (entry) loadDraft(entryToInput(entry), entry.id);
+      else clearDraft();
+    },
+    [clearDraft, dictionary.entries, loadDraft],
+  );
+
   useEffect(() => {
-    if (!draft && dictionary.entries[0]) {
-      loadDraft(entryToInput(dictionary.entries[0]), dictionary.entries[0].id);
-    }
-  }, [dictionary.entries, draft, loadDraft]);
+    if (!draft) loadKindDraft(kind);
+  }, [dictionary.entries, draft, kind, loadKindDraft]);
 
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -78,6 +114,16 @@ export function useAppDictionary() {
     [dirty],
   );
 
+  const setKind = useCallback(
+    (next: DictionaryKind) => {
+      if (next === kind) return;
+      if (!canDiscard()) return;
+      setKindState(next);
+      if (shouldReplaceDraftForKind(draft, next)) loadKindDraft(next);
+    },
+    [canDiscard, draft, kind, loadKindDraft],
+  );
+
   const select = useCallback(
     (id: number) => {
       if (id === selectedId || !canDiscard()) return;
@@ -88,8 +134,8 @@ export function useAppDictionary() {
   );
 
   const add = useCallback(
-    (kind: DictionaryEntryInput["kind"]) => {
-      if (canDiscard()) loadDraft(createDictionaryDraft(kind), null);
+    (nextKind: DictionaryKind) => {
+      if (canDiscard()) loadDraft(createDictionaryDraft(nextKind), null);
     },
     [canDiscard, loadDraft],
   );
@@ -149,14 +195,11 @@ export function useAppDictionary() {
       run(async () => {
         if (!selectedId || !window.confirm("Delete this dictionary entry?")) return;
         await deleteDictionaryEntry(selectedId);
-        setSelectedId(null);
-        setDraft(null);
-        setSavedDraft("");
-        setAnalysis(null);
+        clearDraft();
         await reload();
         toast.success("Dictionary entry deleted");
       }),
-    [reload, run, selectedId],
+    [clearDraft, reload, run, selectedId],
   );
 
   const toggleEntry = useCallback(
@@ -179,16 +222,11 @@ export function useAppDictionary() {
     (id: number) =>
       run(async () => {
         await deleteDictionaryEntry(id);
-        if (selectedId === id) {
-          setSelectedId(null);
-          setDraft(null);
-          setSavedDraft("");
-          setAnalysis(null);
-        }
+        if (selectedId === id) clearDraft();
         await reload();
         toast.success("Dictionary entry deleted");
       }),
-    [reload, run, selectedId],
+    [clearDraft, reload, run, selectedId],
   );
 
   return {
@@ -200,8 +238,8 @@ export function useAppDictionary() {
     setDraft,
     query,
     setQuery,
-    kindFilter,
-    setKindFilter,
+    kind,
+    setKind,
     previewText,
     setPreviewText,
     analysis,
