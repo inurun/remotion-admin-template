@@ -5,7 +5,7 @@ import { assetPath } from "../path";
 
 describe("assetPath", () => {
   it("returns the slash-prefixed asset path", () => {
-    expect(assetPath("favicon.svg" as AssetFile)).toBe("/favicon.svg");
+    expect(assetPath("favicon.svg")).toBe("/favicon.svg");
   });
 
   it("preserves nested asset paths", () => {

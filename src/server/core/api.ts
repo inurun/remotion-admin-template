@@ -30,6 +30,7 @@ const CONTENT_TYPES = new Map([
   [".jpg", "image/jpeg"],
   [".jpeg", "image/jpeg"],
   [".png", "image/png"],
+  [".svg", "image/svg+xml"],
   [".wav", "audio/wav"],
   [".webp", "image/webp"],
   [".mp3", "audio/mpeg"],
@@ -117,6 +118,13 @@ export const createApp = () => {
       try {
         await ensureProjectDirs();
         return await servePublicAsset(c.req.path.replace(/^\/+/u, ""));
+      } catch {
+        return new Response("Not found", { status: 404 });
+      }
+    })
+    .get("/favicon.svg", async () => {
+      try {
+        return await servePublicAsset("favicon.svg");
       } catch {
         return new Response("Not found", { status: 404 });
       }
