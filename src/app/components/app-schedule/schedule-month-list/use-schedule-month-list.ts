@@ -1,5 +1,5 @@
-import type { ScheduleDateGroup } from "@/app/features/schedule";
+import type { SavedScheduleItem } from "@/_schemas";
 
-export function useScheduleMonthList(groups: ScheduleDateGroup[]) {
-  return { groups, isEmpty: groups.length === 0 };
+export function useScheduleMonthList(items: SavedScheduleItem[]) {
+  return { items, isEmpty: items.length === 0 };
 }

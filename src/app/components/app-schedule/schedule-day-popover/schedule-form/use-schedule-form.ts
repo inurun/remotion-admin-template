@@ -23,7 +23,8 @@ export function useScheduleForm({
     resolver: zodResolver(scheduleFormSchema),
     defaultValues: {
       id: item?.id,
-      date: item?.date ?? date,
+      startDate: item?.startDate ?? date,
+      endDate: item?.endDate ?? date,
       color: item?.color ?? DEFAULT_SCHEDULE_COLOR,
       title: item?.title ?? "",
       description: item?.description ?? "",
@@ -33,7 +34,8 @@ export function useScheduleForm({
   useEffect(() => {
     form.reset({
       id: item?.id,
-      date: item?.date ?? date,
+      startDate: item?.startDate ?? date,
+      endDate: item?.endDate ?? date,
       color: item?.color ?? DEFAULT_SCHEDULE_COLOR,
       title: item?.title ?? "",
       description: item?.description ?? "",
@@ -43,14 +45,23 @@ export function useScheduleForm({
   return {
     form,
     color: form.watch("color"),
+    startDate: form.watch("startDate"),
+    endDate: form.watch("endDate"),
     setColor: (color: string) => {
       form.setValue("color", color, { shouldDirty: true, shouldValidate: true });
+    },
+    setStartDate: (startDate: string) => {
+      form.setValue("startDate", startDate, { shouldDirty: true, shouldValidate: true });
+    },
+    setEndDate: (endDate: string) => {
+      form.setValue("endDate", endDate, { shouldDirty: true, shouldValidate: true });
     },
     submit: form.handleSubmit(async (values) => {
       await onSubmit(values);
       if (!values.id) {
         form.reset({
-          date: values.date,
+          startDate: values.startDate,
+          endDate: values.startDate,
           color: DEFAULT_SCHEDULE_COLOR,
           title: "",
           description: "",

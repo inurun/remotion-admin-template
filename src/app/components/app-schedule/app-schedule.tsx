@@ -11,8 +11,8 @@ export function AppSchedule() {
       <header className="grid gap-1">
         <h1 className="font-heading text-xl font-bold tracking-tight">Schedule</h1>
       </header>
-      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,25rem)_minmax(22rem,1fr)]">
-        <Card className="sticky top-2 z-10 h-fit min-w-0 self-start">
+      <div className="grid gap-2 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,25rem)_minmax(22rem,1fr)] lg:overflow-hidden">
+        <Card className="h-fit min-w-0 self-start">
           <CardContent className="pt-2">
             <ScheduleCalendar
               month={schedule.month}
@@ -24,13 +24,13 @@ export function AppSchedule() {
             />
           </CardContent>
         </Card>
-        <Card className="min-w-0">
+        <Card className="flex min-h-0 min-w-0 flex-col">
           <CardHeader>
             <CardTitle>This month</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="min-h-0 flex-1 overflow-y-auto">
             <ScheduleMonthList
-              groups={schedule.dateGroups}
+              items={schedule.monthItems}
               pending={schedule.pending}
               onUpsert={schedule.upsert}
               onRemove={schedule.remove}

@@ -35,10 +35,10 @@ git remote add origin git@github.com:<you>/<my-series>.git
 git push -u origin main
 ```
 
-| remote | 指す先 |
-| --- | --- |
-| `origin` | 派生リポジトリ（private 推奨） |
-| `template` | このリポジトリ |
+| remote     | 指す先                         |
+| ---------- | ------------------------------ |
+| `origin`   | 派生リポジトリ（private 推奨） |
+| `template` | このリポジトリ                 |
 
 ### 2. 派生側で残すファイルを宣言する
 
@@ -74,15 +74,15 @@ git config merge.ours.driver true
 
 ### 3. 派生側で置き換える場所
 
-| 場所 | 役割 |
-| --- | --- |
-| `src/remotion/**` | 映像の本体。stub の intro / main / outro を案件パターンに差し替える |
-| `data/project.json` | 初期データ。実プロジェクトデータは派生の private に置く |
-| `src/app/core/layout.tsx` | タイトルなどのブランディング |
-| `public/avatars/**` | アバター画像（使う場合） |
-| `src/_shared/lib/avatar/**` | アバターカタログ |
-| `src/features/weather/weather-locations.ts` | 天気ロケーション |
-| `AGENTS.md` | 派生の運用メモ |
+| 場所                                        | 役割                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| `src/remotion/**`                           | 映像の本体。stub の intro / main / outro を案件パターンに差し替える |
+| `data/project.json`                         | 初期データ。実プロジェクトデータは派生の private に置く             |
+| `src/app/core/layout.tsx`                   | タイトルなどのブランディング                                        |
+| `public/avatars/**`                         | アバター画像（使う場合）                                            |
+| `src/_shared/lib/avatar/**`                 | アバターカタログ                                                    |
+| `src/features/weather/weather-locations.ts` | 天気ロケーション                                                    |
+| `AGENTS.md`                                 | 派生の運用メモ                                                      |
 
 管理画面（`src/app`、`src/server`、汎用の `src/_shared`）はテンプレ更新を受け取る前提で触る。派生だけで足した配線（preview への追加 props など）は取り込み時に残す。
 

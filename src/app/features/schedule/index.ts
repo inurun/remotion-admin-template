@@ -3,6 +3,7 @@ export {
   createScheduleItem,
   filterSchedulesByMonth,
   formatScheduleDateLabel,
+  formatScheduleDateRangeLabel,
   formatScheduleMonthLabel,
   groupSchedulesByDate,
   removeScheduleItem,

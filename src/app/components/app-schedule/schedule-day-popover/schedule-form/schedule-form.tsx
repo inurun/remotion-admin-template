@@ -25,6 +25,24 @@ export function ScheduleForm({
   return (
     <form className="grid gap-2" onSubmit={(event) => void form.submit(event)}>
       <ColorPicker value={form.color} onChange={form.setColor} />
+      <div className="grid grid-cols-2 gap-2">
+        <Field data-invalid={Boolean(form.form.formState.errors.startDate)}>
+          <Input
+            type="date"
+            value={form.startDate}
+            onChange={(event) => form.setStartDate(event.currentTarget.value)}
+          />
+          <FieldError errors={[form.form.formState.errors.startDate]} />
+        </Field>
+        <Field data-invalid={Boolean(form.form.formState.errors.endDate)}>
+          <Input
+            type="date"
+            value={form.endDate}
+            onChange={(event) => form.setEndDate(event.currentTarget.value)}
+          />
+          <FieldError errors={[form.form.formState.errors.endDate]} />
+        </Field>
+      </div>
       <Field data-invalid={Boolean(form.form.formState.errors.title)}>
         <Input placeholder="Title" autoFocus {...form.form.register("title")} />
         <FieldError errors={[form.form.formState.errors.title]} />

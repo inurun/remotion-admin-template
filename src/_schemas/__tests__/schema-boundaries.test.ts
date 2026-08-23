@@ -114,7 +114,8 @@ describe("schema boundaries", () => {
     expect(contract).not.toMatch(/from ["']@\/app\/features/);
 
     const scheduleForm = source("src/app/features/schedule/model/schedule-form-schema.ts");
-    expect(scheduleForm).toContain("date: z.iso.date()");
+    expect(scheduleForm).toContain("startDate: z.iso.date()");
+    expect(scheduleForm).toContain("endDate: z.iso.date()");
     expect(scheduleForm).toContain("title: z.string().min(1)");
     expect(scheduleForm).toContain("description: z.string()");
   });

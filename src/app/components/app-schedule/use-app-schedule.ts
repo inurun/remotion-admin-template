@@ -6,7 +6,6 @@ import {
   createScheduleItem,
   filterSchedulesByMonth,
   formatScheduleMonthLabel,
-  groupSchedulesByDate,
   removeScheduleItem,
   scheduleItemsByDate,
   upsertScheduleItem,
@@ -24,7 +23,6 @@ export function useAppSchedule() {
     () => filterSchedulesByMonth(schedules.items, yearMonth),
     [schedules.items, yearMonth],
   );
-  const dateGroups = useMemo(() => groupSchedulesByDate(monthItems), [monthItems]);
   const itemsByDate = useMemo(() => scheduleItemsByDate(monthItems), [monthItems]);
   const monthLabel = formatScheduleMonthLabel(month);
 
@@ -50,7 +48,8 @@ export function useAppSchedule() {
           schedules.items,
           createScheduleItem({
             id: values.id,
-            date: values.date,
+            startDate: values.startDate,
+            endDate: values.endDate,
             color: values.color,
             title: values.title,
             description: values.description,
@@ -72,7 +71,7 @@ export function useAppSchedule() {
     month,
     setMonth,
     monthLabel,
-    dateGroups,
+    monthItems,
     itemsByDate,
     isLoading,
     pending,

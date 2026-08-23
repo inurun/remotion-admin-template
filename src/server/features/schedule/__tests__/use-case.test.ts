@@ -16,7 +16,8 @@ const sample = saveSchedulesSchema.parse({
   items: [
     {
       id: "schedule-1",
-      date: "2026-08-18",
+      startDate: "2026-08-18",
+      endDate: "2026-08-18",
       color: "#3b82f6",
       title: "Release",
       description: "Ship the schedule page",

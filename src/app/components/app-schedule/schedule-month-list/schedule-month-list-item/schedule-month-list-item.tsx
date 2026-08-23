@@ -2,7 +2,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { SavedScheduleItem } from "@/_schemas";
 import { Button } from "@/_shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/_shared/components/ui/popover";
-import type { ScheduleFormValues } from "@/app/features/schedule";
+import { formatScheduleDateRangeLabel, type ScheduleFormValues } from "@/app/features/schedule";
 import { ScheduleForm } from "@/app/components/app-schedule/schedule-day-popover/schedule-form/schedule-form";
 import { useScheduleMonthListItem } from "@/app/components/app-schedule/schedule-month-list/schedule-month-list-item/use-schedule-month-list-item";
 
@@ -26,6 +26,9 @@ export function ScheduleMonthListItem({
         style={{ backgroundColor: row.item.color }}
       />
       <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground">
+          {formatScheduleDateRangeLabel(row.item.startDate, row.item.endDate)}
+        </p>
         <p className="truncate text-sm font-medium">{row.item.title}</p>
         {row.item.description ? (
           <p className="mt-1 text-xs whitespace-pre-wrap text-muted-foreground">
@@ -42,7 +45,7 @@ export function ScheduleMonthListItem({
           </PopoverTrigger>
           <PopoverContent align="end" className="w-80 p-3">
             <ScheduleForm
-              date={row.item.date}
+              date={row.item.startDate}
               item={row.item}
               pending={row.pending}
               onSubmit={row.onUpsert}
