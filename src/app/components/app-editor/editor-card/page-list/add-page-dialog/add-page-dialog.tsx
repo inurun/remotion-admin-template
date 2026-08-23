@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -46,44 +47,49 @@ export function AddPageDialog() {
       >
         <FilePlus2 className="size-3" />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,420px)]">
-        <form className="grid gap-4" onSubmit={(event) => void dialog.submit(event)}>
+      <DialogContent className="max-h-[90vh] w-[min(92vw,420px)]">
+        <form
+          className="flex min-h-0 flex-1 flex-col gap-4"
+          onSubmit={(event) => void dialog.submit(event)}
+        >
           <DialogHeader>
             <DialogTitle>Add Page</DialogTitle>
           </DialogHeader>
-          <Controller
-            name="type"
-            control={dialog.form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
+          <DialogMain className="grid gap-4">
+            <Controller
+              name="type"
+              control={dialog.form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <label className="grid gap-2 text-sm font-medium">
+                    Type
+                    <Select name={field.name} value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger aria-invalid={fieldState.invalid} className="w-full">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dialog.typeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+            {dialog.isTransitionType ? null : (
+              <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
                 <label className="grid gap-2 text-sm font-medium">
-                  Type
-                  <Select name={field.name} value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger aria-invalid={fieldState.invalid} className="w-full">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dialog.typeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  Title
+                  <Input autoFocus {...dialog.form.register("title")} />
                 </label>
-                <FieldError errors={[fieldState.error]} />
+                <FieldError errors={[dialog.form.formState.errors.title]} />
               </Field>
             )}
-          />
-          {dialog.isTransitionType ? null : (
-            <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Title
-                <Input autoFocus {...dialog.form.register("title")} />
-              </label>
-              <FieldError errors={[dialog.form.formState.errors.title]} />
-            </Field>
-          )}
+          </DialogMain>
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
             <Button type="submit">Add</Button>

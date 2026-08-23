@@ -5,7 +5,7 @@ export const layoutHtml = (
     <head>
       <meta charSet="utf-8" />
       <meta content="width=device-width, initial-scale=1" name="viewport" />
-      <title>Remotion + VoiSona Template</title>
+      <title>Remotion Admin Template</title>
       <meta
         content="Template app for VoiSona-driven video editing and Remotion rendering"
         name="description"

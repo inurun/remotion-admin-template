@@ -13,6 +13,7 @@ import { isDictionaryRoute, isSchedulesRoute } from "@/app/features/project/lib/
 import { AppDictionary } from "@/app/components/app-dictionary/app-dictionary";
 import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
+import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
 
 function ProjectStores({ children }: { children: React.ReactNode }) {
   const { projectPath } = useProjectRoute();
@@ -60,10 +61,10 @@ function AppMain() {
   }
 
   return (
-    <>
+    <RemotionPlayerControlProvider>
       <AppHeader />
       <AppEditor />
-    </>
+    </RemotionPlayerControlProvider>
   );
 }
 

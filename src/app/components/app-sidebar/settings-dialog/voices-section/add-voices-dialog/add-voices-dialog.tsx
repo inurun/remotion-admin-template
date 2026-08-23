@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -21,39 +22,43 @@ export function AddVoicesDialog({ voices }: { voices: VoicesSectionState }) {
         <Plus />
         Add
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,520px)]">
+      <DialogContent className="max-h-[90vh] w-[min(92vw,520px)]">
         <DialogHeader>
           <DialogTitle>Add voices</DialogTitle>
         </DialogHeader>
-        {voices.emptyMessage ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-            {voices.emptyMessage}
-          </div>
-        ) : (
-          <div className="grid max-h-[50vh] gap-2 overflow-y-auto pr-1">
-            {voices.addableVoices.map((voice) => {
-              const voiceId = getVoiceId(voice);
-              const checked = voices.selectedVoiceIds.includes(voiceId);
+        <DialogMain>
+          {voices.emptyMessage ? (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+              {voices.emptyMessage}
+            </div>
+          ) : (
+            <div className="grid gap-2 pr-1">
+              {voices.addableVoices.map((voice) => {
+                const voiceId = getVoiceId(voice);
+                const checked = voices.selectedVoiceIds.includes(voiceId);
 
-              return (
-                <label
-                  key={voiceId}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(event) => voices.toggleSelectedVoice(voiceId, event.target.checked)}
-                  />
-                  <span className="min-w-0 truncate">{voice.displayName}</span>
-                  <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-                    {voice.provider}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        )}
+                return (
+                  <label
+                    key={voiceId}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) =>
+                        voices.toggleSelectedVoice(voiceId, event.target.checked)
+                      }
+                    />
+                    <span className="min-w-0 truncate">{voice.displayName}</span>
+                    <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                      {voice.provider}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </DialogMain>
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
           <Button

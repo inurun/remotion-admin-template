@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -31,13 +32,16 @@ export function BgmDialog() {
       >
         <Music2 />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,560px)]">
-        <form className="grid gap-4" onSubmit={(e) => void dialog.submit(e)}>
+      <DialogContent className="max-h-[90vh] w-[min(92vw,560px)]">
+        <form
+          className="flex min-h-0 flex-1 flex-col gap-4"
+          onSubmit={(e) => void dialog.submit(e)}
+        >
           <DialogHeader>
             <DialogTitle>BGM</DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-3">
+          <DialogMain className="grid gap-3">
             {dialog.fields.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">No BGM tracks</p>
             )}
@@ -140,7 +144,7 @@ export function BgmDialog() {
               <Plus />
               Add track
             </Button>
-          </div>
+          </DialogMain>
 
           <DialogFooter>
             <DialogClose

@@ -4,7 +4,6 @@ import { ConfigActions } from "@/app/components/app-editor/config-card/config-ac
 import { ReadTextField } from "@/app/components/app-editor/config-card/read-text-field/read-text-field";
 import { AnalysisField } from "@/app/components/app-editor/config-card/analysis-field/analysis-field";
 import { AvatarSettingsField } from "@/app/components/app-editor/config-card/avatar-settings-field/avatar-settings-field";
-import { TtsPlaybackSettingsField } from "@/app/components/app-editor/config-card/tts-playback-settings-field/tts-playback-settings-field";
 import {
   useConfigCard,
   useConfigCardVisibility,
@@ -43,7 +42,6 @@ function ConfigCardInner() {
           <SelectedTtsContextProvider key={selectedTts.id} ttsId={selectedTts.id}>
             <div className="grid gap-4">
               <AvatarSettingsField />
-              <TtsPlaybackSettingsField />
               <ConfigActions />
               <ReadTextField />
               <AnalysisField />

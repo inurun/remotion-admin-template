@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
 } from "@/_shared/components/ui/dialog";
 import { cn } from "@/_shared/lib/utils";
@@ -20,7 +21,7 @@ export function RenderDialog() {
 
   return (
     <Dialog open={dialog.renderDialogOpen} onOpenChange={dialog.setRenderDialogOpen}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center justify-between gap-3 pr-10">
             <DialogTitle>Render</DialogTitle>
@@ -37,7 +38,7 @@ export function RenderDialog() {
             保存済み内容から書き出す。既存 mp4 があれば Publish のみも可。
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        <DialogMain className="grid gap-4">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -68,7 +69,7 @@ export function RenderDialog() {
               {dialog.errorMessage}
             </div>
           )}
-        </div>
+        </DialogMain>
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>閉じる</DialogClose>
           <Button

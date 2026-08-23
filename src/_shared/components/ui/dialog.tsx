@@ -48,7 +48,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 max-h-dvh z-50 flex flex-col w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-popover p-6 text-popover-foreground shadow-lg transition duration-200 data-ending-style:opacity-0 data-ending-style:scale-95 data-starting-style:opacity-0 data-starting-style:scale-95",
+          "fixed top-1/2 left-1/2 max-h-dvh z-50 flex min-h-0 flex-col overflow-hidden w-[min(92vw,720px)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-popover p-6 text-popover-foreground shadow-lg transition duration-200 data-ending-style:opacity-0 data-ending-style:scale-95 data-starting-style:opacity-0 data-starting-style:scale-95",
           className,
         )}
         {...props}
@@ -70,6 +70,16 @@ function DialogContent({
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="dialog-header" className={cn("grid gap-1", className)} {...props} />;
+}
+
+function DialogMain({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-main"
+      className={cn("min-h-0 flex-1 overflow-y-auto py-1", className)}
+      {...props}
+    />
+  );
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -109,6 +119,7 @@ export {
   DialogOverlay,
   DialogContent,
   DialogHeader,
+  DialogMain,
   DialogFooter,
   DialogTitle,
   DialogDescription,

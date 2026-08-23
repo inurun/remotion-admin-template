@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -30,11 +31,11 @@ export function LlmG2pDialog() {
       >
         <FlaskConical />
       </DialogTrigger>
-      <DialogContent className="w-[min(94vw,860px)]">
+      <DialogContent className="max-h-[90vh] w-[min(94vw,860px)]">
         <DialogHeader>
           <DialogTitle>LLM G2P Lab</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3">
+        <DialogMain className="grid gap-3">
           {dialog.pending ? (
             <p className="text-sm text-muted-foreground">
               Running page pipeline · {dialog.elapsedSec?.toFixed(1)}s
@@ -50,7 +51,7 @@ export function LlmG2pDialog() {
               {dialog.error}
             </div>
           ) : null}
-        </div>
+        </DialogMain>
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>Close</DialogClose>
           <Button

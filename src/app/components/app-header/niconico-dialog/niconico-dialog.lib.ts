@@ -1,10 +1,13 @@
 import { z } from "zod";
 import {
+  collectNiconicoParentWorkIds,
   formatParentWorkIdsInput,
   normalizeNiconicoMeta,
   parseParentWorkIdsInput,
   type ProjectNiconicoMeta,
 } from "@/_shared/project/project-meta";
+import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
+import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 
 export const niconicoFormSchema = z.object({
   title: z.string(),
@@ -32,4 +35,19 @@ export function fromNiconicoFormValues(values: NiconicoFormValues): ProjectNicon
     thumbnailTime: values.thumbnailTime,
     parentWorkIds: parseParentWorkIdsInput(values.parentWorkIds),
   });
+}
+
+export function parentWorkIdsInputFromOutroItems(
+  items: Iterable<PageFormValues | TransitionFormValues>,
+) {
+  const urls: string[] = [];
+  for (const item of items) {
+    if (item.type !== "outro") {
+      continue;
+    }
+    for (const block of item.meta.blocks) {
+      urls.push(block.url);
+    }
+  }
+  return formatParentWorkIdsInput(collectNiconicoParentWorkIds(urls));
 }

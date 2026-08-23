@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -36,11 +37,13 @@ export function VoicePresetDialog({
       >
         <SlidersHorizontal />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,520px)]">
+      <DialogContent className="max-h-[90vh] w-[min(92vw,520px)]">
         <DialogHeader>
           <DialogTitle>Voice settings</DialogTitle>
         </DialogHeader>
-        <SynthesisSettingsFields provider={voice.provider} value={value} onChange={onChange} />
+        <DialogMain>
+          <SynthesisSettingsFields provider={voice.provider} value={value} onChange={onChange} />
+        </DialogMain>
       </DialogContent>
     </Dialog>
   );

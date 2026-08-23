@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -30,21 +31,23 @@ export function AddProjectDialog() {
       >
         <Plus />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,420px)]">
-        <form className="grid gap-4" onSubmit={submit}>
+      <DialogContent className="max-h-[90vh] w-[min(92vw,420px)]">
+        <form className="flex min-h-0 flex-1 flex-col gap-4" onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>Add Project</DialogTitle>
           </DialogHeader>
-          <label className="grid gap-2 text-sm font-medium">
-            Project path
-            <Input
-              name="projectPath"
-              autoFocus
-              defaultValue={defaultProjectPath}
-              placeholder="project-name"
-              required
-            />
-          </label>
+          <DialogMain>
+            <label className="grid gap-2 text-sm font-medium">
+              Project path
+              <Input
+                name="projectPath"
+                autoFocus
+                defaultValue={defaultProjectPath}
+                placeholder="project-name"
+                required
+              />
+            </label>
+          </DialogMain>
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" disabled={isPending} />}>
               閉じる

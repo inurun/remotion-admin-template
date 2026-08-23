@@ -4,10 +4,12 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
+import { TtsPlaybackSettingsField } from "@/app/components/app-editor/config-card/tts-settings-dialog/tts-playback-settings-field/tts-playback-settings-field";
 import { useTtsSettingsDialog } from "@/app/components/app-editor/config-card/tts-settings-dialog/use-tts-settings-dialog";
 
 export function TtsSettingsDialog() {
@@ -24,11 +26,12 @@ export function TtsSettingsDialog() {
       >
         <SlidersHorizontal />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,520px)]">
+      <DialogContent className="max-h-[90vh] w-[min(92vw,520px)]">
         <DialogHeader>
           <DialogTitle>Voice settings</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4">
+        <DialogMain className="grid gap-4">
+          <TtsPlaybackSettingsField />
           <Button type="button" variant="secondary" onClick={dialog.loadPreset}>
             Load preset
           </Button>
@@ -37,7 +40,7 @@ export function TtsSettingsDialog() {
             value={dialog.displayedSynthesisSettings}
             onChange={dialog.setSynthesisSettings}
           />
-        </div>
+        </DialogMain>
       </DialogContent>
     </Dialog>
   );

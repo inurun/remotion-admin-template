@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -33,17 +34,17 @@ export function SettingsDialog() {
       >
         <Settings />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,760px)]">
+      <DialogContent className="max-h-[90vh] w-[min(92vw,760px)]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-5">
+        <DialogMain className="grid gap-5">
           <AppearanceSection />
           <Separator />
           <VoicesSection form={dialog.form} settingsOpen={dialog.open} />
           <Separator />
           <HotkeysSection form={dialog.form} />
-        </div>
+        </DialogMain>
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
           <Button type="button" disabled={!dialog.canSave} onClick={dialog.save}>

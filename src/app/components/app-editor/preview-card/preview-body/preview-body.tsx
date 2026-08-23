@@ -1,4 +1,3 @@
-import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
 import { PlaybackControl } from "@/app/components/app-editor/preview-card/playback-control/playback-control";
 import { PlaybackRateControl } from "@/app/components/app-editor/preview-card/playback-rate-control/playback-rate-control";
 import { PreviewPlayer } from "@/app/components/app-editor/preview-card/preview-player/preview-player";
@@ -37,9 +36,5 @@ function PreviewPlayerArea({ component, durationInFrames, project }: PreviewPlay
 }
 
 export function PreviewBody(props: PreviewPlayerAreaProps) {
-  return (
-    <RemotionPlayerControlProvider>
-      <PreviewPlayerArea {...props} />
-    </RemotionPlayerControlProvider>
-  );
+  return <PreviewPlayerArea {...props} />;
 }

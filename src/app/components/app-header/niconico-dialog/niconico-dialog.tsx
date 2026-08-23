@@ -1,4 +1,4 @@
-import { Tv } from "lucide-react";
+import { RefreshCw, Tv } from "lucide-react";
 import { Button } from "@/_shared/components/ui/button";
 import {
   Dialog,
@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogMain,
   DialogTitle,
   DialogTrigger,
 } from "@/_shared/components/ui/dialog";
@@ -25,11 +26,14 @@ export function NiconicoDialog() {
         <Tv />
       </DialogTrigger>
       <DialogContent className="w-[min(92vw,520px)] max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Niconico</DialogTitle>
-        </DialogHeader>
-        <div className="overflow-y-auto flex-1 py-1">
-          <form className="grid gap-4" onSubmit={(event) => void dialog.submit(event)}>
+        <form
+          className="flex min-h-0 flex-1 flex-col gap-4"
+          onSubmit={(event) => void dialog.submit(event)}
+        >
+          <DialogHeader>
+            <DialogTitle>Niconico</DialogTitle>
+          </DialogHeader>
+          <DialogMain className="grid gap-4">
             <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
               <label className="grid gap-2 text-sm font-medium">
                 Title
@@ -45,35 +49,56 @@ export function NiconicoDialog() {
               <FieldError errors={[dialog.form.formState.errors.description]} />
             </Field>
             <Field data-invalid={Boolean(dialog.form.formState.errors.thumbnailTime)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Thumbnail time
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">Thumbnail time</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={dialog.setThumbnailTimeFromPreview}
+                  >
+                    Set current time
+                  </Button>
+                </div>
                 <Input placeholder="00:00.000" {...dialog.form.register("thumbnailTime")} />
-              </label>
+              </div>
               <FieldError errors={[dialog.form.formState.errors.thumbnailTime]} />
             </Field>
             <Field data-invalid={Boolean(dialog.form.formState.errors.parentWorkIds)}>
-              <label className="grid gap-2 text-sm font-medium">
-                Parent works
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">Parent works</span>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="outline"
+                    title="Refresh"
+                    onClick={dialog.refreshParentWorks}
+                  >
+                    <RefreshCw />
+                  </Button>
+                </div>
                 <Textarea
                   rows={3}
                   placeholder="sm9 ss123"
                   {...dialog.form.register("parentWorkIds")}
                 />
-              </label>
+              </div>
               <FieldError errors={[dialog.form.formState.errors.parentWorkIds]} />
             </Field>
-          </form>
-        </div>
-        <DialogFooter>
-          <DialogClose
-            render={<Button type="button" variant="outline" disabled={dialog.isPending} />}
-          >
-            Cancel
-          </DialogClose>
-          <Button type="submit" disabled={dialog.isPending}>
-            {dialog.isPending ? "Saving" : "Save"}
-          </Button>
-        </DialogFooter>
+          </DialogMain>
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" disabled={dialog.isPending} />}
+            >
+              Cancel
+            </DialogClose>
+            <Button type="submit" disabled={dialog.isPending}>
+              {dialog.isPending ? "Saving" : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

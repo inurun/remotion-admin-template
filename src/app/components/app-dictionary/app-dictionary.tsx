@@ -55,18 +55,8 @@ export function AppDictionary() {
               {state.filteredEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className={`grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-2 rounded-lg pr-3 hover:bg-muted ${state.selectedId === entry.id ? "bg-muted" : ""}`}
+                  className={`flex items-center gap-2 rounded-lg pr-3 hover:bg-muted ${state.selectedId === entry.id ? "bg-muted" : ""}`}
                 >
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    variant="ghost"
-                    disabled={state.pending}
-                    aria-label={`Delete ${entry.surface}`}
-                    onClick={() => state.removeEntry(entry.id)}
-                  >
-                    <Trash2 />
-                  </Button>
                   <Switch
                     size="sm"
                     checked={entry.enabled}
@@ -76,7 +66,7 @@ export function AppDictionary() {
                   />
                   <button
                     type="button"
-                    className="grid min-w-0 py-2 text-left"
+                    className="grid min-w-0 py-2 text-left flex-1"
                     onClick={() => state.select(entry.id)}
                   >
                     <span className="truncate text-sm font-medium">{entry.surface}</span>
@@ -87,6 +77,16 @@ export function AppDictionary() {
                       {!entry.enabled && " · Disabled"}
                     </span>
                   </button>
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="destructive"
+                    disabled={state.pending}
+                    aria-label={`Delete ${entry.surface}`}
+                    onClick={() => state.removeEntry(entry.id)}
+                  >
+                    <Trash2 />
+                  </Button>
                 </div>
               ))}
             </div>

@@ -28,34 +28,31 @@ function BoundTtsPlaybackSettingsField({ ttsIndex }: { ttsIndex: number }) {
   const item = useWatch({ control, name });
 
   return (
-    <div className="grid gap-2">
-      <div className="text-sm font-medium">TTS</div>
-      <div className="grid grid-cols-3 gap-2">
-        {TTS_PLAYBACK_FIELDS.map((field) => (
-          <Field key={field.key}>
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              <span>{field.label}</span>
-              <Input
-                type="number"
-                step={field.step}
-                min={field.min}
-                max={field.max}
-                value={item?.[field.key] ?? field.fallback}
-                onChange={(event) => {
-                  setValue(
-                    `${name}.${field.key}`,
-                    parseNumberInput(event.target.value, field.fallback),
-                    {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    },
-                  );
-                }}
-              />
-            </label>
-          </Field>
-        ))}
-      </div>
+    <div className="grid grid-cols-3 gap-2">
+      {TTS_PLAYBACK_FIELDS.map((field) => (
+        <Field key={field.key}>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            <span>{field.label}</span>
+            <Input
+              type="number"
+              step={field.step}
+              min={field.min}
+              max={field.max}
+              value={item?.[field.key] ?? field.fallback}
+              onChange={(event) => {
+                setValue(
+                  `${name}.${field.key}`,
+                  parseNumberInput(event.target.value, field.fallback),
+                  {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  },
+                );
+              }}
+            />
+          </label>
+        </Field>
+      ))}
     </div>
   );
 }
