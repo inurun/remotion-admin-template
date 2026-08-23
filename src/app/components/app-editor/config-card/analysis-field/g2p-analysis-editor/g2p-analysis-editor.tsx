@@ -21,6 +21,19 @@ export function G2pAnalysisEditor({
   return (
     <div className="grid gap-3">
       <G2pTextHighlight text={editor.parsed.item.text} spans={editor.unknownSpans} />
+      <Input
+        className="font-mono"
+        value={editor.draft}
+        disabled={editor.pending}
+        onChange={(event) => editor.setDraft(event.target.value)}
+        onBlur={() => void editor.commit()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            void editor.commit();
+          }
+        }}
+      />
       {editor.warningsWithoutSpan.length > 0 ? (
         <ul className="grid gap-1 text-xs text-muted-foreground">
           {editor.warningsWithoutSpan.map((warning, index) => (
@@ -39,19 +52,6 @@ export function G2pAnalysisEditor({
           onAccentChange={phrase.onAccentChange}
         />
       ))}
-      <Input
-        className="font-mono"
-        value={editor.draft}
-        disabled={editor.pending}
-        onChange={(event) => editor.setDraft(event.target.value)}
-        onBlur={() => void editor.commit()}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            void editor.commit();
-          }
-        }}
-      />
       {editor.error ? <p className="text-sm text-destructive">{editor.error}</p> : null}
     </div>
   );

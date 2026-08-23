@@ -42,10 +42,10 @@ function ConfigCardInner() {
         ) : (
           <SelectedTtsContextProvider key={selectedTts.id} ttsId={selectedTts.id}>
             <div className="grid gap-4">
-              <ReadTextField />
               <AvatarSettingsField />
               <TtsPlaybackSettingsField />
               <ConfigActions />
+              <ReadTextField />
               <AnalysisField />
             </div>
           </SelectedTtsContextProvider>

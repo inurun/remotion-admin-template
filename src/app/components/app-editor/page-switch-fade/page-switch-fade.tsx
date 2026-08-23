@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "@/_shared/lib/utils";
 
-export const PAGE_SWITCH_FADE_CLASS =
-  "animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-700";
+export const PAGE_SWITCH_FADE_CLASS = cn(
+  "animate-in fade-in slide-in-from-bottom-1 fill-mode-both duration-300",
+);
 
 export function PageSwitchFade({
   pageId,

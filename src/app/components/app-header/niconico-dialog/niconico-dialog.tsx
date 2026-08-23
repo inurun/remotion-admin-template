@@ -24,54 +24,56 @@ export function NiconicoDialog() {
       >
         <Tv />
       </DialogTrigger>
-      <DialogContent className="w-[min(92vw,520px)] max-h-[90vh] overflow-y-auto">
-        <form className="grid gap-4" onSubmit={(event) => void dialog.submit(event)}>
-          <DialogHeader>
-            <DialogTitle>Niconico</DialogTitle>
-          </DialogHeader>
-          <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
-            <label className="grid gap-2 text-sm font-medium">
-              Title
-              <Input {...dialog.form.register("title")} />
-            </label>
-            <FieldError errors={[dialog.form.formState.errors.title]} />
-          </Field>
-          <Field data-invalid={Boolean(dialog.form.formState.errors.description)}>
-            <label className="grid gap-2 text-sm font-medium">
-              Description
-              <Textarea rows={4} {...dialog.form.register("description")} />
-            </label>
-            <FieldError errors={[dialog.form.formState.errors.description]} />
-          </Field>
-          <Field data-invalid={Boolean(dialog.form.formState.errors.thumbnailTime)}>
-            <label className="grid gap-2 text-sm font-medium">
-              Thumbnail time
-              <Input placeholder="00:00.000" {...dialog.form.register("thumbnailTime")} />
-            </label>
-            <FieldError errors={[dialog.form.formState.errors.thumbnailTime]} />
-          </Field>
-          <Field data-invalid={Boolean(dialog.form.formState.errors.parentWorkIds)}>
-            <label className="grid gap-2 text-sm font-medium">
-              Parent works
-              <Textarea
-                rows={3}
-                placeholder="sm9 ss123"
-                {...dialog.form.register("parentWorkIds")}
-              />
-            </label>
-            <FieldError errors={[dialog.form.formState.errors.parentWorkIds]} />
-          </Field>
-          <DialogFooter>
-            <DialogClose
-              render={<Button type="button" variant="outline" disabled={dialog.isPending} />}
-            >
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={dialog.isPending}>
-              {dialog.isPending ? "Saving" : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+      <DialogContent className="w-[min(92vw,520px)] max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Niconico</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-y-auto flex-1 py-1">
+          <form className="grid gap-4" onSubmit={(event) => void dialog.submit(event)}>
+            <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
+              <label className="grid gap-2 text-sm font-medium">
+                Title
+                <Input {...dialog.form.register("title")} />
+              </label>
+              <FieldError errors={[dialog.form.formState.errors.title]} />
+            </Field>
+            <Field data-invalid={Boolean(dialog.form.formState.errors.description)}>
+              <label className="grid gap-2 text-sm font-medium">
+                Description
+                <Textarea rows={4} {...dialog.form.register("description")} className="text-xs" />
+              </label>
+              <FieldError errors={[dialog.form.formState.errors.description]} />
+            </Field>
+            <Field data-invalid={Boolean(dialog.form.formState.errors.thumbnailTime)}>
+              <label className="grid gap-2 text-sm font-medium">
+                Thumbnail time
+                <Input placeholder="00:00.000" {...dialog.form.register("thumbnailTime")} />
+              </label>
+              <FieldError errors={[dialog.form.formState.errors.thumbnailTime]} />
+            </Field>
+            <Field data-invalid={Boolean(dialog.form.formState.errors.parentWorkIds)}>
+              <label className="grid gap-2 text-sm font-medium">
+                Parent works
+                <Textarea
+                  rows={3}
+                  placeholder="sm9 ss123"
+                  {...dialog.form.register("parentWorkIds")}
+                />
+              </label>
+              <FieldError errors={[dialog.form.formState.errors.parentWorkIds]} />
+            </Field>
+          </form>
+        </div>
+        <DialogFooter>
+          <DialogClose
+            render={<Button type="button" variant="outline" disabled={dialog.isPending} />}
+          >
+            Cancel
+          </DialogClose>
+          <Button type="submit" disabled={dialog.isPending}>
+            {dialog.isPending ? "Saving" : "Save"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

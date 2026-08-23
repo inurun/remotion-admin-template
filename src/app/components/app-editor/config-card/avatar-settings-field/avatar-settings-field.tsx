@@ -45,7 +45,6 @@ function AvatarSettingsControls({
 
   return (
     <div className="grid gap-2">
-      <div className="text-sm font-medium">Avatar: {avatarType}</div>
       <div className="grid grid-cols-3 gap-2">
         <Field>
           <AvatarSelect value={avatar.base} onChange={(base) => onChange({ ...avatar, base })}>

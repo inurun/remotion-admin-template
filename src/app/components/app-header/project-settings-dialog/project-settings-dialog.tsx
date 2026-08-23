@@ -75,17 +75,14 @@ export function ProjectSettingsDialog() {
               </Field>
             )}
           />
-          <div className="grid gap-2 rounded-xl border border-border p-3">
-            <div className="text-sm font-medium">TTS</div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={dialog.isPending || dialog.isClearingTts}
-              onClick={() => void dialog.clearTtsCache()}
-            >
-              {dialog.isClearingTts ? "Clearing" : "Clear TTS cache"}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={dialog.isPending || dialog.isClearingTts}
+            onClick={() => void dialog.clearTtsCache()}
+          >
+            {dialog.isClearingTts ? "Clearing" : "Clear TTS cache"}
+          </Button>
           <DialogFooter>
             <DialogClose
               render={<Button type="button" variant="outline" disabled={dialog.isPending} />}
