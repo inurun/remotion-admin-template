@@ -799,19 +799,22 @@ function formatOpenCodeEvent(event: unknown, sessionId: string): FormattedOpenCo
   }
 }
 
-async function startOpenCodeEventLogging(
+export async function startOpenCodeEventLogging(
   job: PublishPrepJob,
   opencode: OpenCodeInstance,
   rootDir: string,
   sessionId: string,
+  promptSignal: AbortSignal,
   onRetry: (attempt: number, message: string) => void,
   onActivity: () => void,
 ) {
   const controller = new AbortController();
   const runtime = getJobRuntimeStore().get(job.id);
-  const signal = runtime
-    ? AbortSignal.any([controller.signal, runtime.controller.signal])
-    : controller.signal;
+  const signal = AbortSignal.any([
+    controller.signal,
+    promptSignal,
+    ...(runtime ? [runtime.controller.signal] : []),
+  ]);
   let events: Awaited<ReturnType<typeof opencode.client.event.subscribe>>;
   try {
     events = await opencode.client.event.subscribe(
@@ -1065,6 +1068,7 @@ async function runOpenCodePublishPrep(
         opencode,
         rootDir,
         session.data.id,
+        promptSignal,
         (attempt, message) => {
           if (maxRetryAttempts > 0 && attempt >= maxRetryAttempts) {
             promptController.abort(
