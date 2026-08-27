@@ -127,6 +127,39 @@ describe("consumeCodexEvents", () => {
     expect(job.logs.some((line) => line.includes("agent_browser_snapshot: completed"))).toBe(true);
   });
 
+  it("keeps consuming after a failed MCP call so Codex can recover", async () => {
+    const job = createJob();
+    const result = JSON.stringify({ ok: true });
+
+    await expect(
+      consumeCodexEvents(
+        job,
+        stream([
+          {
+            type: "item.completed",
+            item: {
+              id: "tool-1",
+              type: "mcp_tool_call",
+              server: "agent_browser",
+              tool: "agent_browser_click",
+              arguments: {},
+              error: { message: "click failed" },
+              status: "failed",
+            },
+          },
+          {
+            type: "item.completed",
+            item: { id: "message-1", type: "agent_message", text: result },
+          },
+          { type: "turn.completed", usage },
+        ]),
+      ),
+    ).resolves.toBe(result);
+    expect(job.logs.some((line) => line.includes("[WARN]") && line.includes("click failed"))).toBe(
+      true,
+    );
+  });
+
   it.each([
     {
       name: "shell execution",
@@ -149,22 +182,6 @@ describe("consumeCodexEvents", () => {
         item: { id: "file-1", type: "file_change", changes: [], status: "completed" },
       } satisfies ThreadEvent,
       error: "forbidden file_change",
-    },
-    {
-      name: "failed MCP call",
-      event: {
-        type: "item.completed",
-        item: {
-          id: "tool-1",
-          type: "mcp_tool_call",
-          server: "agent_browser",
-          tool: "agent_browser_click",
-          arguments: {},
-          error: { message: "click failed" },
-          status: "failed",
-        },
-      } satisfies ThreadEvent,
-      error: "click failed",
     },
     {
       name: "stream error",
@@ -213,6 +230,8 @@ describe("publish result and abort guard", () => {
     };
     const result = parsePublishResult(
       JSON.stringify({
+        outcome: "ready",
+        blockingReason: null,
         url: "https://garage.nicovideo.jp/niconico-garage/video/videos/123",
         title: "投稿の確認",
         finalResponse: "ready",

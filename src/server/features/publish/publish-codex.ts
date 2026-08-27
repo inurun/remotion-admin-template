@@ -94,6 +94,8 @@ const DEFAULT_CHROME_EXECUTABLE_PATHS = [
 ];
 
 const publishResultSchema = z.object({
+  outcome: z.enum(["ready", "blocked"]),
+  blockingReason: z.string().nullable(),
   url: z.string(),
   title: z.string(),
   finalResponse: z.string(),
@@ -104,6 +106,7 @@ const publishResultSchema = z.object({
   actualThumbnailTime: z.string(),
   registeredParentWorkIds: z.array(z.string()),
 });
+type CodexPublishResult = z.infer<typeof publishResultSchema>;
 
 export const PUBLISH_RESULT_SCHEMA = z.toJSONSchema(publishResultSchema);
 
@@ -334,7 +337,7 @@ function assertVideoMeta(value: unknown): VideoMeta {
   };
 }
 
-export function parsePublishResult(text: string): PublishPrepJobResult {
+export function parsePublishResult(text: string): CodexPublishResult {
   let value: unknown;
   try {
     value = JSON.parse(text);
@@ -444,14 +447,18 @@ function logCodexItem(job: PublishPrepJob, event: ThreadEvent): string | undefin
     throw new Error(`Codex attempted forbidden MCP server: ${item.server}`);
   }
 
-  const level = item.status === "failed" ? "ERROR" : "INFO";
-  pushLog(job, `Codex MCP ${item.tool}: ${item.status}`, {
-    dedupeKey: `mcp:${item.id}:${item.status}`,
-    level,
-  });
-  if (item.status === "failed") {
-    throw new Error(`Codex MCP ${item.tool} failed: ${item.error?.message ?? "unknown error"}`);
-  }
+  const errorMessage =
+    item.status === "failed"
+      ? (item.error?.message ?? ("result" in item ? stringifyForLog(item.result) : "unknown error"))
+      : undefined;
+  pushLog(
+    job,
+    `Codex MCP ${item.tool}: ${item.status}${errorMessage ? ` (${errorMessage})` : ""}`,
+    {
+      dedupeKey: `mcp:${item.id}:${item.status}`,
+      level: item.status === "failed" ? "WARN" : "INFO",
+    },
+  );
   return undefined;
 }
 
@@ -507,6 +514,9 @@ ${procedure}
 - 利用できるブラウザーツールは agent_browser MCPだけ。
 - シェル、ファイル編集、web search、ほかのMCPは使わない。
 - 既存のヘッド付きChromeへ接続済み。新しいChromeやタブを開かず、ブラウザーを閉じない。
+- MCP操作が失敗しても停止しない。snapshotで現在状態を確認し、同じ引数を盲目的に繰り返さず別のref・selector・入力方法で続行する。
+- UIを変えるclickの直後は、依存するevalや入力より先にwaitまたはsnapshotを実行する。
+- blockedを返せるのは、現在URLとsnapshotを確認し、複数の代替手段を試しても続行不能な場合だけ。単発のMCP失敗はblockedではない。
 
 ## 作業入力
 
@@ -576,28 +586,57 @@ async function runCodexPublishPrep(
     );
     const codex = new Codex(createPublishCodexOptions());
     const thread = codex.startThread(createPublishThreadOptions());
-    const { events } = await thread.runStreamed(
-      createPrompt(procedure, videoPath, videoMeta, parentWorks, parentWorkIds),
-      { outputSchema: PUBLISH_RESULT_SCHEMA, signal: guard.signal },
-    );
-    const finalResponse = await consumeCodexEvents(job, events, guard.activity);
-    const result = parsePublishResult(finalResponse);
-    const validationErrors = validatePublishPrepResult(result, {
-      videoPath,
-      videoTitle: videoMeta.title,
-      thumbnailTime: videoMeta.thumbnailTime,
-      parentWorkIds,
-    });
-    if (validationErrors.length > 0) {
-      throw new Error(
-        `Codex publish prep verification failed: ${validationErrors.join("; ")}. Response: ${finalResponse}`,
-      );
+    let prompt = createPrompt(procedure, videoPath, videoMeta, parentWorks, parentWorkIds);
+    for (;;) {
+      const { events } = await thread.runStreamed(prompt, {
+        outputSchema: PUBLISH_RESULT_SCHEMA,
+        signal: guard.signal,
+      });
+      const finalResponse = await consumeCodexEvents(job, events, guard.activity);
+      try {
+        const result = parsePublishResult(finalResponse);
+        if (result.outcome === "blocked") {
+          if (!result.blockingReason?.trim()) {
+            throw new Error("Blocked result requires a blocking reason");
+          }
+          throw new Error(`Codex reported publish prep blocked: ${result.blockingReason}`);
+        }
+        const validationErrors = validatePublishPrepResult(result, {
+          videoPath,
+          videoTitle: videoMeta.title,
+          thumbnailTime: videoMeta.thumbnailTime,
+          parentWorkIds,
+        });
+        if (validationErrors.length > 0) {
+          throw new Error(`Publish prep verification failed: ${validationErrors.join("; ")}`);
+        }
+        pushLog(
+          job,
+          `Publish prep verified: title=${result.actualVideoTitle} thumbnail=${result.actualThumbnailTime} parentWorks=${result.registeredParentWorkIds.length} confirmation=${result.reachedConfirmation}`,
+        );
+        return {
+          url: result.url,
+          title: result.title,
+          finalResponse: result.finalResponse,
+          videoPath: result.videoPath,
+          reachedConfirmation: result.reachedConfirmation,
+          finalSubmitClicked: result.finalSubmitClicked,
+          actualVideoTitle: result.actualVideoTitle,
+          actualThumbnailTime: result.actualThumbnailTime,
+          registeredParentWorkIds: result.registeredParentWorkIds,
+        };
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Codex reported publish prep blocked:")
+        ) {
+          throw error;
+        }
+        const message = stringifyForLog(error);
+        pushLog(job, `Codex result needs recovery: ${message}`, { level: "WARN" });
+        prompt = `前のターンの最終結果は受理できなかった: ${message}\n現在のブラウザー状態をsnapshotで確認し、必要な作業を続行して、JSON Schemaどおりに再回答する。`;
+      }
     }
-    pushLog(
-      job,
-      `Publish prep verified: title=${result.actualVideoTitle} thumbnail=${result.actualThumbnailTime} parentWorks=${result.registeredParentWorkIds.length} confirmation=${result.reachedConfirmation}`,
-    );
-    return result;
   } finally {
     guard.stop();
   }
