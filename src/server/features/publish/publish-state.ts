@@ -17,7 +17,7 @@ import {
   runPublishPrep,
   subscribePublishPrepJob,
   type PublishPrepJob,
-} from "./publish-opencode";
+} from "./publish-codex";
 
 type PublishStatus = "idle" | "running" | "success" | "error";
 
