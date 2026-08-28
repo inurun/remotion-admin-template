@@ -12,7 +12,19 @@ agent_browser MCPだけを使ってニコニコ動画への投稿準備を自動
 - MCP操作が失敗しても停止しない。snapshotで現在状態を確認し、同じ引数を盲目的に繰り返さず、別のref・selector・入力方法を試す。
 - UIを変えるclickの直後は、依存するevalや入力より先にwaitまたはsnapshotを実行する。
 - `blocked` を返せるのは、現在URLとsnapshotを確認し、複数の代替手段でも続行不能な場合だけ。単発のMCP失敗は `blocked` ではない。
+- `ALL_TOOLS`やツール説明を出力・列挙しない。必要なagent-browser MCPは利用可能なので直接呼び出す。
 - `agent_browser_close` は絶対に使わない。
+
+## MCP呼び出し
+
+execセル内から次の形で直接呼ぶ。
+
+- snapshot: `tools.mcp__agent_browser__agent_browser_snapshot({ session: "niconico-publish" })`
+- click: `tools.mcp__agent_browser__agent_browser_click({ session: "niconico-publish", selector: "@ref" })`
+- fill: `tools.mcp__agent_browser__agent_browser_fill({ session: "niconico-publish", selector: "@ref", text: "..." })`
+- wait_ms: `tools.mcp__agent_browser__agent_browser_wait_ms({ session: "niconico-publish", ms: 500 })`。`timeMs` は使わない。
+- upload: `tools.mcp__agent_browser__agent_browser_upload({ session: "niconico-publish", selector: "@ref", files: ["絶対パス"], timeoutMs: 120000 })`
+- eval: `tools.mcp__agent_browser__agent_browser_eval({ session: "niconico-publish", script: "...", timeoutMs: 120000 })`
 
 ## 投稿準備の流れ
 

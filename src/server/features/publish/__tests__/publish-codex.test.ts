@@ -8,6 +8,7 @@ import {
   createPublishThreadOptions,
   parsePublishResult,
   PUBLISH_RESULT_SCHEMA,
+  shouldRetryBlockedResult,
   type PublishPrepJob,
 } from "../publish-codex";
 
@@ -124,6 +125,7 @@ describe("consumeCodexEvents", () => {
       ),
     ).resolves.toBe(result);
     expect(activity).toHaveBeenCalledTimes(5);
+    expect(activity).toHaveBeenCalledWith(expect.objectContaining({ type: "item.completed" }));
     expect(job.logs.some((line) => line.includes("agent_browser_snapshot: completed"))).toBe(true);
   });
 
@@ -219,6 +221,13 @@ describe("publish result and abort guard", () => {
   it("rejects invalid JSON", () => {
     expect(() => parsePublishResult("not json")).toThrow("invalid JSON");
     expect(() => parsePublishResult("{}")).toThrow("invalid publish result");
+  });
+
+  it("rejects the first blocked result and requires MCP recovery before accepting another", () => {
+    expect(shouldRetryBlockedResult(0, 20)).toBe(true);
+    expect(shouldRetryBlockedResult(1, 0)).toBe(true);
+    expect(shouldRetryBlockedResult(1, 1)).toBe(true);
+    expect(shouldRetryBlockedResult(1, 2)).toBe(false);
   });
 
   it("parses a structured result that passes the existing verification", () => {

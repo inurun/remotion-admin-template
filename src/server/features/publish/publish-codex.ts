@@ -351,6 +351,10 @@ export function parsePublishResult(text: string): CodexPublishResult {
   return result.data;
 }
 
+export function shouldRetryBlockedResult(rejectedBlockedResults: number, mcpAttempts: number) {
+  return rejectedBlockedResults === 0 || mcpAttempts < 2;
+}
+
 export function createPublishAbortGuard(
   parentSignal: AbortSignal,
   hardTimeoutMs: number,
@@ -465,13 +469,13 @@ function logCodexItem(job: PublishPrepJob, event: ThreadEvent): string | undefin
 export async function consumeCodexEvents(
   job: PublishPrepJob,
   events: AsyncIterable<ThreadEvent>,
-  onActivity: () => void = () => undefined,
+  onActivity: (event: ThreadEvent) => void = () => undefined,
 ): Promise<string> {
   let finalResponse: string | undefined;
   let completed = false;
 
   for await (const event of events) {
-    onActivity();
+    onActivity(event);
     if (event.type === "thread.started") {
       const runtime = getJobRuntimeStore().get(job.id);
       if (runtime) runtime.threadId = event.thread_id;
@@ -517,6 +521,8 @@ ${procedure}
 - MCP操作が失敗しても停止しない。snapshotで現在状態を確認し、同じ引数を盲目的に繰り返さず別のref・selector・入力方法で続行する。
 - UIを変えるclickの直後は、依存するevalや入力より先にwaitまたはsnapshotを実行する。
 - blockedを返せるのは、現在URLとsnapshotを確認し、複数の代替手段を試しても続行不能な場合だけ。単発のMCP失敗はblockedではない。
+- ALL_TOOLSやツール説明を出力・列挙しない。手順書に記載した既知のagent-browser MCPを直接使う。
+- agent_browser_wait_ms の待機時間は ms で渡す。timeMs ではない。
 
 ## 作業入力
 
@@ -524,7 +530,6 @@ ${procedure}
 - 対象mp4: ${JSON.stringify(videoPath)}
 - 動画タイトル: ${JSON.stringify(videoMeta.title)}
 - 動画説明文HTML: ${JSON.stringify(descriptionHtml)}
-- 動画タイトル(Base64 UTF-8): ${Buffer.from(videoMeta.title, "utf-8").toString("base64")}
 - 動画説明文(Base64 UTF-8): ${Buffer.from(descriptionHtml, "utf-8").toString("base64")}
 - サムネイル時刻: ${JSON.stringify(videoMeta.thumbnailTime)}
 - 確認前に登録する親作品: ${JSON.stringify(parentWorks)}
@@ -587,20 +592,39 @@ async function runCodexPublishPrep(
     const codex = new Codex(createPublishCodexOptions());
     const thread = codex.startThread(createPublishThreadOptions());
     let prompt = createPrompt(procedure, videoPath, videoMeta, parentWorks, parentWorkIds);
+    let rejectedBlockedResults = 0;
     for (;;) {
       const { events } = await thread.runStreamed(prompt, {
         outputSchema: PUBLISH_RESULT_SCHEMA,
         signal: guard.signal,
       });
-      const finalResponse = await consumeCodexEvents(job, events, guard.activity);
+      let mcpAttempts = 0;
+      const finalResponse = await consumeCodexEvents(job, events, (event) => {
+        guard.activity();
+        if (
+          event.type === "item.completed" &&
+          event.item.type === "mcp_tool_call" &&
+          (event.item.status === "completed" || event.item.status === "failed")
+        ) {
+          mcpAttempts += 1;
+        }
+      });
       try {
         const result = parsePublishResult(finalResponse);
         if (result.outcome === "blocked") {
           if (!result.blockingReason?.trim()) {
             throw new Error("Blocked result requires a blocking reason");
           }
+          if (shouldRetryBlockedResult(rejectedBlockedResults, mcpAttempts)) {
+            rejectedBlockedResults += 1;
+            const message = `Codex blocked result rejected: ${result.blockingReason}`;
+            pushLog(job, `${message}; continuing recovery`, { level: "WARN" });
+            prompt = `${message}\nまだ未実行の作業があり、blockedは受理しない。最新snapshotを取得し、少なくとも1つ別のMCP操作で回復を試して作業を続行する。同じ説明だけでblockedを繰り返さない。`;
+            continue;
+          }
           throw new Error(`Codex reported publish prep blocked: ${result.blockingReason}`);
         }
+        rejectedBlockedResults = 0;
         const validationErrors = validatePublishPrepResult(result, {
           videoPath,
           videoTitle: videoMeta.title,
