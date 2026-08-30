@@ -5,6 +5,7 @@ import {
   consumeCodexEvents,
   createPublishAbortGuard,
   createPublishCodexOptions,
+  createPublishCodexRuntime,
   createPublishThreadOptions,
   parsePublishResult,
   PUBLISH_RESULT_SCHEMA,
@@ -37,17 +38,33 @@ const usage = {
 
 describe("publish Codex configuration", () => {
   it("pins the model, reasoning, sandbox, and agent-browser MCP", () => {
-    expect(createPublishThreadOptions("/repo")).toEqual({
+    const runtime = createPublishCodexRuntime("/real-home");
+    expect(runtime).toEqual({
+      hostHomeDir: "/real-home",
+      homeDir: "/real-home/.cache/niconico-publish-codex/home",
+      codexHomeDir: "/real-home/.cache/niconico-publish-codex/codex-home",
+      workspaceDir: "/real-home/.cache/niconico-publish-codex/workspace",
+    });
+    expect(createPublishThreadOptions(runtime.workspaceDir)).toEqual({
       model: "gpt-5.6-luna",
       modelReasoningEffort: "low",
       sandboxMode: "read-only",
       approvalPolicy: "never",
-      workingDirectory: "/repo",
+      workingDirectory: runtime.workspaceDir,
+      skipGitRepoCheck: true,
       networkAccessEnabled: false,
       webSearchMode: "disabled",
     });
-    expect(createPublishCodexOptions("/repo")).toMatchObject({
+    expect(createPublishCodexOptions("/repo", runtime)).toMatchObject({
+      env: {
+        HOME: runtime.homeDir,
+        CODEX_HOME: runtime.codexHomeDir,
+        XDG_CONFIG_HOME: `${runtime.homeDir}/.config`,
+        XDG_CACHE_HOME: `${runtime.homeDir}/.cache`,
+      },
       config: {
+        agents: { enabled: false },
+        apps: { _default: { enabled: false } },
         features: {
           shell_tool: false,
         },
@@ -68,6 +85,9 @@ describe("publish Codex configuration", () => {
               "all",
             ],
             default_tools_approval_mode: "approve",
+            env: {
+              HOME: "/real-home",
+            },
             enabled_tools: expect.arrayContaining([
               "agent_browser_snapshot",
               "agent_browser_upload",
@@ -158,6 +178,36 @@ describe("consumeCodexEvents", () => {
       ),
     ).resolves.toBe(result);
     expect(job.logs.some((line) => line.includes("[WARN]") && line.includes("click failed"))).toBe(
+      true,
+    );
+  });
+
+  it("logs the skills context advisory without stopping the turn", async () => {
+    const job = createJob();
+    const result = JSON.stringify({ ok: true });
+
+    await expect(
+      consumeCodexEvents(
+        job,
+        stream([
+          {
+            type: "item.completed",
+            item: {
+              id: "warning-1",
+              type: "error",
+              message:
+                "Skill descriptions were shortened to fit the skills context budget. Codex can still see every skill.",
+            },
+          },
+          {
+            type: "item.completed",
+            item: { id: "message-1", type: "agent_message", text: result },
+          },
+          { type: "turn.completed", usage },
+        ]),
+      ),
+    ).resolves.toBe(result);
+    expect(job.logs.some((line) => line.includes("[WARN]") && line.includes("advisory"))).toBe(
       true,
     );
   });

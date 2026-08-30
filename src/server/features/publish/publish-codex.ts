@@ -49,6 +49,13 @@ type ParentWork = {
   url: string;
 };
 
+type PublishCodexRuntime = {
+  hostHomeDir: string;
+  homeDir: string;
+  codexHomeDir: string;
+  workspaceDir: string;
+};
+
 const STORE_KEY = "__niconicoPublishPrepJobs";
 const RUNTIME_STORE_KEY = "__niconicoPublishPrepJobRuntimes";
 const JOB_LISTENERS_KEY = "__niconicoPublishPrepJobListeners";
@@ -60,6 +67,8 @@ const DEFAULT_HARD_TIMEOUT_MS = 1_200_000;
 const DEFAULT_INACTIVITY_TIMEOUT_MS = 180_000;
 const DEFAULT_MAX_PUBLISH_LOG_FILES = 50;
 const THUMBNAIL_TIME_PATTERN = /^\d{2}:[0-5]\d\.\d{3}$/;
+const SKILLS_CONTEXT_WARNING =
+  "Skill descriptions were shortened to fit the skills context budget.";
 // agent-browser 0.35.1 exposes upload only through `all`; Codex sees only this allowlist.
 const AGENT_BROWSER_ENABLED_TOOLS = [
   "agent_browser_open",
@@ -240,6 +249,34 @@ function getAgentBrowserStateDir(): string {
   return path.join(os.homedir(), ".agent-browser");
 }
 
+export function createPublishCodexRuntime(realHome = os.homedir()): PublishCodexRuntime {
+  const baseDir = path.join(realHome, ".cache/niconico-publish-codex");
+  return {
+    hostHomeDir: realHome,
+    homeDir: path.join(baseDir, "home"),
+    codexHomeDir: path.join(baseDir, "codex-home"),
+    workspaceDir: path.join(baseDir, "workspace"),
+  };
+}
+
+async function preparePublishCodexRuntime(runtime: PublishCodexRuntime) {
+  const runtimeDirs = [runtime.homeDir, runtime.codexHomeDir, runtime.workspaceDir];
+  await Promise.all(runtimeDirs.map((dir) => fs.mkdir(dir, { recursive: true, mode: 0o700 })));
+  await Promise.all(runtimeDirs.map((dir) => fs.chmod(dir, 0o700)));
+  const authSource = path.join(runtime.hostHomeDir, ".codex/auth.json");
+  const authTarget = path.join(runtime.codexHomeDir, "auth.json");
+  await fs.copyFile(authSource, authTarget);
+  await fs.chmod(authTarget, 0o600);
+}
+
+function processEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] => entry[1] !== undefined,
+    ),
+  );
+}
+
 function isCdpPortListening(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = net.connect({ host: "127.0.0.1", port });
@@ -385,9 +422,27 @@ export function createPublishAbortGuard(
   };
 }
 
-export function createPublishCodexOptions(rootDir = PROJECT_ROOT): CodexOptions {
+export function createPublishCodexOptions(
+  rootDir = PROJECT_ROOT,
+  runtime = createPublishCodexRuntime(),
+): CodexOptions {
   return {
+    env: {
+      ...processEnv(),
+      HOME: runtime.homeDir,
+      CODEX_HOME: runtime.codexHomeDir,
+      XDG_CONFIG_HOME: path.join(runtime.homeDir, ".config"),
+      XDG_CACHE_HOME: path.join(runtime.homeDir, ".cache"),
+    },
     config: {
+      agents: {
+        enabled: false,
+      },
+      apps: {
+        _default: {
+          enabled: false,
+        },
+      },
       features: {
         shell_tool: false,
       },
@@ -409,6 +464,12 @@ export function createPublishCodexOptions(rootDir = PROJECT_ROOT): CodexOptions 
           ],
           default_tools_approval_mode: "approve",
           enabled_tools: AGENT_BROWSER_ENABLED_TOOLS,
+          env: {
+            HOME: runtime.hostHomeDir,
+            XDG_CONFIG_HOME:
+              process.env.XDG_CONFIG_HOME ?? path.join(runtime.hostHomeDir, ".config"),
+            XDG_CACHE_HOME: process.env.XDG_CACHE_HOME ?? path.join(runtime.hostHomeDir, ".cache"),
+          },
           startup_timeout_sec: 30,
           tool_timeout_sec: 180,
         },
@@ -417,13 +478,16 @@ export function createPublishCodexOptions(rootDir = PROJECT_ROOT): CodexOptions 
   };
 }
 
-export function createPublishThreadOptions(rootDir = PROJECT_ROOT): ThreadOptions {
+export function createPublishThreadOptions(
+  workspaceDir = createPublishCodexRuntime().workspaceDir,
+): ThreadOptions {
   return {
     model: "gpt-5.6-luna",
     modelReasoningEffort: "low",
     sandboxMode: "read-only",
     approvalPolicy: "never",
-    workingDirectory: rootDir,
+    workingDirectory: workspaceDir,
+    skipGitRepoCheck: true,
     networkAccessEnabled: false,
     webSearchMode: "disabled",
   };
@@ -442,7 +506,13 @@ function logCodexItem(job: PublishPrepJob, event: ThreadEvent): string | undefin
   if (item.type === "command_execution" || item.type === "file_change") {
     throw new Error(`Codex attempted forbidden ${item.type}`);
   }
-  if (item.type === "error") throw new Error(`Codex item error: ${item.message}`);
+  if (item.type === "error") {
+    if (item.message.includes(SKILLS_CONTEXT_WARNING)) {
+      pushLog(job, `Codex advisory: ${item.message}`, { level: "WARN" });
+      return undefined;
+    }
+    throw new Error(`Codex item error: ${item.message}`);
+  }
   if (item.type === "agent_message") {
     return event.type === "item.completed" ? item.text : undefined;
   }
@@ -589,8 +659,11 @@ async function runCodexPublishPrep(
       job,
       `Codex config: model=gpt-5.6-luna reasoning=low sandbox=read-only MCP=agent_browser`,
     );
-    const codex = new Codex(createPublishCodexOptions());
-    const thread = codex.startThread(createPublishThreadOptions());
+    const codexRuntime = createPublishCodexRuntime();
+    await preparePublishCodexRuntime(codexRuntime);
+    pushLog(job, `Codex isolated runtime: ${codexRuntime.codexHomeDir}`);
+    const codex = new Codex(createPublishCodexOptions(PROJECT_ROOT, codexRuntime));
+    const thread = codex.startThread(createPublishThreadOptions(codexRuntime.workspaceDir));
     let prompt = createPrompt(procedure, videoPath, videoMeta, parentWorks, parentWorkIds);
     let rejectedBlockedResults = 0;
     for (;;) {
