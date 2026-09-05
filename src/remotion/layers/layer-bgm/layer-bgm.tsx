@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { Html5Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio } from "@remotion/media";
 import type { BgmTrack } from "@/_schemas";
 import { assetPath, type AssetFile } from "@/_shared/lib/assets/path";
 import { secondsToFrames } from "@/remotion/utils/timing";
@@ -59,7 +60,7 @@ function BgmTrack({
       layout="none"
       showInTimeline={false}
     >
-      <Html5Audio
+      <Audio
         src={staticFile(getBgmAssetPath(track.src))}
         volume={volume}
         loop={isLoop}

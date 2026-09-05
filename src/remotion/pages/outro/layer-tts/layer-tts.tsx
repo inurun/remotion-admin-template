@@ -1,4 +1,4 @@
-import { Html5Audio } from "remotion";
+import { Audio } from "@remotion/media";
 import { Layer } from "@/remotion/components/layter";
 import { SequenceUnstyled } from "@/remotion/components/sequence-unstyled";
 import { useLayerTts } from "./use-layer-tts";
@@ -16,7 +16,7 @@ export function TtsLayer() {
           durationInFrames={ttsSegment.duration}
         >
           <p className="text-8xl font-bold font-sans">{ttsSegment.text}</p>
-          <Html5Audio src={ttsSegment.audio.src} volume={ttsSegment.volume} />
+          <Audio src={ttsSegment.audio.src} volume={ttsSegment.volume} />
         </SequenceUnstyled>
       ))}
     </Layer>
