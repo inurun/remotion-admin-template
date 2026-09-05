@@ -1,4 +1,4 @@
-import type { VoiceOption } from "@/_schemas";
+import type { AvatarSettings, VoiceOption } from "@/_schemas";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   getAvatarTypeByVoiceName,
@@ -11,14 +11,11 @@ export function createZenTts(
   options: VoiceOption[],
   target: ZenAliasTarget,
   text: string,
-  eyes: string | undefined,
+  avatarSettings: AvatarSettings,
 ): TtsFormValues {
   const draft = createTtsInput(options, undefined);
   const avatarType = getAvatarTypeByVoiceName(target.voice.voiceName);
-  const avatar = resolveAvatarSettings(
-    avatarType,
-    eyes ? { base: "", eyes, mouth: "" } : undefined,
-  );
+  const avatar = resolveAvatarSettings(avatarType, avatarSettings);
 
   return {
     ...draft,

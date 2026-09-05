@@ -1,4 +1,4 @@
-import type { AvatarType, VoiceOption } from "@/_schemas";
+import type { AvatarSettings, AvatarType, VoiceOption } from "@/_schemas";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 
 export type ZenParseError = {
@@ -13,7 +13,7 @@ export type ZenAliasTarget = {
 
 export type ZenSpeakerBlock = {
   alias: string;
-  eyes?: string;
+  avatar: AvatarSettings;
   lines: string[];
   lineNumber: number;
 };

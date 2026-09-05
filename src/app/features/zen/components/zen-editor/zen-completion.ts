@@ -1,6 +1,6 @@
 import { type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
 import type { AvatarType } from "@/_schemas";
-import { getEyesOptions } from "@/app/features/zen/normalize-eyes";
+import { avatarTokenFields, getZenAvatarOptions } from "@/app/features/zen/avatar-tokens";
 
 export type ZenCompletionAlias = {
   alias: string;
@@ -9,31 +9,34 @@ export type ZenCompletionAlias = {
 
 export function createZenCompletionSource(aliases: ZenCompletionAlias[]) {
   const aliasLabels = aliases.map((item) => item.alias);
-  const eyesByAlias = new Map(
-    aliases.map((item) => [item.alias, [...getEyesOptions(item.avatarType)]]),
+  const optionsByAlias = new Map(
+    aliases.map(({ alias, avatarType }) => {
+      const options = getZenAvatarOptions(avatarType);
+      return [
+        alias,
+        Object.entries(avatarTokenFields).flatMap(([key, field]) =>
+          options[field].map((value) => `${key}.${value}`),
+        ),
+      ];
+    }),
   );
 
   return (context: CompletionContext): CompletionResult | null => {
     const line = context.state.doc.lineAt(context.pos);
     const textBefore = line.text.slice(0, context.pos - line.from);
 
-    const speakerMatch = textBefore.match(/^@(\S+)\s+(\S*)$/);
+    const speakerMatch = textBefore.match(/^@(\S+)\s+(.*)$/);
     if (speakerMatch) {
-      const alias = speakerMatch[1];
-      const eyesPrefix = speakerMatch[2] ?? "";
-      const eyes = eyesByAlias.get(alias);
-      if (!eyes) {
-        return null;
-      }
-
+      const options = optionsByAlias.get(speakerMatch[1]);
+      if (!options) return null;
+      const tokens = speakerMatch[2].split(/\s+/);
+      const prefix = tokens.pop() ?? "";
+      const used = new Set(tokens.map((token) => token.split(".")[0]));
       return {
-        from: context.pos - eyesPrefix.length,
-        options: eyes
-          .filter((eye) => eye.startsWith(eyesPrefix))
-          .map((eye) => ({
-            label: eye,
-            type: "property",
-          })),
+        from: context.pos - prefix.length,
+        options: options
+          .filter((token) => !used.has(token.split(".")[0]) && token.startsWith(prefix))
+          .map((label) => ({ label, type: "property" })),
       };
     }
 

@@ -1,5 +1,8 @@
+import { usePageFormScope } from "@/app/features/page/context/page-form-context";
+import { useSaveProjectChanges } from "@/app/features/editor/lib/use-save-project-changes";
+import { schedulePageZenApply } from "@/app/features/zen/schedule-page-zen-apply";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { useFormContext } from "react-hook-form";
 import { useSettings } from "@/app/features/settings";
@@ -11,6 +14,10 @@ const EMPTY_SOURCE = "";
 export function useZenDialog() {
   const { getValues, setValue } = useFormContext<PageFormValues>();
   const { voices, voiceSettings } = useSettings();
+  const { pageId, isReady } = usePageFormScope();
+  const { save } = useSaveProjectChanges();
+  const [appliedSource, setAppliedSource] = useState(EMPTY_SOURCE);
+  const openedPageId = useRef<string | null>(null);
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState(EMPTY_SOURCE);
 
@@ -56,8 +63,11 @@ export function useZenDialog() {
 
       if (nextOpen) {
         const page = getValues();
-        if (page.type === "main") {
-          setSource(serializeZenPage(page, aliases));
+        if (page.type === "main" || page.type === "intro") {
+          const initial = serializeZenPage(page, aliases);
+          setSource(initial);
+          setAppliedSource(initial);
+          openedPageId.current = page.id;
         }
       }
 
@@ -66,14 +76,19 @@ export function useZenDialog() {
     [aliases, getValues],
   );
 
-  const apply = useCallback(() => {
+  const applyToForm = useCallback(() => {
     if (parsed.errors.length > 0 || parsed.pages.length !== 1) {
       return;
     }
 
     const nextPage = parsed.pages[0];
     const current = getValues();
-    if (!nextPage || current.type !== "main") {
+    if (
+      !nextPage ||
+      !isReady ||
+      current.id !== openedPageId.current ||
+      (current.type !== "main" && current.type !== "intro")
+    ) {
       return;
     }
 
@@ -90,8 +105,30 @@ export function useZenDialog() {
       shouldDirty: true,
       shouldValidate: true,
     });
+    setAppliedSource(source);
+    return true;
+  }, [aliases, getValues, parsed.errors.length, parsed.pages, setValue, source, isReady]);
+
+  const apply = useCallback(() => {
+    if (applyToForm()) setOpen(false);
+  }, [applyToForm]);
+
+  useEffect(() => {
     setOpen(false);
-  }, [aliases, getValues, parsed.errors.length, parsed.pages, setValue]);
+  }, [pageId]);
+
+  const latest = useRef({ applyToForm, save });
+  latest.current = { applyToForm, save };
+  useEffect(() => {
+    return schedulePageZenApply({
+      enabled: open && isReady && openedPageId.current === pageId,
+      source,
+      appliedSource,
+      parsed,
+      apply: () => latest.current.applyToForm(),
+      save: () => latest.current.save({ automatic: true }),
+    });
+  }, [open, isReady, pageId, source, appliedSource, parsed]);
 
   return {
     open,

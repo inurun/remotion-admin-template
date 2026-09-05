@@ -1,5 +1,5 @@
 import { ensureZenPage } from "@/app/features/zen/handlers/page-state";
-import { normalizeEyesToken } from "@/app/features/zen/normalize-eyes";
+import { parseAvatarTokens } from "@/app/features/zen/avatar-tokens";
 import type { ZenLineHandler } from "@/app/features/zen/types";
 
 export const speakerHandler: ZenLineHandler = {
@@ -10,7 +10,6 @@ export const speakerHandler: ZenLineHandler = {
     const page = ensureZenPage(state, lineNumber);
     const tokens = line.trim().split(/\s+/);
     const alias = tokens[0]?.slice(1) ?? "";
-    const eyesToken = tokens[1];
 
     if (!alias) {
       state.errors.push({ line: lineNumber, message: "Speaker alias is required." });
@@ -23,30 +22,17 @@ export const speakerHandler: ZenLineHandler = {
       return;
     }
 
-    let eyes: string | undefined;
-    if (eyesToken) {
-      const normalized = normalizeEyesToken(eyesToken, target.avatarType);
-      if (!normalized) {
-        state.errors.push({
-          line: lineNumber,
-          message: `Unknown eyes "${eyesToken}" for @${alias}.`,
-        });
-        return;
-      }
-      eyes = normalized;
-    }
-
-    if (tokens.length > 2) {
-      state.errors.push({
-        line: lineNumber,
-        message: `Unexpected tokens after @${alias}.`,
-      });
+    let avatar;
+    try {
+      avatar = parseAvatarTokens(tokens.slice(1), target.avatarType);
+    } catch (error) {
+      state.errors.push({ line: lineNumber, message: (error as Error).message });
       return;
     }
 
     const speaker = {
       alias,
-      eyes,
+      avatar,
       lines: [],
       lineNumber,
     };

@@ -43,7 +43,7 @@ describe("parseZenScript", () => {
 @himari
 文章中の半角スペース2つで  TTS内の改行として処理
 
-@sayo shaded-open
+@sayo e.shaded-opened
 avatar指定行でeyesの指定だけ可能に
 
 #tag1 #tag2
@@ -166,7 +166,7 @@ hello
 @missing
 hello
 
-@sayo no-such-eyes
+@sayo e.no-such-eyes
 hi
 `,
       { aliases: aliasMap },
@@ -176,7 +176,7 @@ hi
     expect(result.errors).toContainEqual({ line: 3, message: 'Unknown alias "@missing".' });
     expect(result.errors).toContainEqual({
       line: 6,
-      message: 'Unknown eyes "no-such-eyes" for @sayo.',
+      message: 'Unknown eyes "no-such-eyes".',
     });
   });
 

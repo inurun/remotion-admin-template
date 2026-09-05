@@ -25,23 +25,10 @@ function isSameTtsKey(
   return ttsAlias(left, voiceAliases) === ttsAlias(right, voiceAliases) && left.text === right.text;
 }
 
-function applyEyes(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
-  const nextEyes = next.avatar?.eyes;
-  if (!nextEyes || existing.avatar?.eyes === nextEyes) {
+function applyAvatar(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
+  if (!next.avatar || JSON.stringify(existing.avatar) === JSON.stringify(next.avatar))
     return existing;
-  }
-
-  if (!existing.avatar) {
-    return next.avatar ? { ...existing, avatar: next.avatar } : existing;
-  }
-
-  return {
-    ...existing,
-    avatar: {
-      ...existing.avatar,
-      eyes: nextEyes,
-    },
-  };
+  return { ...existing, avatar: { ...next.avatar } };
 }
 
 function applySubstitute(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
@@ -63,7 +50,7 @@ function applySubstitute(existing: TtsFormValues, next: TtsFormValues): TtsFormV
     result = applyTtsTextChange(result, next.text);
   }
 
-  return applyEyes(result, next);
+  return applyAvatar(result, next);
 }
 
 export function applyZenTtsList(
@@ -111,7 +98,7 @@ export function applyZenTtsList(
     if (matchedOldIndex !== null && matchedOldIndex !== undefined) {
       const current = existing[matchedOldIndex];
       if (current) {
-        result.push(applyEyes(current, incoming));
+        result.push(applyAvatar(current, incoming));
       }
       continue;
     }

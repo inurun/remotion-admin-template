@@ -1,3 +1,4 @@
+import { cancelScheduledAutoSave } from "@/app/features/editor/lib/auto-save";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/_shared/lib/error-message";
@@ -28,11 +29,12 @@ export function useSaveProjectChanges() {
   const setPending = useSaveStatusStore((state) => state.setPending);
 
   const save = useCallback(
-    async (options?: { forceResynthesis?: boolean }) => {
+    async (options?: { forceResynthesis?: boolean; automatic?: boolean }) => {
       if (!projectPath) {
         throw new Error("Project path is required");
       }
 
+      cancelScheduledAutoSave(editorStore);
       const savePromise = enqueueSave(async () => {
         const session = editorStore.getState();
         const changeSet = buildSaveChangeSet(session, options);
@@ -53,11 +55,21 @@ export function useSaveProjectChanges() {
         }
       });
 
-      await toast.promise(savePromise, {
-        loading: "保存中...",
-        success: "保存して音声を更新した。",
-        error: (error) => getErrorMessage(error, "Save failed"),
-      });
+      if (options?.automatic) {
+        try {
+          await savePromise;
+        } catch (error) {
+          toast.error(getErrorMessage(error, "Save failed"));
+          throw error;
+        }
+      } else {
+        toast.promise(savePromise, {
+          loading: "保存中...",
+          success: "保存して音声を更新した。",
+          error: (error) => getErrorMessage(error, "Save failed"),
+        });
+        await savePromise;
+      }
     },
     [editorStore, projectPath, reloadProjects, savedStore, setPending],
   );

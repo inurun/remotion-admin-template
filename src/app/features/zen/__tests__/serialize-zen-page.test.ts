@@ -96,7 +96,7 @@ describe("serializeZenPage", () => {
 hello
 world
 
-@himari shaded-opened
+@himari e.shaded-opened
 line  break
 `);
 
@@ -149,6 +149,25 @@ world
     expect(result[0]?.padBeforeSec).toBe(1);
     expect(result[0]?.volume).toBe(0.5);
     expect(result[0]?.speech?.g2p).toEqual(createG2pItem("kept"));
+  });
+
+  it("applies all avatar fields and resets omitted fields without losing TTS settings", () => {
+    const existing = [
+      ttsItem({
+        text: "hello",
+        avatar: { base: "old", eyes: "shaded-opened", mouth: "old" },
+      }),
+    ];
+    const parsed = parseZenScript("@zunda b.normal m.opened\nhello", { aliases: aliasMap });
+    const result = applyZenTtsList(existing, parsed.pages[0]!.tts, aliasMap);
+    expect(result[0]).toMatchObject({
+      id: "id",
+      padBeforeSec: 1,
+      padAfterSec: 2,
+      volume: 0.5,
+      avatar: { base: "normal", eyes: "opened", mouth: "opened" },
+      speech: { g2p: createG2pItem("kept") },
+    });
   });
 
   it("keeps id and updates text with readText on a substitution", () => {
@@ -231,6 +250,21 @@ hello
     expect(result.padBeforeSec).toBe(3);
     expect(result.richText).toBe("<p>keep</p>");
     expect(result.tts[0]?.id).toBe("a");
+  });
+
+  it("edits intro while preserving its kind and non-Zen fields", () => {
+    const existing = { ...mainPage(), type: "intro" as const };
+    const next = mainPage({ title: "New", meta: { tags: ["intro"] } });
+    const result = applyZenPage(existing, next, aliasMap);
+    expect(result).toMatchObject({
+      id: existing.id,
+      type: "intro",
+      title: "New",
+      meta: { tags: ["intro"] },
+      padBeforeSec: 3,
+      padAfterSec: 4,
+      richText: "<p>keep</p>",
+    });
   });
 
   it("keeps endcard lists when updating tags", () => {

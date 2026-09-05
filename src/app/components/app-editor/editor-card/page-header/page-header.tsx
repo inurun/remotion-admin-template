@@ -10,7 +10,7 @@ export function PageHeader() {
     selectedPageId ? state.itemsById[selectedPageId]?.type : undefined,
   );
   const isTransition = selectedPageType === "transition";
-  const isMain = selectedPageType === "main";
+  const supportsZen = selectedPageType === "main" || selectedPageType === "intro";
 
   return (
     <div className="flex items-center justify-between gap-3">
@@ -20,7 +20,7 @@ export function PageHeader() {
       {isTransition ? null : (
         <div className="flex items-center gap-1">
           <LlmG2pDialog />
-          {isMain ? <ZenDialog /> : null}
+          {supportsZen ? <ZenDialog key={selectedPageId} /> : null}
           <PageSettingsDialog />
         </div>
       )}

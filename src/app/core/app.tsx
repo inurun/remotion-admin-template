@@ -1,3 +1,4 @@
+import { useAutoSaveProject } from "@/app/features/editor/lib/use-auto-save-project";
 import type { ReactNode } from "react";
 import { SidebarInset } from "@/_shared/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar/app-sidebar";
@@ -16,6 +17,11 @@ import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
 import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
 
+function ProjectAutoSave() {
+  useAutoSaveProject();
+  return null;
+}
+
 function ProjectStores({ children }: { children: ReactNode }) {
   const { projectPath } = useProjectRoute();
   const { project, hasData } = useSelectedProjectQuery(projectPath);
@@ -29,6 +35,7 @@ function ProjectStores({ children }: { children: ReactNode }) {
         key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}
         initialProject={project}
       >
+        <ProjectAutoSave />
         {children}
       </EditorSessionStoreProvider>
     </SavedProjectStoreProvider>

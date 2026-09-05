@@ -3,7 +3,8 @@ import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { getAvatarTypeByVoiceName } from "@/_shared/lib/avatar/avatar-settings";
 import { getVoiceId } from "@/app/features/settings";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
-import { getDefaultEyes } from "@/app/features/zen/normalize-eyes";
+import { serializeAvatarTokens } from "@/app/features/zen/avatar-tokens";
+import { resolveAvatarSettings } from "@/_shared/lib/avatar/avatar-settings";
 import type { ZenAliasTarget, ZenSpeakerBlock } from "@/app/features/zen/types";
 
 function serializeSpeechText(text: string) {
@@ -19,16 +20,6 @@ function resolveAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
   return voiceAliases.get(voiceId) ?? item.voiceName ?? "unknown";
 }
 
-function resolveEyesToken(item: TtsFormValues) {
-  const eyes = item.avatar?.eyes;
-  if (!eyes) {
-    return undefined;
-  }
-
-  const defaultEyes = getDefaultEyes(getAvatarTypeByVoiceName(item.voiceName));
-  return eyes === defaultEyes ? undefined : eyes;
-}
-
 function toSpeakerBlocks(
   tts: TtsFormValues[],
   voiceAliases: Map<string, string>,
@@ -37,16 +28,16 @@ function toSpeakerBlocks(
 
   for (const item of tts) {
     const alias = resolveAlias(item, voiceAliases);
-    const eyes = resolveEyesToken(item);
+    const avatar = resolveAvatarSettings(getAvatarTypeByVoiceName(item.voiceName), item.avatar);
     const last = speakers.at(-1);
-    if (last && last.alias === alias && last.eyes === eyes) {
+    if (last && last.alias === alias && JSON.stringify(last.avatar) === JSON.stringify(avatar)) {
       last.lines.push(serializeSpeechText(item.text));
       continue;
     }
 
     speakers.push({
       alias,
-      eyes,
+      avatar,
       lines: [serializeSpeechText(item.text)],
       lineNumber: 0,
     });
@@ -79,7 +70,11 @@ export function serializeZenPage(
       lines.push("");
     }
 
-    lines.push(speaker.eyes ? `@${speaker.alias} ${speaker.eyes}` : `@${speaker.alias}`);
+    const tokens = serializeAvatarTokens(
+      speaker.avatar,
+      aliases.get(speaker.alias)?.avatarType ?? "demo",
+    );
+    lines.push(`@${speaker.alias}${tokens ? ` ${tokens}` : ""}`);
     for (const line of speaker.lines) {
       lines.push(line);
     }

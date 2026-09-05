@@ -20,7 +20,7 @@ function createSpeakerTtsList(
     }
 
     for (const line of speaker.lines) {
-      result.push(createZenTts(voiceOptions, target, line, speaker.eyes));
+      result.push(createZenTts(voiceOptions, target, line, speaker.avatar));
     }
   }
 
