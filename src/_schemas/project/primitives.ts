@@ -189,12 +189,14 @@ export const projectNiconicoMetaSchema = z
     description: z.string().default(""),
     thumbnailTime: z.string().default("00:00.000"),
     parentWorkIds: z.array(z.string()).default([]),
+    tags: z.array(z.string().trim().min(1)).max(6).default([]),
   })
   .default({
     title: "",
     description: "",
     thumbnailTime: "00:00.000",
     parentWorkIds: [],
+    tags: [],
   });
 
 const projectMetaFieldsSchema = z.object({

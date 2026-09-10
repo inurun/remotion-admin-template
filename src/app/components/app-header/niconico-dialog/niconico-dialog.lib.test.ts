@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createBlankOutroBlock } from "@/app/features/page/lib/outro-block";
 import { createBlankPageInput } from "@/app/features/page/lib/page-draft";
 import {
@@ -8,18 +8,42 @@ import {
   toNiconicoFormValues,
 } from "./niconico-dialog.lib";
 
+beforeEach(() => vi.spyOn(Math, "random").mockReturnValue(0));
+afterEach(() => vi.restoreAllMocks());
+
 describe("niconico dialog values", () => {
-  it("round-trips niconico meta", () => {
+  it("shows configured tags and redraws character tags on save", () => {
     const meta = {
       title: "Nico",
       description: "desc",
       thumbnailTime: "01:23.456",
       parentWorkIds: ["sm9", "ss1"],
+      tags: ["日記", "ゲーム", "実況", "音声合成", "ずんだもん", "あんこもん"],
     };
 
-    expect(fromNiconicoFormValues(niconicoFormSchema.parse(toNiconicoFormValues(meta)))).toEqual(
-      meta,
-    );
+    const form = niconicoFormSchema.parse(toNiconicoFormValues(meta));
+    expect(form.tags).toBe("日記 ゲーム 実況 音声合成");
+    expect(fromNiconicoFormValues(form)).toEqual(meta);
+  });
+
+  it("parses whitespace-separated tags and removes duplicates on save", () => {
+    const form = toNiconicoFormValues({
+      title: "",
+      description: "",
+      thumbnailTime: "00:00.000",
+      parentWorkIds: [],
+      tags: ["日記", "ずんだもん", "あんこもん"],
+    });
+    expect(form.tags).toBe("日記");
+    expect(fromNiconicoFormValues({ ...form, tags: " 日記\n日記  キャラ " }).tags).toEqual([
+      "日記",
+      "キャラ",
+      "ずんだもん",
+      "あんこもん",
+      "冥鳴ひまり",
+      "小夜/sayo",
+    ]);
+    expect(niconicoFormSchema.safeParse({ ...form, tags: "1 2 3 4 5 6 7" }).success).toBe(false);
   });
 
   it("parses parent work ids from free text", () => {
@@ -30,6 +54,7 @@ describe("niconico dialog values", () => {
           description: "",
           thumbnailTime: "00:00.000",
           parentWorkIds: "sm9 ss1, sm9",
+          tags: "",
         }),
       ).parentWorkIds,
     ).toEqual(["sm9", "ss1"]);

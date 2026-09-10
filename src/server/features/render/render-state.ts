@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  LATEST_THUMBNAIL_PATH,
   LATEST_VIDEO_PATH,
   OUT_DIR,
   PROJECT_ROOT,
@@ -9,6 +10,7 @@ import {
   readSavedProject,
 } from "@/server/_shared/storage";
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
+import { thumbnailTimeToFrame } from "./render-thumbnail";
 
 type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
 
@@ -74,11 +76,12 @@ function resetRenderState() {
 }
 
 function setProgress(next: number) {
-  if (next <= state.progress) {
+  const progress = Math.min(100, Math.max(0, Math.round(next)));
+  if (progress <= state.progress) {
     return;
   }
 
-  state.progress = next;
+  state.progress = progress;
   emit();
 }
 
@@ -104,7 +107,7 @@ function stopChild(signal: NodeJS.Signals) {
   }
 }
 
-function handleOutputLine(line: string) {
+function handleOutputLine(line: string, progressScale = 1) {
   const cleaned = stripAnsi(line).replaceAll("\r", "").trim();
   if (!cleaned) {
     return;
@@ -113,7 +116,7 @@ function handleOutputLine(line: string) {
   console.info("[render]", cleaned);
   const parsed = parseRenderProgress(cleaned);
   if (parsed !== null) {
-    setProgress(parsed);
+    setProgress(parsed * progressScale);
   }
 }
 
@@ -138,6 +141,37 @@ function pipeOutput(stream: NodeJS.ReadableStream | null, onLine: (line: string)
   });
 }
 
+function finishCanceledRender() {
+  cancelRequested = false;
+  state.status = "canceled";
+  state.lastError = null;
+  console.info("[render]", "Render canceled.");
+  emit();
+}
+
+function finishFailedRender(message: string) {
+  state.status = "error";
+  state.lastError = message;
+  console.info("[render]", message);
+  emit();
+}
+
+async function finishSuccessfulRender(outputPath: string) {
+  try {
+    if (outputPath !== LATEST_VIDEO_PATH) {
+      await fs.copyFile(outputPath, LATEST_VIDEO_PATH);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.info("[render]", `Failed to update latest.mp4: ${message}`);
+  }
+  state.status = "success";
+  state.progress = 100;
+  state.videoPath = "/api/render/video";
+  console.info("[render]", "Render and thumbnail completed.");
+  emit();
+}
+
 export async function startRender(projectPath: string) {
   if (state.status === "running") {
     return {
@@ -148,7 +182,9 @@ export async function startRender(projectPath: string) {
 
   await fs.mkdir(OUT_DIR, { recursive: true });
   const project = await readSavedProject(projectPath);
+  await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
   const outputPath = getProjectOutputVideoPath(projectPath);
+  const inputProps = JSON.stringify({ project });
   resetRenderState();
   cancelRequested = false;
   state.status = "running";
@@ -157,14 +193,7 @@ export async function startRender(projectPath: string) {
 
   const child = spawn(
     REMOTION_BIN,
-    [
-      "render",
-      "src/remotion/core/runtime.ts",
-      "Video",
-      outputPath,
-      "--props",
-      JSON.stringify({ project }),
-    ],
+    ["render", "src/remotion/core/runtime.ts", "Video", outputPath, "--props", inputProps],
     {
       cwd: PROJECT_ROOT,
       detached: true,
@@ -174,8 +203,8 @@ export async function startRender(projectPath: string) {
   );
   activeChild = child;
 
-  pipeOutput(child.stdout, handleOutputLine);
-  pipeOutput(child.stderr, handleOutputLine);
+  pipeOutput(child.stdout, (line) => handleOutputLine(line, 0.9));
+  pipeOutput(child.stderr, (line) => handleOutputLine(line, 0.9));
 
   child.on("error", (error) => {
     if (state.status !== "running") {
@@ -193,35 +222,65 @@ export async function startRender(projectPath: string) {
     activeChild = null;
 
     if (cancelRequested) {
-      cancelRequested = false;
-      state.status = "canceled";
-      state.lastError = null;
-      console.info("[render]", "Render canceled.");
-      emit();
+      finishCanceledRender();
       return;
     }
 
     if (code === 0) {
+      let thumbnailFrame: number;
       try {
-        if (outputPath !== LATEST_VIDEO_PATH) {
-          await fs.copyFile(outputPath, LATEST_VIDEO_PATH);
-        }
+        thumbnailFrame = thumbnailTimeToFrame(project.meta.niconico.thumbnailTime);
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.info("[render]", `Failed to update latest.mp4: ${message}`);
+        finishFailedRender(error instanceof Error ? error.message : String(error));
+        return;
       }
-      state.status = "success";
-      state.progress = 100;
-      state.videoPath = "/api/render/video";
-      console.info("[render]", "Render completed.");
-      emit();
+      setProgress(95);
+      console.info("[render]", `Rendering thumbnail.png at frame ${thumbnailFrame}...`);
+      const thumbnailChild = spawn(
+        REMOTION_BIN,
+        [
+          "still",
+          "src/remotion/core/runtime.ts",
+          "Video",
+          LATEST_THUMBNAIL_PATH,
+          "--frame",
+          String(thumbnailFrame),
+          "--props",
+          inputProps,
+          "--overwrite",
+        ],
+        {
+          cwd: PROJECT_ROOT,
+          detached: true,
+          env: process.env,
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+      activeChild = thumbnailChild;
+      pipeOutput(thumbnailChild.stdout, handleOutputLine);
+      pipeOutput(thumbnailChild.stderr, handleOutputLine);
+      thumbnailChild.on("error", (error) => {
+        if (state.status === "running") {
+          finishFailedRender(`Thumbnail process error: ${error.message}`);
+        }
+      });
+      thumbnailChild.on("close", async (thumbnailCode) => {
+        clearKillTimer();
+        activeChild = null;
+        if (cancelRequested) {
+          finishCanceledRender();
+        } else if (state.status !== "running") {
+          return;
+        } else if (thumbnailCode === 0) {
+          await finishSuccessfulRender(outputPath);
+        } else {
+          finishFailedRender(`Thumbnail render exited with code ${thumbnailCode ?? "unknown"}`);
+        }
+      });
       return;
     }
 
-    state.status = "error";
-    state.lastError = `Render exited with code ${code ?? "unknown"}`;
-    console.info("[render]", state.lastError);
-    emit();
+    finishFailedRender(`Render exited with code ${code ?? "unknown"}`);
   });
 
   return {

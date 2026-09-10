@@ -284,8 +284,9 @@ describe("publish result and abort guard", () => {
     const expected = {
       videoPath: "/repo/out/project.mp4",
       videoTitle: "title",
-      thumbnailTime: "00:12.345",
+      thumbnailPath: "/repo/out/thumbnail.png",
       parentWorkIds: ["sm1", "sm2"],
+      tags: [],
     };
     const result = parsePublishResult(
       JSON.stringify({
@@ -298,12 +299,28 @@ describe("publish result and abort guard", () => {
         reachedConfirmation: true,
         finalSubmitClicked: false,
         actualVideoTitle: expected.videoTitle,
-        actualThumbnailTime: expected.thumbnailTime,
+        uploadedThumbnailPath: expected.thumbnailPath,
         registeredParentWorkIds: ["sm2", "sm1"],
+        registeredTags: [],
       }),
     );
 
     expect(validatePublishPrepResult(result, expected)).toEqual([]);
+    const taggedExpectation = { ...expected, tags: ["日記", "キャラ"] };
+    expect(
+      validatePublishPrepResult(
+        { ...result, registeredTags: ["キャラ", "日記"] },
+        taggedExpectation,
+      ),
+    ).toEqual([]);
+    for (const registeredTags of [["日記"], ["日記", "キャラ", "余分"], ["日記", "日記"]]) {
+      expect(validatePublishPrepResult({ ...result, registeredTags }, taggedExpectation)).toEqual([
+        expect.stringContaining("registered tags do not match"),
+      ]);
+    }
+    expect(() =>
+      parsePublishResult(JSON.stringify({ ...result, registeredTags: undefined })),
+    ).toThrow("invalid publish result");
   });
 
   it("aborts on inactivity and parent cancellation", () => {

@@ -9,11 +9,27 @@ import {
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 
+import { createNiconicoTags, getConfiguredNiconicoTags } from "./niconico-tags";
+
+function parseTagsInput(value: string): string[] {
+  return [
+    ...new Set(
+      value
+        .split(/\s+/u)
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export const niconicoFormSchema = z.object({
   title: z.string(),
   description: z.string(),
   thumbnailTime: z.string(),
   parentWorkIds: z.string(),
+  tags: z.string().refine((value) => parseTagsInput(value).length <= 6, {
+    message: "Up to 6 tags",
+  }),
 });
 
 export type NiconicoFormValues = z.infer<typeof niconicoFormSchema>;
@@ -25,6 +41,7 @@ export function toNiconicoFormValues(niconico: ProjectNiconicoMeta): NiconicoFor
     description: normalized.description,
     thumbnailTime: normalized.thumbnailTime,
     parentWorkIds: formatParentWorkIdsInput(normalized.parentWorkIds),
+    tags: getConfiguredNiconicoTags(normalized.tags).join(" "),
   };
 }
 
@@ -34,6 +51,7 @@ export function fromNiconicoFormValues(values: NiconicoFormValues): ProjectNicon
     description: values.description,
     thumbnailTime: values.thumbnailTime,
     parentWorkIds: parseParentWorkIdsInput(values.parentWorkIds),
+    tags: createNiconicoTags(parseTagsInput(values.tags)),
   });
 }
 

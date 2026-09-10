@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  LATEST_THUMBNAIL_PATH,
   LATEST_VIDEO_PATH,
   PROJECT_ROOT,
   PUBLISH_STATE_PATH,
@@ -150,6 +151,11 @@ export async function startPublish(projectPath: string) {
   }
 
   const videoPath = await resolveRenderedVideoPath(projectPath);
+  if (!(await pathExists(LATEST_THUMBNAIL_PATH))) {
+    throw new Error(
+      `Rendered thumbnail not found: ${path.relative(PROJECT_ROOT, LATEST_THUMBNAIL_PATH)}`,
+    );
+  }
   const job = createPublishPrepJob();
   activeJobId = job.id;
   state.status = "running";
@@ -159,7 +165,7 @@ export async function startPublish(projectPath: string) {
   state.jobId = job.id;
   syncFromJob(job);
 
-  void runPublishPrep(job, videoPath, niconico, niconico.parentWorkIds)
+  void runPublishPrep(job, videoPath, LATEST_THUMBNAIL_PATH, niconico, niconico.parentWorkIds)
     .catch((error: unknown) => {
       markPublishPrepFailed(job, error);
     })

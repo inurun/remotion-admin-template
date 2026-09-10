@@ -27,6 +27,7 @@ describe("project meta", () => {
         description: "",
         thumbnailTime: "00:00.000",
         parentWorkIds: [],
+        tags: [],
       },
     });
   });
@@ -68,6 +69,7 @@ describe("project meta", () => {
           description: "desc",
           thumbnailTime: "01:23.456",
           parentWorkIds: ["sm9", " bad ", "sm9", "ss1"],
+          tags: [],
         },
       }).niconico,
     ).toEqual({
@@ -75,6 +77,7 @@ describe("project meta", () => {
       description: "desc",
       thumbnailTime: "01:23.456",
       parentWorkIds: ["sm9", "ss1"],
+      tags: [],
     });
   });
 

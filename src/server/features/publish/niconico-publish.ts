@@ -6,15 +6,17 @@ export type VerifiedPublishPrepResult = {
   reachedConfirmation: boolean;
   finalSubmitClicked: boolean;
   actualVideoTitle: string;
-  actualThumbnailTime: string;
+  uploadedThumbnailPath: string;
   registeredParentWorkIds: string[];
+  registeredTags: string[];
 };
 
 export type PublishPrepExpectation = {
   videoPath: string;
   videoTitle: string;
-  thumbnailTime: string;
+  thumbnailPath: string;
   parentWorkIds: string[];
+  tags: string[];
 };
 
 const NICONICO_CONFIRMATION_PATH = /^\/niconico-garage\/video\/videos\/\d+\/?$/;
@@ -58,8 +60,8 @@ export function validatePublishPrepResult(
   if (result.actualVideoTitle !== expected.videoTitle) {
     errors.push("video title does not match");
   }
-  if (result.actualThumbnailTime !== expected.thumbnailTime) {
-    errors.push("thumbnail time does not match");
+  if (result.uploadedThumbnailPath !== expected.thumbnailPath) {
+    errors.push("thumbnail path does not match");
   }
   if (result.videoPath !== expected.videoPath) {
     errors.push("video path does not match");
@@ -72,6 +74,17 @@ export function validatePublishPrepResult(
     actualParentWorkIds.some((id, index) => id !== expectedParentWorkIds[index])
   ) {
     errors.push("registered parent works do not match");
+  }
+
+  const actualTags = [...result.registeredTags].sort();
+  const expectedTags = [...expected.tags].sort();
+  if (
+    actualTags.length !== expectedTags.length ||
+    actualTags.some((tag, index) => tag !== expectedTags[index])
+  ) {
+    errors.push(
+      `registered tags do not match: expected=${JSON.stringify(expectedTags)} actual=${JSON.stringify(actualTags)}`,
+    );
   }
 
   return errors;

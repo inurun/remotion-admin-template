@@ -8,6 +8,7 @@ export type ProjectNiconicoMeta = {
   description: string;
   thumbnailTime: string;
   parentWorkIds: string[];
+  tags: string[];
 };
 
 type ProjectMetaLike = {
@@ -43,6 +44,7 @@ export function getDefaultNiconicoMeta(): ProjectNiconicoMeta {
     description: "",
     thumbnailTime: DEFAULT_THUMBNAIL_TIME,
     parentWorkIds: [],
+    tags: [],
   };
 }
 
@@ -68,6 +70,7 @@ export function normalizeNiconicoMeta(
     description: value?.description ?? defaults.description,
     thumbnailTime: normalizeThumbnailTime(value?.thumbnailTime),
     parentWorkIds: normalizeParentWorkIds(value?.parentWorkIds),
+    tags: [...new Set((value?.tags ?? []).map((tag) => tag.trim()).filter(Boolean))],
   };
 }
 

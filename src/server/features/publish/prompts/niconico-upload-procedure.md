@@ -35,23 +35,55 @@ execセル内から次の形で直接呼ぶ。
 5. `ニコニコ動画 投稿規約` ダイアログが表示された場合だけ、`投稿規約に同意して投稿する` をクリックする。
 6. `動画情報を編集` 画面まで待ち、snapshotを取り直す。
 7. `投稿した動画から選択` をクリックし、直近に投稿した動画を選んで情報を引き継ぐ。適用後にsnapshotを取り直す。
-8. 最新snapshotのrefを使ってタイトルを指定値へ更新し、完全一致することを確認する。
+8. 最新snapshotのrefを使ってタイトルを指定値へ更新し、完全一致することを確認する。続けて下記「タグの設定」に従ってタグを置き換える。
 9. 親作品がある場合は、指定IDだけを空白区切りでまとめて登録し、下記のeval方式で実際のID集合を確認する。不一致なら先へ進まない。
-10. `サムネイルを変更` から指定時刻を設定する。
+10. `サムネイルを変更` から指定画像をアップロードする。
 11. 最後に説明文エディターをHTMLモードへ切り替える。すでに `HTMLで動画説明文を入力...` が見えていれば切り替えない。切り替え後はwaitまたはsnapshotでHTML入力欄の出現を確認する。
 12. 下記のeval方式を使って説明文HTMLを設定する。HTMLモードを解除してビジュアルへ反映する。
 13. `投稿内容を確認` をクリックする。
 14. `投稿の確認` と `編集に戻る`、`投稿する` がある確認画面へ到達したら停止する。`投稿する` は絶対にクリックしない。
 
-## 説明文の入力
+## タグの設定
 
-`agent_browser_eval` に次のJavaScriptを渡す。`<description-base64>` は実行時入力の値へ置き換える。
+1. `タグを編集` をクリックし、snapshotで `タグの設定` ダイアログを確認する。
+2. 登録済みタグのうち指定配列にないものは、各タグの左側の×で削除する。右側の矢印は削除ではない。削除後に一覧を読み直す。
+3. 不足タグを半角スペース1つで連結し、`タグを追加(6個まで) / スペースで複数入力` 欄へfillで一括入力する。指定配列はNiconico設定の保存時に抽選済みなので、追加・変更・再抽選しない。
+4. 最新snapshotを取得し、タグダイアログ内の `追加` を1回クリックする。不足タグがなければ入力と追加は省略する。親作品欄の `追加` と取り違えない。
+5. snapshotまたはevalで、入力欄が空になり、個別のタグとして登録されていることを確認する。fillだけでは未確定。指定配列と順不同で完全一致しなければ先へ進まない。
+6. `タグの設定` ダイアログ右上の×をクリックする。別の保存・OKボタンはない。編集画面のタグ一覧にも反映されたことを確認する。
+7. 投稿確認画面に進んだあとも、`投稿の確認` ダイアログ内の実際のタグを読み取り、指定配列と照合して `registeredTags` に返す。
+
+2026-09-09にlatest.mp4で、6タグの半角スペース区切り入力→1回の追加→編集画面→投稿確認画面の反映を実機確認済み。`小夜/sayo` のスラッシュもそのまま保持される。
+
+### タグ一覧の読み取り
+
+背面の編集画面にも同名の入力欄やタグが残るため、ページ全体を検索しない。対象ダイアログを見出しで特定する。編集ダイアログなら `タグの設定`、確認画面なら `投稿の確認` を使う。
 
 ```javascript
 (() => {
-  const decode = (value) =>
-    new TextDecoder().decode(Uint8Array.from(atob(value), (char) => char.charCodeAt(0)));
-  const description = decode("<description-base64>");
+  const heading = "タグの設定"; // 確認画面では「投稿の確認」
+  const dialog = Array.from(document.querySelectorAll('[role="dialog"]')).find(
+    (element) => element.querySelector("h2")?.textContent === heading,
+  );
+  if (!dialog) throw new Error(`${heading}ダイアログが見つからない`);
+  return Array.from(dialog.querySelectorAll("span[title]"))
+    .filter((element) => element.getClientRects().length > 0)
+    .map((element) => element.getAttribute("title"));
+})();
+```
+
+上記は実機で確認したタグ要素の構造。構造が変わった場合は最新snapshotとDOMからタグ一覧を特定し直す。候補一覧・説明文・背面画面の文字列を登録済みタグとして扱わない。
+
+## 説明文の入力
+
+HTML入力欄の選択だけを `agent_browser_eval` で行い、文字列の入力には `agent_browser_fill` を使う。
+
+1. `html` ボタンをクリックする。`HTMLで動画説明文を入力...` がすでに見えていればクリックしない。
+2. snapshotを取り、表示中のHTML入力欄のrefを取得する。
+3. 次のevalで表示中のHTML入力欄を全選択する。このevalでは文字列を変更しない。
+
+```javascript
+(() => {
   const htmlEditor = Array.from(document.querySelectorAll(".ql-editor")).find((element) => {
     const placeholder = element.getAttribute("data-placeholder") || "";
     return placeholder.includes("HTML") && element.getClientRects().length > 0;
@@ -64,17 +96,15 @@ execセル内から次の形で直接呼ぶ。
   range.selectNodeContents(htmlEditor);
   selection.removeAllRanges();
   selection.addRange(range);
-  if (!document.execCommand("insertText", false, description)) {
-    throw new Error("説明文のinsertTextに失敗");
-  }
-  return {
-    description: htmlEditor.innerText,
-    hasLiteralBr: htmlEditor.innerText.includes("<br>"),
-  };
+  return selection.toString().length;
 })();
 ```
 
-戻り値の `hasLiteralBr` がtrueで、説明文が指定HTMLと一致した場合だけ続行する。失敗時は同じevalを繰り返さず、snapshotのrefを使った入力へ切り替える。
+4. 手順2で取得したrefへ、指定された説明文HTMLを `agent_browser_fill` で入力する。既存文がある状態でfillだけを実行すると先頭への追記になるため、必ず全選択後に行う。
+5. `agent_browser_get_text` で入力欄を読み取り、指定HTMLと完全一致することを確認する。
+6. `html` ボタンをクリックしてビジュアルモードへ反映する。
+
+2026-09-09にlatest.mp4で、既存文の全選択eval→fillによる置換と、投稿確認画面への反映を実機確認済み。
 
 ## 親作品の確認
 
@@ -98,19 +128,22 @@ execセル内から次の形で直接呼ぶ。
 
 `matches` がfalseなら `投稿内容を確認` を押さず、期待値と実値を報告して停止する。
 
-## サムネイル時刻
+## サムネイル画像
 
 1. `サムネイルを変更` をクリックする。
-2. `シーンの時間を指定する` を有効にする。
-3. 指定された `MM:SS.mmm` を分、秒、ミリ秒へ分け、対応する3入力へ設定する。
-4. `このシーンを表示` をクリックし、対象画像を選択して `選択完了` をクリックする。
-5. 指定時刻を適用できなければ確認画面へ進まず、理由を報告する。
+2. `画像ファイルを選択` ボタンのrefはファイル入力ではないため、そこへuploadしない。`input[type="file"][accept="image/jpeg,image/png"]` をselectorにして、`agent_browser_upload` で指定されたサムネイル画像を指定する。
+3. アップロード完了後にsnapshotを取り直す。アップロード画像は自動選択されるため、画像に選択枠とチェックが付いた状態を確認する。
+4. `選択完了` をクリックし、編集画面左上のサムネイルが指定画像へ変わったことを確認する。
+5. 指定画像を適用できなければ確認画面へ進まず、理由を報告する。
+
+2026-09-09に生成した `out/thumbnail.png` で、画像用inputへのupload→自動選択→`選択完了`→編集画面への反映を実機確認済み。
 
 ## 成功条件
 
-- 指定mp4、タイトル、説明文HTML、サムネイル時刻が反映されている。
+- 指定mp4、タイトル、説明文HTML、サムネイル画像が反映されている。
 - 直近動画から再利用可能な情報を引き継いでいる。
 - 指定された親作品IDの集合が完全一致している。
+- 登録済みタグが指定配列と順不同で完全一致している。
 - ニコニコの投稿確認画面へ到達している。
 - 最終投稿ボタンをクリックしていない。
-- 最終JSONには `outcome` (`ready` または `blocked`)、`blockingReason`、現在URL、ページタイトル、短い要約、対象mp4、実際のタイトル・サムネイル時刻・親作品ID、確認画面到達と最終投稿未実行を入れる。
+- 最終JSONには `outcome` (`ready` または `blocked`)、`blockingReason`、現在URL、ページタイトル、短い要約、対象mp4、実際のタイトル、アップロードしたサムネイル画像の絶対パス（`uploadedThumbnailPath`）、親作品ID・タグ（`registeredTags`）、確認画面到達と最終投稿未実行を入れる。

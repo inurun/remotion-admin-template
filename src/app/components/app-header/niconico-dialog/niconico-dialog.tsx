@@ -48,6 +48,13 @@ export function NiconicoDialog() {
               </label>
               <FieldError errors={[dialog.form.formState.errors.description]} />
             </Field>
+            <Field data-invalid={Boolean(dialog.form.formState.errors.tags)}>
+              <label className="grid gap-2 text-sm font-medium">
+                Tags
+                <Textarea rows={2} placeholder="tag1 tag2 tag3" {...dialog.form.register("tags")} />
+              </label>
+              <FieldError errors={[dialog.form.formState.errors.tags]} />
+            </Field>
             <Field data-invalid={Boolean(dialog.form.formState.errors.thumbnailTime)}>
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-2">

@@ -95,7 +95,13 @@ describe("project use-case", () => {
     width: 1920,
     height: 1080,
     weather: {},
-    niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+    niconico: {
+      title: "",
+      description: "",
+      thumbnailTime: "00:00.000",
+      parentWorkIds: [],
+      tags: [],
+    },
   };
   const helloG2p = createG2pItem("Hello");
 
@@ -869,7 +875,13 @@ describe("project use-case", () => {
         height: 1080,
         updatedAt: now,
         weather: {},
-        niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+        niconico: {
+          title: "",
+          description: "",
+          thumbnailTime: "00:00.000",
+          parentWorkIds: [],
+          tags: [],
+        },
       },
       bgm: [],
       pages: [],
@@ -1181,7 +1193,13 @@ describe("project use-case", () => {
         height: 1080,
         updatedAt: now,
         weather: {},
-        niconico: { title: "", description: "", thumbnailTime: "00:00.000", parentWorkIds: [] },
+        niconico: {
+          title: "",
+          description: "",
+          thumbnailTime: "00:00.000",
+          parentWorkIds: [],
+          tags: [],
+        },
       },
       pages: [],
       bgm: [],

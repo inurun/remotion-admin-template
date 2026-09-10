@@ -27,6 +27,7 @@ export const OUT_DIR = path.join(PROJECT_ROOT, "out");
 export const PUBLISH_STATE_PATH = path.join(DATA_DIR, "publish-state.json");
 export const SCHEDULES_PATH = path.join(DATA_DIR, "schedules.json");
 export const LATEST_VIDEO_PATH = path.join(OUT_DIR, "latest.mp4");
+export const LATEST_THUMBNAIL_PATH = path.join(OUT_DIR, "thumbnail.png");
 
 const DEFAULT_PROJECT_PATH = "project";
 const PROJECT_FILE_EXTENSION = ".json";

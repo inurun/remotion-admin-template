@@ -42,6 +42,7 @@ type VideoMeta = {
   title: string;
   description: string;
   thumbnailTime: string;
+  tags: string[];
 };
 
 type ParentWork = {
@@ -112,8 +113,9 @@ const publishResultSchema = z.object({
   reachedConfirmation: z.boolean(),
   finalSubmitClicked: z.boolean(),
   actualVideoTitle: z.string(),
-  actualThumbnailTime: z.string(),
+  uploadedThumbnailPath: z.string(),
   registeredParentWorkIds: z.array(z.string()),
+  registeredTags: z.array(z.string()),
 });
 type CodexPublishResult = z.infer<typeof publishResultSchema>;
 
@@ -371,6 +373,7 @@ function assertVideoMeta(value: unknown): VideoMeta {
     title: candidate.title,
     description: candidate.description,
     thumbnailTime: candidate.thumbnailTime,
+    tags: z.array(z.string().trim().min(1)).max(6).parse(candidate.tags),
   };
 }
 
@@ -575,9 +578,11 @@ export async function consumeCodexEvents(
 function createPrompt(
   procedure: string,
   videoPath: string,
+  thumbnailPath: string,
   videoMeta: VideoMeta,
   parentWorks: ParentWork[],
   parentWorkIds: string[],
+  tags: string[],
 ) {
   const descriptionHtml = toNiconicoDescriptionHtml(videoMeta.description);
   return `
@@ -598,12 +603,12 @@ ${procedure}
 
 - 開始URL: ${JSON.stringify(NICONICO_UPLOAD_URL)}
 - 対象mp4: ${JSON.stringify(videoPath)}
+- サムネイル画像: ${JSON.stringify(thumbnailPath)}
 - 動画タイトル: ${JSON.stringify(videoMeta.title)}
 - 動画説明文HTML: ${JSON.stringify(descriptionHtml)}
-- 動画説明文(Base64 UTF-8): ${Buffer.from(descriptionHtml, "utf-8").toString("base64")}
-- サムネイル時刻: ${JSON.stringify(videoMeta.thumbnailTime)}
 - 確認前に登録する親作品: ${JSON.stringify(parentWorks)}
 - 確認する親作品ID: ${JSON.stringify(parentWorkIds)}
+- 登録するタグ（この配列で置き換える）: ${JSON.stringify(tags)}
 
 ## 最終応答
 
@@ -614,6 +619,7 @@ ${procedure}
 async function runCodexPublishPrep(
   job: PublishPrepJob,
   videoPath: string,
+  thumbnailPath: string,
   videoMeta: VideoMeta,
   parentWorks: ParentWork[],
 ): Promise<PublishPrepJobResult> {
@@ -664,7 +670,17 @@ async function runCodexPublishPrep(
     pushLog(job, `Codex isolated runtime: ${codexRuntime.codexHomeDir}`);
     const codex = new Codex(createPublishCodexOptions(PROJECT_ROOT, codexRuntime));
     const thread = codex.startThread(createPublishThreadOptions(codexRuntime.workspaceDir));
-    let prompt = createPrompt(procedure, videoPath, videoMeta, parentWorks, parentWorkIds);
+    const tags = videoMeta.tags;
+    pushLog(job, `Niconico tags: ${JSON.stringify(tags)}`);
+    let prompt = createPrompt(
+      procedure,
+      videoPath,
+      thumbnailPath,
+      videoMeta,
+      parentWorks,
+      parentWorkIds,
+      tags,
+    );
     let rejectedBlockedResults = 0;
     for (;;) {
       const { events } = await thread.runStreamed(prompt, {
@@ -701,15 +717,16 @@ async function runCodexPublishPrep(
         const validationErrors = validatePublishPrepResult(result, {
           videoPath,
           videoTitle: videoMeta.title,
-          thumbnailTime: videoMeta.thumbnailTime,
+          thumbnailPath,
           parentWorkIds,
+          tags,
         });
         if (validationErrors.length > 0) {
           throw new Error(`Publish prep verification failed: ${validationErrors.join("; ")}`);
         }
         pushLog(
           job,
-          `Publish prep verified: title=${result.actualVideoTitle} thumbnail=${result.actualThumbnailTime} parentWorks=${result.registeredParentWorkIds.length} confirmation=${result.reachedConfirmation}`,
+          `Publish prep verified: title=${result.actualVideoTitle} thumbnail=${result.uploadedThumbnailPath} parentWorks=${result.registeredParentWorkIds.length} confirmation=${result.reachedConfirmation}`,
         );
         return {
           url: result.url,
@@ -719,8 +736,9 @@ async function runCodexPublishPrep(
           reachedConfirmation: result.reachedConfirmation,
           finalSubmitClicked: result.finalSubmitClicked,
           actualVideoTitle: result.actualVideoTitle,
-          actualThumbnailTime: result.actualThumbnailTime,
+          uploadedThumbnailPath: result.uploadedThumbnailPath,
           registeredParentWorkIds: result.registeredParentWorkIds,
+          registeredTags: result.registeredTags,
         };
       } catch (error) {
         if (
@@ -778,12 +796,14 @@ export function toParentWorks(parentWorkIds: string[]): ParentWork[] {
 export async function runPublishPrep(
   job: PublishPrepJob,
   videoPath: string,
+  thumbnailPath: string,
   videoMeta: VideoMeta,
   parentWorkIds: string[],
 ): Promise<PublishPrepJobResult> {
   updateJob(job, { status: "running" });
   pushLog(job, "Starting Niconico publish prep");
   pushLog(job, `Resolved rendered video: ${videoPath}`);
+  pushLog(job, `Resolved rendered thumbnail: ${thumbnailPath}`);
   const parentWorks = toParentWorks(parentWorkIds);
   if (parentWorks.length > 0) {
     pushLog(
@@ -793,7 +813,7 @@ export async function runPublishPrep(
   }
 
   const startedAt = Date.now();
-  const result = await runCodexPublishPrep(job, videoPath, videoMeta, parentWorks);
+  const result = await runCodexPublishPrep(job, videoPath, thumbnailPath, videoMeta, parentWorks);
   pushLog(job, `Niconico browser phase completed in ${Date.now() - startedAt}ms`);
   if (getJobRuntimeStore().get(job.id)?.controller.signal.aborted) {
     throw new Error("Job was canceled");

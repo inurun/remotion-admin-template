@@ -252,6 +252,7 @@ describe("editor session store", () => {
             description: "",
             thumbnailTime: "00:00.000",
             parentWorkIds: ["ss1"],
+            tags: [],
           },
         },
         pages: [createSavedOutroPage({ id: "outro-1" })],
