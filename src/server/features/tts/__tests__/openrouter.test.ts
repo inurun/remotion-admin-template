@@ -224,7 +224,7 @@ describe("requestOpenRouterCorrections", () => {
     expect(request.headers).toMatchObject({ Authorization: "Bearer secret" });
     expect(body).toMatchObject({
       model: "model/test",
-      reasoning: { effort: "low", exclude: true },
+      reasoning: { effort: "none" },
       provider: {
         only: ["provider-test"],
         allow_fallbacks: false,
@@ -232,6 +232,7 @@ describe("requestOpenRouterCorrections", () => {
       },
       response_format: { type: "json_schema", json_schema: { strict: true } },
     });
+    expect(result.rawResponse).toMatchObject({ id: "generation-1" });
     expect(body.max_tokens).toBe(getOpenRouterMaxTokens(1));
     expect(body.response_format.json_schema.schema.properties.items.items.required).toEqual([
       "id",
@@ -244,9 +245,11 @@ describe("requestOpenRouterCorrections", () => {
     expect(body.messages[0].content).toContain("Do not use changed=false as a shortcut");
     expect(body.messages[0].content).toContain("same or fewer word slots than the baseline");
     expect(body.messages[0].content).toContain("Never add a word boundary that splits");
-    expect(body.messages[0].content).toContain("Preserve 、, ？, and ！ exactly");
+    expect(body.messages[0].content).toContain("Copy 、, ？, and ！ from the baseline kana");
+    expect(body.messages[0].content).toContain("Source … and …… are already 、");
     expect(body.messages[0].content).toContain("If changed is false, return phrases as []");
     expect(body.messages[0].content).toContain("Valid word merge");
+    expect(body.messages[0].content).toContain("previous and next are neighboring utterances");
     expect(JSON.parse(body.messages[1].content).items[0].kana).toBe("ニンキ'");
     expect(result.corrections[0]?.kana).toBe("ヒトケ'");
     expect(result.usage).toEqual({
@@ -282,6 +285,37 @@ describe("requestOpenRouterCorrections", () => {
       changed: false,
       kana: "ニンキ'",
       reason: "維持",
+    });
+  });
+
+  it("forwards neighboring TTS as context-only input", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      successResponse([
+        {
+          id: "tts-1",
+          changed: false,
+          phrases: [],
+          reason: "維持",
+        },
+      ]),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestOpenRouterCorrections({ OPENROUTER_API_KEY: "secret" }, [
+      {
+        ...promptItem(),
+        previous: { text: "前" },
+        next: { text: "次", readText: "つぎ" },
+      },
+    ]);
+
+    const body = JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body));
+    const items = JSON.parse(body.messages[1].content).items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      id: "tts-1",
+      previous: { text: "前" },
+      next: { text: "次", readText: "つぎ" },
     });
   });
 
@@ -384,6 +418,18 @@ describe("requestOpenRouterCorrections", () => {
     ).rejects.toMatchObject({ status: 429, responseBody: "rate limited" });
   });
 
+  it("keeps the raw body when the envelope is not JSON", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{not json", { status: 200 })));
+
+    await expect(
+      requestOpenRouterCorrections({ OPENROUTER_API_KEY: "secret" }, [promptItem()]),
+    ).rejects.toMatchObject({
+      status: 200,
+      responseBody: "{not json",
+      message: expect.stringContaining("invalid JSON"),
+    });
+  });
+
   it("wraps null content as a retryable validation error and keeps usage", async () => {
     vi.stubGlobal(
       "fetch",
@@ -427,11 +473,15 @@ describe("requestOpenRouterCorrections", () => {
       { path: "choices.0.message.content", reason: "null" },
       { path: "choices.0.finish_reason", reason: "length" },
     ]);
+    expect(error.rawResponse).toMatchObject({
+      id: "generation-1",
+      choices: [{ finish_reason: "length", message: { content: null } }],
+    });
   });
 
   it("scales max_tokens with the number of items", () => {
-    expect(getOpenRouterMaxTokens(1)).toBe(8192);
-    expect(getOpenRouterMaxTokens(20)).toBe(20_480);
-    expect(getOpenRouterMaxTokens(256)).toBe(65_536);
+    expect(getOpenRouterMaxTokens(1)).toBe(4096);
+    expect(getOpenRouterMaxTokens(20)).toBe(10_240);
+    expect(getOpenRouterMaxTokens(256)).toBe(32_768);
   });
 });

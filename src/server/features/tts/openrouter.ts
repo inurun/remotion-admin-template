@@ -112,9 +112,10 @@ const openRouterEnvelopeSchema = z
   })
   .passthrough();
 
-const MIN_COMPLETION_TOKENS = 8_192;
-const TOKENS_PER_ITEM = 1_024;
-const MAX_COMPLETION_TOKENS = 65_536;
+const MIN_COMPLETION_TOKENS = 4_096;
+const TOKENS_PER_ITEM = 512;
+const MAX_COMPLETION_TOKENS = 32_768;
+const OPENROUTER_TIMEOUT_MS = 60_000;
 
 const correctionJsonSchema = {
   type: "object",
@@ -169,11 +170,18 @@ const correctionJsonSchema = {
   },
 } as const;
 
+export type OpenRouterNeighborItem = {
+  text: string;
+  readText?: string;
+};
+
 export type OpenRouterPromptItem = {
   id: string;
   text: string;
   readText: string;
   kana: string;
+  previous?: OpenRouterNeighborItem;
+  next?: OpenRouterNeighborItem;
 };
 
 export type StructuredCorrection = z.infer<typeof structuredCorrectionSchema>;
@@ -194,7 +202,7 @@ export type OpenRouterUsage = {
   costUsd: number;
 };
 
-export type ReasoningEffort = "low" | "medium";
+export type ReasoningEffort = "none" | "low" | "medium";
 
 export type OpenRouterValidationIssue = {
   path: string;
@@ -232,6 +240,7 @@ export class OpenRouterValidationError extends Error {
     readonly structuredOutput?: StructuredCorrection[],
     readonly renderedKana?: string[],
     readonly finishReason?: string,
+    readonly rawResponse?: unknown,
   ) {
     super(message);
     this.name = "OpenRouterValidationError";
@@ -427,7 +436,7 @@ export async function requestOpenRouterCorrections(
     throw new Error("OPENROUTER_API_KEY is required");
   }
 
-  const reasoningEffort = options?.reasoningEffort ?? "low";
+  const reasoningEffort = options?.reasoningEffort ?? "none";
   const repairById = new Map((options?.repairItems ?? []).map((item) => [item.id, item]));
   const userItems = promptItems.map((item) => {
     const repair = repairById.get(item.id);
@@ -457,7 +466,7 @@ export async function requestOpenRouterCorrections(
         },
         { role: "user", content: JSON.stringify({ items: userItems }) },
       ],
-      reasoning: { effort: reasoningEffort, exclude: true },
+      reasoning: { effort: reasoningEffort },
       response_format: {
         type: "json_schema",
         json_schema: { name: "g2p_corrections", strict: true, schema: correctionJsonSchema },
@@ -470,11 +479,11 @@ export async function requestOpenRouterCorrections(
       max_tokens: getOpenRouterMaxTokens(promptItems.length),
       stream: false,
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(OPENROUTER_TIMEOUT_MS),
   });
 
+  const responseBody = await response.text();
   if (!response.ok) {
-    const responseBody = await response.text();
     throw new OpenRouterError(
       `OpenRouter request failed: HTTP ${response.status}${responseBody ? ` ${responseBody}` : ""}`,
       response.status,
@@ -484,9 +493,13 @@ export async function requestOpenRouterCorrections(
 
   let json: unknown;
   try {
-    json = await response.json();
-  } catch {
-    throw new OpenRouterError("OpenRouter returned invalid JSON", response.status);
+    json = JSON.parse(responseBody);
+  } catch (error) {
+    throw new OpenRouterError(
+      `OpenRouter returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      response.status,
+      responseBody,
+    );
   }
 
   const envelope = openRouterEnvelopeSchema.safeParse(json);
@@ -498,6 +511,10 @@ export async function requestOpenRouterCorrections(
       undefined,
       ZERO_USAGE,
       toValidationErrors(envelope.error, json),
+      undefined,
+      undefined,
+      undefined,
+      json,
     );
   }
 
@@ -520,6 +537,7 @@ export async function requestOpenRouterCorrections(
       structuredOutput,
       renderedKana,
       finishReason,
+      json,
     );
 
   const content = choice?.message?.content;
@@ -562,6 +580,7 @@ export async function requestOpenRouterCorrections(
       renderedKana: mapped.renderedKana,
       corrections: mapped.corrections,
       usage,
+      rawResponse: json,
     };
   } catch (error) {
     const details = error as {

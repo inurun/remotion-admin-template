@@ -71,11 +71,12 @@ function openRouterResult(
     requestId: "generation-1",
     model: "openai/gpt-5.6-luna",
     actualProvider: "openai",
-    reasoningEffort: "low",
+    reasoningEffort: "none",
     structuredOutput: [structured(id, kana.replaceAll("'", ""))],
     renderedKana: [kana],
     corrections: [{ id, changed: true, kana, reason: "文脈" }],
     usage,
+    rawResponse: { id: "generation-1", model: "openai/gpt-5.6-luna" },
     ...extra,
   };
 }
@@ -107,7 +108,7 @@ describe("analyzeTtsPageWithLlm", () => {
     );
 
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(1);
-    expect(requestCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({ reasoningEffort: "low" });
+    expect(requestCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({ reasoningEffort: "none" });
     expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
     expect(analyzeTextsMock).toHaveBeenCalledWith(expect.anything(), ["人気"]);
     expect(validateG2pItemsMock).toHaveBeenCalledTimes(1);
@@ -120,7 +121,11 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(result.items[0]?.correctedKana).toBe("ヒトケ'");
     expect(result.monthlyUsdAt3000Tts).toBe(9);
     expect(writeFileMock).toHaveBeenCalledOnce();
-    expect(String(writeFileMock.mock.calls[0]?.[1])).toContain('"text": "人気"');
+    const log = JSON.parse(String(writeFileMock.mock.calls[0]?.[1]));
+    expect(log.openRouter[0].rawResponse).toEqual({
+      id: "generation-1",
+      model: "openai/gpt-5.6-luna",
+    });
   });
 
   it("treats normalized kana equal to baseline as unchanged", async () => {
@@ -137,6 +142,42 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(result.items[0]?.status).toBe("unchanged");
   });
 
+  it("forwards neighboring TTS to OpenRouter without analyzing them", async () => {
+    analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
+    validateG2pItemsMock.mockResolvedValueOnce([createG2pItem("人気", "ヒトケ'")]);
+    requestCorrectionsMock.mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ'"));
+
+    const result = await analyzeTtsPageWithLlm(
+      { OPENROUTER_API_KEY: "secret" },
+      {
+        pageId: "page-1",
+        items: [
+          {
+            id: "tts-1",
+            provider: "voisona",
+            text: "人気",
+            previous: { text: "前の文" },
+            next: { text: "次の文", readText: "つぎ" },
+          },
+        ],
+      },
+    );
+
+    expect(analyzeTextsMock).toHaveBeenCalledWith(expect.anything(), ["人気"]);
+    expect(requestCorrectionsMock.mock.calls[0]?.[1]).toEqual([
+      expect.objectContaining({
+        id: "tts-1",
+        text: "人気",
+        previous: { text: "前の文" },
+        next: { text: "次の文", readText: "つぎ" },
+      }),
+    ]);
+    expect(validateG2pItemsMock).toHaveBeenCalledWith(expect.anything(), [
+      { text: "人気", kana: "ヒトケ'" },
+    ]);
+    expect(result.items).toHaveLength(1);
+  });
+
   it("retries once after a 422 and then succeeds", async () => {
     analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
     requestCorrectionsMock
@@ -144,7 +185,7 @@ describe("analyzeTtsPageWithLlm", () => {
       .mockResolvedValueOnce({
         ...openRouterResult("tts-1", "ヒトケ'", usageB),
         requestId: "generation-2",
-        reasoningEffort: "medium",
+        reasoningEffort: "none",
       });
     validateG2pItemsMock
       .mockRejectedValueOnce(
@@ -165,7 +206,7 @@ describe("analyzeTtsPageWithLlm", () => {
     );
 
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(2);
-    expect(requestCorrectionsMock.mock.calls[1]?.[2]).toMatchObject({ reasoningEffort: "medium" });
+    expect(requestCorrectionsMock.mock.calls[1]?.[2]).toMatchObject({ reasoningEffort: "none" });
     expect(requestCorrectionsMock.mock.calls[1]?.[2]?.repairItems).toEqual([
       expect.objectContaining({
         id: "tts-1",
@@ -210,7 +251,7 @@ describe("analyzeTtsPageWithLlm", () => {
         requestId: "generation-1",
         model: "openai/gpt-5.6-luna",
         actualProvider: "openai",
-        reasoningEffort: "low",
+        reasoningEffort: "none",
         structuredOutput: [structured("tts-1", "ヒトケ"), structured("tts-2", "バショ")],
         renderedKana: ["ヒトケ", "バショ'"],
         corrections: [
@@ -223,7 +264,7 @@ describe("analyzeTtsPageWithLlm", () => {
         requestId: "generation-2",
         model: "openai/gpt-5.6-luna",
         actualProvider: "openai",
-        reasoningEffort: "medium",
+        reasoningEffort: "none",
         structuredOutput: [structured("tts-1", "ヒトケ")],
         renderedKana: ["ヒトケ'"],
         corrections: [{ id: "tts-1", changed: true, kana: "ヒトケ'", reason: "修復" }],
@@ -370,6 +411,7 @@ describe("analyzeTtsPageWithLlm", () => {
           undefined,
           undefined,
           "length",
+          { id: "generation-1", choices: [{ message: { content: null } }] },
         ),
       )
       .mockResolvedValueOnce({
@@ -386,6 +428,10 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(2);
     const log = JSON.parse(String(writeFileMock.mock.calls[0]?.[1]));
     expect(log.openRouter[0].finishReason).toBe("length");
+    expect(log.openRouter[0].rawResponse).toEqual({
+      id: "generation-1",
+      choices: [{ message: { content: null } }],
+    });
     expect(log.openRouter[1].finishReason).toBe("stop");
   });
 

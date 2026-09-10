@@ -29,11 +29,18 @@ export const ttsValidateResponseSchema = z.object({
   g2p: g2pItemSchema,
 });
 
+const ttsLlmNeighborSchema = z.object({
+  text: z.string(),
+  readText: z.string().optional(),
+});
+
 const ttsLlmAnalysisRequestItemSchema = z.object({
   id: z.string().min(1),
   provider: voiceProviderSchema,
   text: z.string(),
   readText: z.string().optional(),
+  previous: ttsLlmNeighborSchema.optional(),
+  next: ttsLlmNeighborSchema.optional(),
 });
 
 export const ttsLlmAnalysisRequestSchema = z

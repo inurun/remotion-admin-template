@@ -53,6 +53,7 @@ type AttemptLog = {
   structuredOutput?: StructuredCorrection[];
   renderedKana?: string[];
   validationErrors?: OpenRouterValidationIssue[];
+  rawResponse?: unknown;
   timings: {
     openRouterMs: number;
     validationMs: number;
@@ -93,6 +94,7 @@ function serializeError(error: unknown) {
       message: error.message,
       validationErrors: error.validationErrors,
       finishReason: error.finishReason,
+      rawResponse: error.rawResponse,
     };
   }
   if (error instanceof OpenRouterError) {
@@ -244,6 +246,8 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
         text: item.text,
         readText: item.effectiveText,
         kana: baselineItems[index]!.kana,
+        ...(item.previous ? { previous: item.previous } : {}),
+        ...(item.next ? { next: item.next } : {}),
       }));
 
       let pendingItems = promptItems;
@@ -251,7 +255,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       mergedCorrections = [];
 
       for (const attempt of [1, 2] as const) {
-        const reasoningEffort: ReasoningEffort = attempt === 1 ? "low" : "medium";
+        const reasoningEffort: ReasoningEffort = "none";
         stage = "openrouter";
         stageStartedAt = performance.now();
         let openRouterResult: Awaited<ReturnType<typeof requestOpenRouterCorrections>>;
@@ -274,6 +278,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
               structuredOutput: error.structuredOutput,
               renderedKana: error.renderedKana,
               validationErrors: error.validationErrors,
+              rawResponse: error.rawResponse,
               timings: { openRouterMs, validationMs: 0 },
               usage: error.usage,
             });
@@ -324,6 +329,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
             finishReason: openRouterResult.finishReason,
             structuredOutput: openRouterResult.structuredOutput,
             renderedKana: openRouterResult.renderedKana,
+            rawResponse: openRouterResult.rawResponse,
             timings: { openRouterMs, validationMs },
             usage: openRouterResult.usage,
           });
@@ -345,6 +351,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
             structuredOutput: openRouterResult.structuredOutput,
             renderedKana: openRouterResult.renderedKana,
             validationErrors,
+            rawResponse: openRouterResult.rawResponse,
             timings: { openRouterMs, validationMs },
             usage: openRouterResult.usage,
           });

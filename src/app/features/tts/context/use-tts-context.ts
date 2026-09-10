@@ -10,6 +10,7 @@ import {
   useSelectedPageId,
 } from "@/app/features/project/context/project-route-context";
 import { requestPreviewSynthesis } from "@/app/features/tts/api/tts-api";
+import { getAdjacentTtsContext } from "@/app/features/tts/lib/adjacent-tts-context";
 import {
   canStartTtsAnalyze,
   canStartTtsLlmAnalyze,
@@ -101,6 +102,7 @@ function useTtsCommands() {
               provider: item.provider,
               text: item.text,
               ...(item.readText === undefined ? {} : { readText: item.readText }),
+              ...getAdjacentTtsContext(form.getValues("tts"), ttsId),
             },
           ],
         });
