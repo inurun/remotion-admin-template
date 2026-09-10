@@ -36,7 +36,6 @@ export function useConfigTtsActions() {
     name: `tts.${Math.max(ttsIndex, 0)}.provider`,
   });
   const actionDisabled = ttsIndex < 0 || isVoiceActionDisabled({ canRunTts, text, voiceName });
-  const busy = isAnalyzing || isLlmAnalyzing;
 
   const analyzeSelected = useCallback(() => {
     void analyze(ttsId);
@@ -52,10 +51,10 @@ export function useConfigTtsActions() {
 
   return {
     analyzeSelected,
-    analyzeDisabled: actionDisabled || busy,
+    analyzeDisabled: actionDisabled || isAnalyzing || isLlmAnalyzing,
     isAnalyzing,
     llmAnalyzeSelected,
-    llmAnalyzeDisabled: actionDisabled || busy || provider === "voicepeak",
+    llmAnalyzeDisabled: actionDisabled || isLlmAnalyzing || provider === "voicepeak",
     isLlmAnalyzing,
     previewDisabled: actionDisabled,
     previewSelected,

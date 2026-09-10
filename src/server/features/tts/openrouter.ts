@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { ServerEnv } from "@/server/core/env";
 import { getOpenRouterG2pSystemPrompt } from "./openrouter-prompt";
 
-const DEFAULT_MODEL = "google/gemini-3.7-flash";
-const DEFAULT_PROVIDER = "google-vertex";
+const DEFAULT_MODEL = "openai/gpt-5.6-luna";
+const DEFAULT_PROVIDER = "openai";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const READING_PATTERN = /^[^'|/、？！_\s]+$/u;

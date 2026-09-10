@@ -70,8 +70,8 @@ describe("tts routes", () => {
       runId: "run-1",
       logFile: ".logs/llm-g2p/run-1.json",
       requestId: "request-1",
-      model: "google/gemini-3.7-flash",
-      provider: "google-vertex",
+      model: "openai/gpt-5.6-luna",
+      provider: "openai",
       timings: {
         haqumeiBaselineMs: 1,
         openRouterMs: 2,

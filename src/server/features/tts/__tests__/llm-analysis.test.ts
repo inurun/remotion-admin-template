@@ -69,8 +69,8 @@ function openRouterResult(
 ) {
   return {
     requestId: "generation-1",
-    model: "google/gemini-3.7-flash",
-    actualProvider: "google-vertex",
+    model: "openai/gpt-5.6-luna",
+    actualProvider: "openai",
     reasoningEffort: "low",
     structuredOutput: [structured(id, kana.replaceAll("'", ""))],
     renderedKana: [kana],
@@ -208,8 +208,8 @@ describe("analyzeTtsPageWithLlm", () => {
     requestCorrectionsMock
       .mockResolvedValueOnce({
         requestId: "generation-1",
-        model: "google/gemini-3.7-flash",
-        actualProvider: "google-vertex",
+        model: "openai/gpt-5.6-luna",
+        actualProvider: "openai",
         reasoningEffort: "low",
         structuredOutput: [structured("tts-1", "ヒトケ"), structured("tts-2", "バショ")],
         renderedKana: ["ヒトケ", "バショ'"],
@@ -221,8 +221,8 @@ describe("analyzeTtsPageWithLlm", () => {
       })
       .mockResolvedValueOnce({
         requestId: "generation-2",
-        model: "google/gemini-3.7-flash",
-        actualProvider: "google-vertex",
+        model: "openai/gpt-5.6-luna",
+        actualProvider: "openai",
         reasoningEffort: "medium",
         structuredOutput: [structured("tts-1", "ヒトケ")],
         renderedKana: ["ヒトケ'"],
@@ -332,8 +332,8 @@ describe("analyzeTtsPageWithLlm", () => {
         new OpenRouterValidationError(
           "OpenRouter structured output failed validation",
           "generation-1",
-          "google/gemini-3.7-flash",
-          "google-vertex",
+          "openai/gpt-5.6-luna",
+          "openai",
           usageA,
           [
             {
@@ -363,8 +363,8 @@ describe("analyzeTtsPageWithLlm", () => {
         new OpenRouterValidationError(
           "OpenRouter returned empty structured output",
           "generation-1",
-          "google/gemini-3.7-flash",
-          "google-vertex",
+          "openai/gpt-5.6-luna",
+          "openai",
           usageA,
           [{ path: "choices.0.message.content", reason: "null" }],
           undefined,

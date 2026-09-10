@@ -17,8 +17,8 @@ describe("getServerEnv", () => {
       VITE_VIDEO_FPS: "'60'",
       HAQUMEI_API_URL: '" http://127.0.0.1:8080 "',
       OPENROUTER_API_KEY: " secret ",
-      OPENROUTER_G2P_MODEL: " google/gemini-3.7-flash ",
-      OPENROUTER_G2P_PROVIDER: " google-vertex ",
+      OPENROUTER_G2P_MODEL: " openai/gpt-5.6-luna ",
+      OPENROUTER_G2P_PROVIDER: " openai ",
       VOICEPEAK_PATH: " /Applications/voicepeak.app/Contents/MacOS/voicepeak ",
       EXTRA_VALUE: "ignored",
     });
@@ -28,8 +28,8 @@ describe("getServerEnv", () => {
       VITE_VIDEO_FPS: "60",
       HAQUMEI_API_URL: "http://127.0.0.1:8080",
       OPENROUTER_API_KEY: "secret",
-      OPENROUTER_G2P_MODEL: "google/gemini-3.7-flash",
-      OPENROUTER_G2P_PROVIDER: "google-vertex",
+      OPENROUTER_G2P_MODEL: "openai/gpt-5.6-luna",
+      OPENROUTER_G2P_PROVIDER: "openai",
       VOICEPEAK_PATH: "/Applications/voicepeak.app/Contents/MacOS/voicepeak",
     });
   });

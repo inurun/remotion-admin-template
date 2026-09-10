@@ -34,8 +34,8 @@ function successResponse(items: unknown) {
   return new Response(
     JSON.stringify({
       id: "generation-1",
-      model: "google/gemini-3.7-flash",
-      provider: "google-vertex",
+      model: "openai/gpt-5.6-luna",
+      provider: "openai",
       choices: [{ message: { content: JSON.stringify({ items }) } }],
       usage: {
         prompt_tokens: 100,
@@ -391,8 +391,8 @@ describe("requestOpenRouterCorrections", () => {
         new Response(
           JSON.stringify({
             id: "generation-1",
-            model: "google/gemini-3.7-flash",
-            provider: "google-vertex",
+            model: "openai/gpt-5.6-luna",
+            provider: "openai",
             choices: [{ finish_reason: "length", message: { content: null } }],
             usage: {
               prompt_tokens: 100,
@@ -413,8 +413,8 @@ describe("requestOpenRouterCorrections", () => {
     expect(error).toBeInstanceOf(OpenRouterValidationError);
     expect(error).toMatchObject({
       requestId: "generation-1",
-      model: "google/gemini-3.7-flash",
-      provider: "google-vertex",
+      model: "openai/gpt-5.6-luna",
+      provider: "openai",
       finishReason: "length",
       usage: {
         promptTokens: 100,
