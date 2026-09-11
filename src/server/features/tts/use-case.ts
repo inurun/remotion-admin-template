@@ -1,6 +1,6 @@
 import type { VoiceOption } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
-import { clearProjectTtsCache } from "@/server/_shared/storage";
+import { clearProjectTtsCache, readSavedProject } from "@/server/_shared/storage";
 import { analyzeText } from "@/server/features/haqumei-api/analyze";
 import { validateG2pItem } from "@/server/features/haqumei-api/validate";
 import {
@@ -18,6 +18,9 @@ import {
 import { getEffectiveReadText, getUsableG2p } from "./providers/comparison";
 import { getTtsProvider } from "./providers/registry";
 import type { TtsSynthesisInput } from "./providers/types";
+import { projectHasPendingTts } from "@/_shared/lib/tts/tts-audio";
+import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
+import { TtsCacheClearConflictError } from "@/server/features/tts/errors";
 
 export { analyzeTtsPageWithLlm } from "./llm-analysis";
 
@@ -92,6 +95,12 @@ export async function synthesizeTts(serverEnv: ServerEnv, input: unknown) {
 
 export async function clearTtsCache(input: unknown) {
   const parsed = ttsClearCacheRequestSchema.parse(input);
-  await clearProjectTtsCache(parsed.projectPath);
-  return { ok: true as const };
+  return enqueueProjectMutation(parsed.projectPath, async () => {
+    const project = await readSavedProject(parsed.projectPath);
+    if (projectHasPendingTts(project)) {
+      throw new TtsCacheClearConflictError();
+    }
+    await clearProjectTtsCache(parsed.projectPath);
+    return { ok: true as const };
+  });
 }

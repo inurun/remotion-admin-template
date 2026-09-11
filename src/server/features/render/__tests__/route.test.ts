@@ -68,6 +68,25 @@ describe("render routes", () => {
     expect(await response.text()).toBe("video");
   });
 
+  it("returns conflict when synthesis is still pending", async () => {
+    startRenderMock.mockResolvedValueOnce({ started: false, reason: "tts_pending" });
+
+    const response = await renderApp.request("/render", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ projectPath: "project" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "TTS synthesis is still pending",
+      started: false,
+      reason: "tts_pending",
+    });
+  });
+
   it("starts render for the selected project", async () => {
     startRenderMock.mockResolvedValueOnce({ started: true });
 

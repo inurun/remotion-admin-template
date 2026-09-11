@@ -1,4 +1,5 @@
 import { useAutoSaveProject } from "@/app/features/editor/lib/use-auto-save-project";
+import { useSyncProjectSynthesis } from "@/app/features/editor/lib/use-sync-project-synthesis";
 import type { ReactNode } from "react";
 import { SidebarInset } from "@/_shared/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar/app-sidebar";
@@ -17,8 +18,9 @@ import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
 import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
 
-function ProjectAutoSave() {
+function ProjectSync() {
   useAutoSaveProject();
+  useSyncProjectSynthesis();
   return null;
 }
 
@@ -35,7 +37,7 @@ function ProjectStores({ children }: { children: ReactNode }) {
         key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}
         initialProject={project}
       >
-        <ProjectAutoSave />
+        <ProjectSync />
         {children}
       </EditorSessionStoreProvider>
     </SavedProjectStoreProvider>

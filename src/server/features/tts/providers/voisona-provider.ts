@@ -1,5 +1,5 @@
 import type { ServerEnv } from "@/server/core/env";
-import { synthesizeVoisona } from "@/server/features/haqumei-api/synthesis";
+import { planVoisonaSynthesis } from "@/server/features/haqumei-api/synthesis";
 import {
   createDraftComparisonInput,
   createPreviousComparisonInput,
@@ -17,13 +17,13 @@ export const voisonaProvider = {
   createPreviousComparisonInput(item: SavedTtsForProvider<"voisona">) {
     return createPreviousComparisonInput("voisona", item);
   },
-  synthesize(serverEnv: ServerEnv, input) {
+  plan(serverEnv: ServerEnv, input) {
     if (!input.g2p) {
       throw new Error("VoiSona synthesis requires g2p");
     }
 
     const voiceVersion = getOptionalVoiceVersion(input.voiceVersion);
-    return synthesizeVoisona({
+    return planVoisonaSynthesis({
       serverEnv,
       projectPath: input.projectPath,
       g2p: input.g2p,
@@ -31,5 +31,8 @@ export const voisonaProvider = {
       ...(voiceVersion ? { voiceVersion } : {}),
       ...(input.synthesisSettings ? { synthesisSettings: input.synthesisSettings } : {}),
     });
+  },
+  synthesize(serverEnv: ServerEnv, input) {
+    return this.plan(serverEnv, input).run();
   },
 } satisfies TtsProviderAdapter<"voisona">;

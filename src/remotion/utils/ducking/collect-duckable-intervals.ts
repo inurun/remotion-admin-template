@@ -1,6 +1,7 @@
 import type { SavedProject } from "@/_schemas";
 import { isSavedContentPage, isSavedTransition } from "@/_schemas";
 import { createTtsTimingSegments } from "@/_shared/lib/tts/tts-timing";
+import { listReadyTtsTimingInputs } from "@/_shared/lib/tts/tts-audio";
 import { getTransitionDurationSec } from "@/remotion/transitions/variants";
 import { secondsToFrames } from "@/remotion/utils/timing";
 
@@ -25,7 +26,9 @@ function collectTtsIntervals(project: SavedProject, fps: number): DuckableInterv
 
     const pageDurationFrames = Math.max(1, secondsToFrames(item.durationSec, fps));
 
-    for (const segment of createTtsTimingSegments(item.tts, { minDurationSec: 1 / fps })) {
+    for (const segment of createTtsTimingSegments(listReadyTtsTimingInputs(item.tts), {
+      minDurationSec: 1 / fps,
+    })) {
       const from = pageStartFrame + secondsToFrames(item.padBeforeSec + segment.startSec, fps);
       const duration = secondsToFrames(segment.durationSec, fps);
       if (duration > 0) {

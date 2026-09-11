@@ -1,5 +1,5 @@
 import type { ServerEnv } from "@/server/core/env";
-import { synthesizeVoicepeak } from "@/server/features/voicepeak/use-case";
+import { planVoicepeakSynthesis } from "@/server/features/voicepeak/use-case";
 import {
   createDraftComparisonInput,
   createPreviousComparisonInput,
@@ -17,9 +17,9 @@ export const voicepeakProvider = {
   createPreviousComparisonInput(item: SavedTtsForProvider<"voicepeak">) {
     return createPreviousComparisonInput("voicepeak", item);
   },
-  synthesize(serverEnv: ServerEnv, input) {
+  plan(serverEnv: ServerEnv, input) {
     const voiceVersion = getOptionalVoiceVersion(input.voiceVersion);
-    return synthesizeVoicepeak({
+    return planVoicepeakSynthesis({
       serverEnv,
       projectPath: input.projectPath,
       text: input.readText,
@@ -27,5 +27,8 @@ export const voicepeakProvider = {
       ...(voiceVersion ? { voiceVersion } : {}),
       ...(input.synthesisSettings ? { synthesisSettings: input.synthesisSettings } : {}),
     });
+  },
+  synthesize(serverEnv: ServerEnv, input) {
+    return this.plan(serverEnv, input).run();
   },
 } satisfies TtsProviderAdapter<"voicepeak">;

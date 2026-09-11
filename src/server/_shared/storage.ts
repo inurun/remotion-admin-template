@@ -65,9 +65,10 @@ function createInitialSavedProject() {
             readText: "このテンプレをベースにほんぶんとよみあげをへんしゅうできる。",
             voiceName: "",
             voiceVersion: "",
-            durationSec: 0,
             audio: {
+              status: "ready",
               src: "",
+              durationSec: 0,
             },
             speech: {},
           },
@@ -189,9 +190,26 @@ function shouldIncludeProjectFile(entryName: string, isFile: boolean) {
   );
 }
 
+function getProjectSummaryUpdatedAt(content: string, fallbackMs: number) {
+  try {
+    const parsed = JSON.parse(content) as { meta?: { updatedAt?: unknown } };
+    const timestamp = Date.parse(
+      typeof parsed.meta?.updatedAt === "string" ? parsed.meta.updatedAt : "",
+    );
+    return Number.isFinite(timestamp) ? timestamp : fallbackMs;
+  } catch {
+    return fallbackMs;
+  }
+}
+
 async function readProjectSummaryFile(relativePath: string, absolutePath: string) {
   const stats = await fs.stat(absolutePath);
-  return toProjectSummary(relativePath, stats.mtimeMs);
+  try {
+    const content = await fs.readFile(absolutePath, "utf8");
+    return toProjectSummary(relativePath, getProjectSummaryUpdatedAt(content, stats.mtimeMs));
+  } catch {
+    return toProjectSummary(relativePath, stats.mtimeMs);
+  }
 }
 
 async function readProjectSummary(projectPath: string) {

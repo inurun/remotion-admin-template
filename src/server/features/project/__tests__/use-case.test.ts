@@ -16,6 +16,10 @@ const analyzeTextsMock = vi.fn();
 const synthesizeVoisonaMock = vi.fn();
 const synthesizeVoicevoxMock = vi.fn();
 const synthesizeVoicepeakMock = vi.fn();
+const planVoisonaSynthesisMock = vi.fn();
+const planVoicevoxSynthesisMock = vi.fn();
+const planVoicepeakSynthesisMock = vi.fn();
+const readCachedWavMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   default: {
@@ -42,13 +46,26 @@ vi.mock("@/server/features/haqumei-api/analyze", () => ({
 }));
 
 vi.mock("@/server/features/haqumei-api/synthesis", () => ({
+  planVoisonaSynthesis: planVoisonaSynthesisMock,
+  planVoicevoxSynthesis: planVoicevoxSynthesisMock,
   synthesizeVoisona: synthesizeVoisonaMock,
   synthesizeVoicevox: synthesizeVoicevoxMock,
 }));
 
 vi.mock("@/server/features/voicepeak/use-case", () => ({
+  planVoicepeakSynthesis: planVoicepeakSynthesisMock,
   synthesizeVoicepeak: synthesizeVoicepeakMock,
 }));
+
+vi.mock("@/server/features/tts/wav-cache", async () => {
+  const actual = await vi.importActual<typeof import("@/server/features/tts/wav-cache")>(
+    "@/server/features/tts/wav-cache",
+  );
+  return {
+    ...actual,
+    readCachedWav: (...args: unknown[]) => readCachedWavMock(...args),
+  };
+});
 
 async function saveProject(
   serverEnv: object,
@@ -87,6 +104,46 @@ function audio(src: string, durationSec = 1) {
   return { audioSrc: src, outputPath: "/tmp/audio.wav", durationSec };
 }
 
+function mockPlannedSynthesis(
+  mock: { mockImplementation: (impl: (input: { projectPath: string }) => unknown) => unknown },
+  synthesizeMock: (input: unknown) => Promise<{ durationSec: number }>,
+  provider: string,
+) {
+  let sequence = 0;
+  mock.mockImplementation((input: { projectPath: string }) => {
+    sequence += 1;
+    const audioSrc = `/tts/${input.projectPath}/${provider}-${sequence}.wav`;
+    return {
+      wav: {
+        fileName: `${provider}-${sequence}.wav`,
+        outputPath: `/tmp/${provider}-${sequence}.wav`,
+        audioSrc,
+      },
+      run: async () => {
+        const result = await synthesizeMock(input);
+        return {
+          audioSrc,
+          outputPath: `/tmp/${provider}-${sequence}.wav`,
+          durationSec: result.durationSec,
+        };
+      },
+    };
+  });
+}
+
+function lastWrittenProject() {
+  const last = writeSavedProjectMock.mock.calls.at(-1);
+  if (!last) {
+    throw new Error("expected project write");
+  }
+  return last[1] as import("@/_schemas").SavedProject;
+}
+
+async function flushJobs() {
+  const { flushSynthesisJobsForTests } = await import("../tts-synthesis-jobs");
+  await flushSynthesisJobsForTests();
+}
+
 describe("project use-case", () => {
   const now = "2026-07-27T09:40:00.000Z";
   const defaultMeta = {
@@ -105,14 +162,27 @@ describe("project use-case", () => {
   };
   const helloG2p = createG2pItem("Hello");
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     accessMock.mockResolvedValue(undefined);
+    readCachedWavMock.mockResolvedValue(null);
+    readSavedProjectMock.mockImplementation(async () => {
+      const last = writeSavedProjectMock.mock.calls.at(-1);
+      return last?.[1] ?? { pages: [] };
+    });
+    mockPlannedSynthesis(planVoisonaSynthesisMock, synthesizeVoisonaMock, "voisona");
+    mockPlannedSynthesis(planVoicevoxSynthesisMock, synthesizeVoicevoxMock, "voicevox");
+    mockPlannedSynthesis(planVoicepeakSynthesisMock, synthesizeVoicepeakMock, "voicepeak");
+    const { resetSynthesisJobsForTests } = await import("../tts-synthesis-jobs");
+    const { resetProjectMutationQueueForTests } = await import("../project-mutation-queue");
+    resetSynthesisJobsForTests();
+    resetProjectMutationQueueForTests();
     vi.useFakeTimers();
     vi.setSystemTime(now);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await flushJobs();
     vi.useRealTimers();
   });
 
@@ -136,8 +206,7 @@ describe("project use-case", () => {
               readText: "Hello",
               voiceName: "voice",
               voiceVersion: "1",
-              durationSec: 1.2,
-              audio: { src: "/tts/nested/example/old.wav" },
+              audio: { status: "ready", src: "/tts/nested/example/old.wav", durationSec: 1.2 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -199,6 +268,157 @@ describe("project use-case", () => {
     expect(writeSavedProjectMock).toHaveBeenCalledWith("nested/example", result);
   });
 
+  it("returns pending audio before synthesis settles", async () => {
+    let resolveSynth: ((value: ReturnType<typeof audio>) => void) | undefined;
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSynth = resolve;
+      }),
+    );
+
+    const savedPromise = saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    const saved = await savedPromise;
+    expect(contentPage(saved.pages).tts[0]?.audio).toMatchObject({
+      status: "pending",
+    });
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(helloG2p);
+    expect(writeSavedProjectMock).toHaveBeenCalledTimes(1);
+
+    resolveSynth?.(audio("/tts/project/voisona-1.wav", 2));
+    await flushJobs();
+    expect(writeSavedProjectMock).toHaveBeenCalledTimes(2);
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      durationSec: 2.1,
+    });
+  });
+
+  it("marks cached wav ready without calling the engine", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    readCachedWavMock.mockResolvedValueOnce(audio("/tts/project/cached.wav", 2));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      durationSec: 2.1,
+    });
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(writeSavedProjectMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("saves failed audio without failing the rest of the batch", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p, createG2pItem("World")]);
+    synthesizeVoisonaMock
+      .mockRejectedValueOnce(new Error("engine exploded"))
+      .mockResolvedValueOnce(audio("/tts/two.wav", 1));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+            {
+              id: "tts-2",
+              provider: "voisona",
+              text: "World",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts.map((item) => item.audio.status)).toEqual([
+      "pending",
+      "pending",
+    ]);
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts.map((item) => item.audio)).toMatchObject([
+      { status: "failed", error: "engine exploded" },
+      { status: "ready", durationSec: 1.1 },
+    ]);
+  });
+
   it("updates avatar settings without regenerating unchanged tts", async () => {
     const previous = {
       pages: [
@@ -219,8 +439,7 @@ describe("project use-case", () => {
               readText: "Hello",
               voiceName: "voice",
               voiceVersion: "1",
-              durationSec: 1.2,
-              audio: { src: "/tts/project/old.wav" },
+              audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1.2 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -514,8 +733,13 @@ describe("project use-case", () => {
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicevox",
-      durationSec: 1.1,
-      audio: { src: "/tts/voicevox.wav" },
+      audio: { status: "pending" },
+      speech: { g2p: helloG2p },
+    });
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]).toMatchObject({
+      provider: "voicevox",
+      audio: { status: "ready", durationSec: 1.1 },
       speech: { g2p: helloG2p },
     });
   });
@@ -594,8 +818,7 @@ describe("project use-case", () => {
               text: "Hello",
               readText: "Hello",
               voiceName: "3",
-              durationSec: 1.1,
-              audio: { src: "/tts/project/old.wav" },
+              audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1.1 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -663,8 +886,7 @@ describe("project use-case", () => {
               text: "Hello",
               readText: "Hello",
               voiceName: "3",
-              durationSec: 1.1,
-              audio: { src: "/tts/project/old.wav" },
+              audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1.1 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -719,7 +941,9 @@ describe("project use-case", () => {
       voiceName: "3",
       synthesisSettings: { speedScale: 1.5 },
     });
-    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/voicevox.wav");
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("pending");
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio.status).toBe("ready");
   });
 
   it("reuses an explicit tts override when the project preset changes", async () => {
@@ -734,7 +958,7 @@ describe("project use-case", () => {
       volume: 1,
       durationSec: 1.1,
       synthesisSettings: { speedScale: 1.3 },
-      audio: { src: "/tts/project/old.wav" },
+      audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1.1 },
       speech: { g2p: helloG2p },
     };
     readSavedProjectMock.mockResolvedValueOnce({
@@ -846,8 +1070,13 @@ describe("project use-case", () => {
     });
     expect(contentPage(saved.pages).tts[0]).toMatchObject({
       provider: "voicepeak",
-      durationSec: 1.3,
-      audio: { src: "/tts/voicepeak.wav" },
+      audio: { status: "pending" },
+      speech: {},
+    });
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]).toMatchObject({
+      provider: "voicepeak",
+      audio: { status: "ready", durationSec: 1.3 },
       speech: {},
     });
   });
@@ -910,8 +1139,7 @@ describe("project use-case", () => {
               readText: "old read",
               voiceName: "voice",
               voiceVersion: "1",
-              durationSec: 1.2,
-              audio: { src: "/tts/old.wav" },
+              audio: { status: "ready", src: "/tts/old.wav", durationSec: 1.2 },
               speech: { g2p: createG2pItem("old read") },
             },
           ],
@@ -984,8 +1212,7 @@ describe("project use-case", () => {
               text: "Hello",
               readText: "Hello",
               voiceName: "3",
-              durationSec: 1.2,
-              audio: { src: "/tts/old.wav" },
+              audio: { status: "ready", src: "/tts/old.wav", durationSec: 1.2 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -1060,8 +1287,7 @@ describe("project use-case", () => {
               readText: "Hello",
               voiceName: "voice",
               voiceVersion: "1",
-              durationSec: 1.2,
-              audio: { src: "/tts/project/old.wav" },
+              audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1.2 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -1105,59 +1331,232 @@ describe("project use-case", () => {
     expect(synthesizeVoisonaMock).toHaveBeenCalled();
   });
 
-  it("rejects when a page is shorter than an adjacent transition", async () => {
+  it("keeps pending pages saveable when shorter than an adjacent transition", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     synthesizeVoisonaMock
       .mockResolvedValueOnce(audio("/tts/short.wav", 0.2))
       .mockResolvedValueOnce(audio("/tts/long.wav", 3));
 
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-short",
+          title: "Short",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "tts-short",
+              provider: "voisona",
+              text: "short",
+              voiceName: "voice",
+              speech: { g2p: createG2pItem("short") },
+            },
+          ],
+        },
+        {
+          id: "tr-1",
+          type: "transition",
+          variant: "slide",
+        },
+        {
+          id: "page-long",
+          title: "Long",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "tts-long",
+              provider: "voisona",
+              text: "long",
+              voiceName: "voice",
+              speech: { g2p: createG2pItem("long") },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).durationSec).toBe(0.8);
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).durationSec).toBe(0.8);
+  });
+
+  it("keeps a failed page saveable when shorter than an adjacent transition", async () => {
+    const previous = {
+      pages: [
+        {
+          id: "page-short",
+          title: "Short",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 0.2,
+          richText: null,
+          tts: [
+            {
+              id: "tts-short",
+              provider: "voisona",
+              text: "short",
+              readText: "short",
+              voiceName: "voice",
+              audio: { status: "failed", src: "/tts/project/short.wav", error: "engine failed" },
+              speech: { g2p: createG2pItem("short") },
+            },
+          ],
+        },
+        {
+          id: "tr-1",
+          type: "transition",
+          variant: "slide",
+        },
+        {
+          id: "page-long",
+          title: "Long",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 3,
+          richText: null,
+          tts: [
+            {
+              id: "tts-long",
+              provider: "voisona",
+              text: "long",
+              readText: "long",
+              voiceName: "voice",
+              audio: { status: "ready", src: "/tts/project/long.wav", durationSec: 3 },
+              speech: { g2p: createG2pItem("long") },
+            },
+          ],
+        },
+      ],
+    };
+    readSavedProjectMock.mockResolvedValueOnce(previous);
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: previous.pages.map((page) => {
+        if (page.type === "transition") {
+          return page;
+        }
+        return {
+          id: page.id,
+          title: page.title,
+          type: page.type,
+          meta: page.meta,
+          padBeforeSec: page.padBeforeSec,
+          padAfterSec: page.padAfterSec,
+          richText: page.richText,
+          tts: (("tts" in page ? page.tts : []) ?? []).map((item) => ({
+            id: item.id,
+            provider: item.provider,
+            text: item.text,
+            voiceName: item.voiceName,
+            speech: item.speech,
+          })),
+        };
+      }),
+    });
+
+    expect(contentPage(saved.pages).durationSec).toBe(0.8);
+    expect(contentPage(saved.pages).tts[0]?.audio).toMatchObject({
+      status: "failed",
+      error: "engine failed",
+    });
+    expect(writeSavedProjectMock).toHaveBeenCalled();
+  });
+
+  it("rejects a ready page shorter than an adjacent transition", async () => {
+    const previous = {
+      pages: [
+        {
+          id: "page-short",
+          title: "Short",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 0.2,
+          richText: null,
+          tts: [
+            {
+              id: "tts-short",
+              provider: "voisona",
+              text: "short",
+              readText: "short",
+              voiceName: "voice",
+              audio: { status: "ready", src: "/tts/project/short.wav", durationSec: 0.2 },
+              speech: { g2p: createG2pItem("short") },
+            },
+          ],
+        },
+        {
+          id: "tr-1",
+          type: "transition",
+          variant: "slide",
+        },
+        {
+          id: "page-long",
+          title: "Long",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 3,
+          richText: null,
+          tts: [
+            {
+              id: "tts-long",
+              provider: "voisona",
+              text: "long",
+              readText: "long",
+              voiceName: "voice",
+              audio: { status: "ready", src: "/tts/project/long.wav", durationSec: 3 },
+              speech: { g2p: createG2pItem("long") },
+            },
+          ],
+        },
+      ],
+    };
+    readSavedProjectMock.mockResolvedValueOnce(previous);
+
     await expect(
       saveProject({}, "project", {
         meta: defaultMeta,
         bgm: [],
-        pages: [
-          {
-            id: "page-short",
-            title: "Short",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            richText: null,
-            tts: [
-              {
-                id: "tts-short",
-                provider: "voisona",
-                text: "short",
-                voiceName: "voice",
-                speech: { g2p: createG2pItem("short") },
-              },
-            ],
-          },
-          {
-            id: "tr-1",
-            type: "transition",
-            variant: "slide",
-          },
-          {
-            id: "page-long",
-            title: "Long",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            richText: null,
-            tts: [
-              {
-                id: "tts-long",
-                provider: "voisona",
-                text: "long",
-                voiceName: "voice",
-                speech: { g2p: createG2pItem("long") },
-              },
-            ],
-          },
-        ],
+        pages: previous.pages.map((page) => {
+          if (page.type === "transition") {
+            return page;
+          }
+          return {
+            id: page.id,
+            title: page.title,
+            type: page.type,
+            meta: page.meta,
+            padBeforeSec: page.padBeforeSec,
+            padAfterSec: page.padAfterSec,
+            richText: page.richText,
+            tts: (("tts" in page ? page.tts : []) ?? []).map((item) => ({
+              id: item.id,
+              provider: item.provider,
+              text: item.text,
+              voiceName: item.voiceName,
+              speech: item.speech,
+            })),
+          };
+        }),
       }),
     ).rejects.toThrow(/must be at least as long as adjacent transition/);
     expect(writeSavedProjectMock).not.toHaveBeenCalled();
@@ -1317,6 +1716,11 @@ describe("project use-case", () => {
 
     expect(contentPage(saved.pages)).toMatchObject({
       type: "eyecatch-text",
+      durationSec: EYECATCH_TEXT_MIN_DURATION_SEC,
+    });
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages)).toMatchObject({
+      type: "eyecatch-text",
       durationSec: 2.1,
     });
   });
@@ -1378,8 +1782,7 @@ describe("project use-case", () => {
           readText: "Keep",
           voiceName: "voice",
           voiceVersion: "1",
-          durationSec: 1.2,
-          audio: { src: "/tts/project/b.wav" },
+          audio: { status: "ready", src: "/tts/project/b.wav", durationSec: 1.2 },
           speech: { g2p: helloG2p },
         },
       ],
@@ -1405,8 +1808,7 @@ describe("project use-case", () => {
               text: "Old",
               readText: "Old",
               voiceName: "voice",
-              durationSec: 1,
-              audio: { src: "/tts/project/a.wav" },
+              audio: { status: "ready", src: "/tts/project/a.wav", durationSec: 1 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -1471,8 +1873,7 @@ describe("project use-case", () => {
               text: "Hello",
               readText: "Hello",
               voiceName: "voice",
-              durationSec: 1,
-              audio: { src: "/tts/project/a.wav" },
+              audio: { status: "ready", src: "/tts/project/a.wav", durationSec: 1 },
               speech: { g2p: helloG2p },
             },
           ],
@@ -1522,8 +1923,7 @@ describe("project use-case", () => {
           text: "Hello",
           readText: "Hello",
           voiceName: "voice",
-          durationSec: 1,
-          audio: { src: "/tts/project/a.wav" },
+          audio: { status: "ready", src: "/tts/project/a.wav", durationSec: 1 },
           speech: { g2p: helloG2p },
         },
       ],
@@ -1544,8 +1944,7 @@ describe("project use-case", () => {
           text: "Other",
           readText: "Other",
           voiceName: "3",
-          durationSec: 1,
-          audio: { src: "/tts/project/b.wav" },
+          audio: { status: "ready", src: "/tts/project/b.wav", durationSec: 1 },
           speech: { g2p: helloG2p },
         },
       ],
@@ -1603,8 +2002,7 @@ describe("project use-case", () => {
           text: "Hello",
           readText: "Hello",
           voiceName: "voice",
-          durationSec: 1,
-          audio: { src: "/tts/project/a.wav" },
+          audio: { status: "ready", src: "/tts/project/a.wav", durationSec: 1 },
           speech: { g2p: helloG2p },
         },
       ],
@@ -1625,8 +2023,7 @@ describe("project use-case", () => {
           text: "Hello",
           readText: "Hello",
           voiceName: "voice",
-          durationSec: 1,
-          audio: { src: "/tts/project/b.wav" },
+          audio: { status: "ready", src: "/tts/project/b.wav", durationSec: 1 },
           speech: { g2p: helloG2p },
         },
       ],

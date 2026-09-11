@@ -93,6 +93,7 @@ export function RenderDialog() {
           <Button
             type="button"
             disabled={dialog.renderExecuteDisabled}
+            title={dialog.renderExecuteLabel}
             onClick={dialog.handleRenderExecute}
           >
             <Clapperboard />

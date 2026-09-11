@@ -82,11 +82,19 @@ export function ProjectSettingsDialog() {
             />
             <Button
               type="button"
+              variant="outline"
+              disabled={dialog.isPending || dialog.isRetryingPending || !dialog.hasPendingTts}
+              onClick={() => void dialog.retryPendingSynthesis()}
+            >
+              {dialog.isRetryingPending ? "Retrying" : "Retry pending synthesis"}
+            </Button>
+            <Button
+              type="button"
               variant="destructive"
-              disabled={dialog.isPending || dialog.isClearingTts}
+              disabled={dialog.isPending || dialog.isClearingTts || dialog.hasPendingTts}
               onClick={() => void dialog.clearTtsCache()}
             >
-              {dialog.isClearingTts ? "Clearing" : "Clear TTS cache"}
+              {dialog.isClearingTts ? "Clearing" : "Clear TTS cache and resynthesize"}
             </Button>
           </DialogMain>
           <DialogFooter>

@@ -14,8 +14,7 @@ describe("form context conversion", () => {
       padBeforeSec: 0.1,
       padAfterSec: -0.2,
       volume: 0.8,
-      durationSec: 1,
-      audio: { src: "/tts/hello.wav" },
+      audio: { status: "ready", src: "/tts/hello.wav", durationSec: 1 },
       speech: { g2p: createG2pItem("analysis") },
       avatar: {
         base: "normal",

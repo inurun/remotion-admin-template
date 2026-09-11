@@ -142,15 +142,13 @@ describe("page form save speech reconcile", () => {
                 createSavedTts({
                   id: "tts-1",
                   text: "One",
-                  durationSec: 9,
-                  audio: { src: "/tts/one.wav" },
+                  audio: { status: "ready", src: "/tts/one.wav", durationSec: 9 },
                   speech: { g2p: first },
                 }),
                 createSavedTts({
                   id: "tts-2",
                   text: "Two",
-                  durationSec: 8,
-                  audio: { src: "/tts/two.wav" },
+                  audio: { status: "ready", src: "/tts/two.wav", durationSec: 8 },
                   speech: { g2p: second },
                 }),
               ],

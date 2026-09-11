@@ -37,6 +37,13 @@ function isRenderConflict(result: { started: boolean }) {
   return !result.started;
 }
 
+function getRenderConflictError(result: { started: boolean; reason?: string }) {
+  if (result.reason === "tts_pending") {
+    return "TTS synthesis is still pending";
+  }
+  return "Render is already running.";
+}
+
 export const renderApp = new Hono()
   .get("/render", async (c) => {
     try {
@@ -50,7 +57,7 @@ export const renderApp = new Hono()
       const payload = renderStartRequestSchema.parse(await c.req.json());
       const result = renderStartResponseSchema.parse(await startRender(payload.projectPath));
       if (isRenderConflict(result)) {
-        return c.json({ error: "Render is already running.", ...result }, 409);
+        return c.json({ error: getRenderConflictError(result), ...result }, 409);
       }
       return c.json(result);
     } catch (error) {

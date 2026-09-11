@@ -9,6 +9,7 @@ import {
   synthesizeTts,
   validateTtsG2p,
 } from "./use-case";
+import { TtsCacheClearConflictError } from "@/server/features/tts/errors";
 import {
   synthesizeResponseSchema,
   ttsAnalyzeRequestSchema,
@@ -70,6 +71,9 @@ export const ttsApp = new Hono()
       const json = ttsClearCacheRequestSchema.parse(await c.req.json());
       return c.json(ttsClearCacheResponseSchema.parse(await clearTtsCache(json)));
     } catch (error) {
+      if (error instanceof TtsCacheClearConflictError) {
+        return jsonError(c, 409, error, error.message);
+      }
       return jsonError(c, 500, error, "Failed to clear TTS cache");
     }
   });

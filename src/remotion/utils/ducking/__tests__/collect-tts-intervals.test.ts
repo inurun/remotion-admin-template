@@ -9,11 +9,10 @@ function tts(durationSec: number) {
     id: "t",
     provider: "voisona" as const,
     text: "",
-    durationSec,
     padBeforeSec: 0,
     padAfterSec: 0,
     volume: 1,
-    audio: { src: "" },
+    audio: { status: "ready" as const, src: "/tts/t.wav", durationSec },
     speech: {},
   };
 }

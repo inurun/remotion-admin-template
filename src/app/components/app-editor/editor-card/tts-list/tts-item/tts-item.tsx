@@ -4,6 +4,7 @@ import { cn } from "@/_shared/lib/utils";
 import { TtsTextField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-text-field/tts-text-field";
 import { TtsVoiceField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-voice-field/tts-voice-field";
 import { useTtsItem } from "@/app/components/app-editor/editor-card/tts-list/tts-item/use-tts-item";
+import { TtsSynthesisStatus } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-synthesis-status/tts-synthesis-status";
 
 export function TtsItem({
   index,
@@ -20,15 +21,20 @@ export function TtsItem({
   onSelect: (index: number) => void;
   onFocus: (index: number) => void;
 }) {
-  const { ref, handleRef, isDragging, isSelected } = useTtsItem(ttsId, index);
+  const { ref, handleRef, isDragging, isSelected, synthesisStatus, synthesisError } = useTtsItem(
+    ttsId,
+    index,
+  );
 
   return (
     <article
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "flex gap-2 overflow-hidden flex-wrap p-1 transition data-[dragging=true]:opacity-70",
+        "flex gap-2 overflow-hidden items-center py-1 pr-3 transition data-[dragging=true]:opacity-70",
         isSelected ? "bg-muted/20" : "bg-card",
+        synthesisStatus === "pending" && "text-muted-foreground",
+        synthesisStatus === "failed" && "ring-1 ring-destructive/40",
       )}
     >
       <span
@@ -40,20 +46,8 @@ export function TtsItem({
       >
         <GripVertical className="size-4" />
       </span>
-      <div className="grid gap-1 w-full max-w-30">
+      <div className="">
         <TtsVoiceField index={index} onSelect={onSelect} />
-        <Button
-          type="button"
-          size="icon-xs"
-          variant="destructive"
-          tabIndex={-1}
-          onClick={onRemove}
-          title="削除"
-          aria-label="削除"
-          className="shrink-0"
-        >
-          <Trash2 />
-        </Button>
       </div>
       <TtsTextField
         index={index}
@@ -62,6 +56,19 @@ export function TtsItem({
         onInsertAfter={onInsertAfter}
         onRemove={onRemove}
       />
+      <Button
+        type="button"
+        size="icon-xs"
+        variant="destructive"
+        tabIndex={-1}
+        onClick={onRemove}
+        title="削除"
+        aria-label="削除"
+        className="shrink-0"
+      >
+        <Trash2 />
+      </Button>
+      <TtsSynthesisStatus status={synthesisStatus} error={synthesisError} />
     </article>
   );
 }

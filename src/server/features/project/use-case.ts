@@ -8,7 +8,6 @@ import {
   type VoicePreset,
   isContentPage,
   isSavedContentPage,
-  isSavedTransition,
   isTransition,
   pageTypeRequiresTts,
   savedProjectSchema,
@@ -17,19 +16,6 @@ import { nowIso } from "@/_shared/lib/date";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import { getEffectiveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
-import { VIDEO_FPS } from "@/constants";
-import { getTransitionDurationSec } from "@/remotion/transitions/variants";
-import {
-  OUTRO_BLOCKS_PER_PAGE,
-  OUTRO_CARDS_DELAY_SEC,
-  OUTRO_PAPER_FADE_OUT_SEC,
-  OUTRO_PAPER_HOLD_AFTER_PAGE_SEC,
-  OUTRO_PAGE_DURATION_SEC,
-} from "@/_shared/lib/outro/outro-timing";
-import { ENDCARD_DURATION_SEC } from "@/_shared/lib/endcard/endcard-timing";
-import { EYECATCH_TEXT_MIN_DURATION_SEC } from "@/_shared/lib/page/page-timing";
-import { secondsToFrames } from "@/remotion/utils/timing";
-import { createTtsTimingSegments, getTtsTimingEndSec } from "@/_shared/lib/tts/tts-timing";
 import {
   isProjectTtsSrc,
   listSavedProjects,
@@ -57,29 +43,26 @@ import {
 } from "@/server/features/tts/providers/registry";
 import { getUsableG2p } from "@/server/features/tts/providers/comparison";
 import { stableStringify } from "@/server/_shared/stable-stringify";
-import type { TtsComparisonInput } from "@/server/features/tts/providers/types";
+import type { PlannedSynthesis, TtsComparisonInput } from "@/server/features/tts/providers/types";
+import { readCachedWav } from "@/server/features/tts/wav-cache";
+import type { SynthesizeResponse } from "@/server/features/tts/contract";
+import {
+  AUDIO_PADDING_SECONDS,
+  finalizeSequenceDurations,
+  withSavedPageDurations,
+} from "@/server/features/project/page-duration";
+import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
+import {
+  hasInFlightSynthesisJob,
+  startSynthesisBatch,
+  type SynthesisJob,
+} from "@/server/features/project/tts-synthesis-jobs";
 
-const AUDIO_PADDING_SECONDS = 0.1;
-const MIN_TTS_DURATION_SECONDS = 1 / VIDEO_FPS;
 const DEFAULT_TTS_PLAYBACK_SETTINGS = {
   padBeforeSec: 0,
   padAfterSec: 0,
   volume: 1,
 };
-
-function getOutroContentDurationSec(blockCount: number) {
-  const pageCount = Math.ceil(blockCount / OUTRO_BLOCKS_PER_PAGE);
-  if (pageCount <= 0) {
-    return 0;
-  }
-
-  return (
-    OUTRO_CARDS_DELAY_SEC +
-    pageCount * OUTRO_PAGE_DURATION_SEC +
-    OUTRO_PAPER_HOLD_AFTER_PAGE_SEC +
-    OUTRO_PAPER_FADE_OUT_SEC
-  );
-}
 
 function getTtsPlaybackSettings(
   item: Pick<SaveTtsItem, "padBeforeSec" | "padAfterSec" | "volume">,
@@ -89,10 +72,6 @@ function getTtsPlaybackSettings(
     padAfterSec: item.padAfterSec ?? DEFAULT_TTS_PLAYBACK_SETTINGS.padAfterSec,
     volume: item.volume ?? DEFAULT_TTS_PLAYBACK_SETTINGS.volume,
   };
-}
-
-function sequenceDurationInFrames(durationSec: number) {
-  return Math.max(1, secondsToFrames(durationSec, VIDEO_FPS));
 }
 
 function validateSequenceItems(items: Array<SaveSequenceItem | SavedSequenceItem>) {
@@ -120,31 +99,6 @@ function validateSequenceItems(items: Array<SaveSequenceItem | SavedSequenceItem
     const next = items[index + 1];
     if (!prev || !next || !isContentPage(prev) || !isContentPage(next)) {
       throw new Error(`transition ${item.id} must be between content pages`);
-    }
-  }
-}
-
-function validateTransitionSequenceDurations(pages: SavedSequenceItem[]) {
-  for (let index = 0; index < pages.length; index += 1) {
-    const item = pages[index];
-    if (!item || !isSavedTransition(item)) {
-      continue;
-    }
-
-    const transitionFrames = sequenceDurationInFrames(getTransitionDurationSec(item.variant));
-    const neighbors = [pages[index - 1], pages[index + 1]];
-
-    for (const neighbor of neighbors) {
-      if (!neighbor || !isSavedContentPage(neighbor)) {
-        continue;
-      }
-
-      const pageFrames = sequenceDurationInFrames(neighbor.durationSec);
-      if (pageFrames < transitionFrames) {
-        throw new Error(
-          `page ${neighbor.id} (${pageFrames} frames) must be at least as long as adjacent transition ${item.id} (${transitionFrames} frames)`,
-        );
-      }
     }
   }
 }
@@ -192,25 +146,12 @@ function withEffectiveSynthesisSettings<
   };
 }
 
-async function shouldReusePreviousTts(
+function comparisonInputMatches(
   item: SaveTtsItem,
-  projectPath: string,
-  previous: SavedTts | undefined,
+  previous: SavedTts,
   nextPresets: VoicePreset[],
   previousPresets: VoicePreset[],
 ) {
-  if (!previous) {
-    return false;
-  }
-
-  if (!isProjectTtsSrc(previous.audio.src, projectPath)) {
-    return false;
-  }
-
-  if (!(await audioFileExists(previous.audio.src))) {
-    return false;
-  }
-
   return (
     stableStringify(
       createPreviousTtsComparisonInput(withEffectiveSynthesisSettings(previous, previousPresets)),
@@ -219,15 +160,52 @@ async function shouldReusePreviousTts(
   );
 }
 
+type TtsReuseKind = "ready" | "pending" | "failed" | "none";
+
+async function classifyTtsReuse(
+  item: SaveTtsItem,
+  projectPath: string,
+  previous: SavedTts | undefined,
+  nextPresets: VoicePreset[],
+  previousPresets: VoicePreset[],
+  forceResynthesis: boolean,
+): Promise<TtsReuseKind> {
+  if (!previous || forceResynthesis) {
+    return "none";
+  }
+
+  if (!comparisonInputMatches(item, previous, nextPresets, previousPresets)) {
+    return "none";
+  }
+
+  if (previous.audio.status === "pending") {
+    return "pending";
+  }
+
+  if (previous.audio.status === "failed") {
+    return "failed";
+  }
+
+  if (!isProjectTtsSrc(previous.audio.src, projectPath)) {
+    return "none";
+  }
+
+  if (!(await audioFileExists(previous.audio.src))) {
+    return "none";
+  }
+
+  return "ready";
+}
+
 type PlannedTts = {
   item: SaveTtsItem;
   previous?: SavedTts;
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>;
-  reuse: boolean;
+  reuse: TtsReuseKind;
 };
 
 function needsG2pAnalyze(plan: PlannedTts) {
-  if (plan.reuse) {
+  if (plan.reuse !== "none") {
     return false;
   }
 
@@ -262,20 +240,64 @@ async function assignBatchG2p(serverEnv: ServerEnv, plans: PlannedTts[]) {
   }
 }
 
-function createReusedSavedTts(item: SaveTtsItem, previous: SavedTts) {
+function createTtsFields(
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+  voiceVersion?: string,
+) {
   return {
-    id: previous.id,
-    provider: previous.provider,
-    text: previous.text,
-    readText: previous.readText,
-    voiceName: previous.voiceName,
-    ...(previous.voiceVersion ? { voiceVersion: previous.voiceVersion } : {}),
+    id: item.id,
+    provider: item.provider,
+    text: item.text,
+    readText: nextInput.readText,
+    voiceName: nextInput.voiceName,
+    ...(voiceVersion ? { voiceVersion } : {}),
     ...getTtsPlaybackSettings(item),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
-    durationSec: previous.durationSec,
+    speech: nextInput.g2p ? { g2p: nextInput.g2p } : {},
+  };
+}
+
+function createReusedSavedTts(item: SaveTtsItem, previous: SavedTts) {
+  return {
+    ...createTtsFields(
+      item,
+      createPreviousTtsComparisonInput(previous),
+      getOptionalVoiceVersion(previous.voiceVersion ?? ""),
+    ),
     audio: previous.audio,
-    speech: previous.speech,
+  };
+}
+
+function createReadySavedTts(
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+  audio: SynthesizeResponse,
+  voiceVersion?: string,
+) {
+  return {
+    ...createTtsFields(item, nextInput, voiceVersion),
+    audio: {
+      status: "ready" as const,
+      src: audio.audioSrc,
+      durationSec: audio.durationSec + AUDIO_PADDING_SECONDS,
+    },
+  };
+}
+
+function createPendingSavedTts(
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+  audioSrc: string,
+  voiceVersion?: string,
+) {
+  return {
+    ...createTtsFields(item, nextInput, voiceVersion),
+    audio: {
+      status: "pending" as const,
+      src: audioSrc,
+    },
   };
 }
 
@@ -293,57 +315,87 @@ async function planSavedTts(
     item,
     previous,
     nextInput,
-    reuse: forceResynthesis
-      ? false
-      : await shouldReusePreviousTts(item, projectPath, previous, nextPresets, previousPresets),
+    reuse: await classifyTtsReuse(
+      item,
+      projectPath,
+      previous,
+      nextPresets,
+      previousPresets,
+      forceResynthesis,
+    ),
   };
 }
 
-async function buildSavedTts(serverEnv: ServerEnv, projectPath: string, plan: PlannedTts) {
-  if (plan.reuse && plan.previous) {
-    return createReusedSavedTts(plan.item, plan.previous);
-  }
-
-  const voiceVersion = getOptionalVoiceVersion(plan.nextInput.voiceVersion);
-  const provider = getTtsProvider(plan.nextInput.provider);
+function planProviderSynthesis(
+  serverEnv: ServerEnv,
+  projectPath: string,
+  itemId: string,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+): PlannedSynthesis {
+  const voiceVersion = getOptionalVoiceVersion(nextInput.voiceVersion);
+  const provider = getTtsProvider(nextInput.provider);
   if (provider.usesG2p) {
-    assertHaqumeiTextLength(plan.nextInput.readText, plan.item.id);
+    assertHaqumeiTextLength(nextInput.readText, itemId);
   }
 
-  const audio = await provider.synthesize(serverEnv, {
-    ...plan.nextInput,
+  return provider.plan(serverEnv, {
+    ...nextInput,
     projectPath,
     ...(voiceVersion ? { voiceVersion } : {}),
   } as never);
-
-  return createSavedTts(plan.item, plan.nextInput, audio, voiceVersion);
 }
 
-function getOptionalVoiceVersion(value: string) {
-  return value || undefined;
-}
-
-function createSavedTts(
-  item: SaveTtsItem,
-  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
-  audio: { audioSrc: string; durationSec: number },
-  voiceVersion?: string,
+function shouldSkipPendingJob(
+  projectPath: string,
+  previous: SavedTts | undefined,
+  audioSrc: string,
+  forceResynthesis: boolean,
 ) {
+  if (!forceResynthesis || !previous || previous.audio.status !== "pending") {
+    return false;
+  }
+
+  return previous.audio.src === audioSrc && hasInFlightSynthesisJob(projectPath, audioSrc);
+}
+
+async function buildSavedTts(
+  serverEnv: ServerEnv,
+  projectPath: string,
+  pageId: string,
+  plan: PlannedTts,
+  forceResynthesis: boolean,
+): Promise<{ tts: SavedTts; job?: SynthesisJob }> {
+  if (plan.reuse !== "none" && plan.previous) {
+    return { tts: createReusedSavedTts(plan.item, plan.previous) as SavedTts };
+  }
+
+  const voiceVersion = getOptionalVoiceVersion(plan.nextInput.voiceVersion);
+  const planned = planProviderSynthesis(serverEnv, projectPath, plan.item.id, plan.nextInput);
+  const cached = await readCachedWav(planned.wav);
+  if (cached) {
+    return {
+      tts: createReadySavedTts(plan.item, plan.nextInput, cached, voiceVersion) as SavedTts,
+    };
+  }
+
+  const tts = createPendingSavedTts(
+    plan.item,
+    plan.nextInput,
+    planned.wav.audioSrc,
+    voiceVersion,
+  ) as SavedTts;
+  if (shouldSkipPendingJob(projectPath, plan.previous, planned.wav.audioSrc, forceResynthesis)) {
+    return { tts };
+  }
+
   return {
-    id: item.id,
-    provider: item.provider,
-    text: item.text,
-    readText: nextInput.readText,
-    voiceName: nextInput.voiceName,
-    ...(voiceVersion ? { voiceVersion } : {}),
-    ...getTtsPlaybackSettings(item),
-    ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
-    ...(item.avatar ? { avatar: item.avatar } : {}),
-    durationSec: audio.durationSec + AUDIO_PADDING_SECONDS,
-    audio: {
-      src: audio.audioSrc,
+    tts,
+    job: {
+      pageId,
+      ttsId: plan.item.id,
+      wav: planned.wav,
+      run: planned.run,
     },
-    speech: nextInput.g2p ? { g2p: nextInput.g2p } : {},
   };
 }
 
@@ -376,85 +428,30 @@ async function buildSavedPage(
   serverEnv: ServerEnv,
   projectPath: string,
   planned: { page: SavePageItem; tts: PlannedTts[] },
-): Promise<SavedPage> {
-  const tts = (await Promise.all(
-    planned.tts.map((plan) => buildSavedTts(serverEnv, projectPath, plan)),
-  )) as SavedTts[];
+  forceResynthesis: boolean,
+): Promise<{ page: SavedPage; jobs: SynthesisJob[] }> {
+  const built = await Promise.all(
+    planned.tts.map((plan) =>
+      buildSavedTts(serverEnv, projectPath, planned.page.id, plan, forceResynthesis),
+    ),
+  );
+  const tts = built.map((item) => item.tts);
+  const jobs = built.flatMap((item) => (item.job ? [item.job] : []));
   const page = planned.page;
 
-  if (page.type === "outro") {
-    const contentDurationSec = getOutroContentDurationSec(page.meta.blocks.length);
-    return {
-      id: page.id,
-      title: page.title,
-      type: page.type,
-      meta: page.meta,
-      padBeforeSec: page.padBeforeSec,
-      padAfterSec: page.padAfterSec,
-      durationSec: Math.max(
-        MIN_TTS_DURATION_SECONDS,
-        contentDurationSec + page.padBeforeSec + page.padAfterSec,
-      ),
-      richText: page.richText,
-      tts,
-    };
-  }
-
-  if (page.type === "endcard") {
-    return {
-      id: page.id,
-      title: page.title,
-      type: page.type,
-      meta: page.meta,
-      padBeforeSec: page.padBeforeSec,
-      padAfterSec: page.padAfterSec,
-      durationSec: Math.max(
-        MIN_TTS_DURATION_SECONDS,
-        ENDCARD_DURATION_SEC + page.padBeforeSec + page.padAfterSec,
-      ),
-      richText: page.richText,
-      tts,
-    };
-  }
-
-  if (page.type === "eyecatch-text") {
-    const ttsDurationSec = getTtsTimingEndSec(
-      createTtsTimingSegments(tts, {
-        minDurationSec: MIN_TTS_DURATION_SECONDS,
-      }),
-    );
-    return {
-      id: page.id,
-      title: page.title,
-      type: page.type,
-      meta: page.meta,
-      padBeforeSec: page.padBeforeSec,
-      padAfterSec: page.padAfterSec,
-      durationSec: Math.max(EYECATCH_TEXT_MIN_DURATION_SEC, ttsDurationSec),
-      richText: page.richText,
-      tts,
-    };
-  }
-
-  const ttsDurationSec = getTtsTimingEndSec(
-    createTtsTimingSegments(tts, {
-      minDurationSec: MIN_TTS_DURATION_SECONDS,
-    }),
-  );
-
   return {
-    id: page.id,
-    title: page.title,
-    type: page.type,
-    meta: page.meta,
-    padBeforeSec: page.padBeforeSec,
-    padAfterSec: page.padAfterSec,
-    durationSec: Math.max(
-      MIN_TTS_DURATION_SECONDS,
-      ttsDurationSec + page.padBeforeSec + page.padAfterSec,
-    ),
-    richText: page.richText,
-    tts,
+    jobs,
+    page: {
+      id: page.id,
+      title: page.title,
+      type: page.type,
+      meta: page.meta,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      durationSec: 0,
+      richText: page.richText,
+      tts,
+    } as SavedPage,
   };
 }
 
@@ -560,6 +557,10 @@ function resolveSequenceOrder(
   return nextOrder;
 }
 
+function getOptionalVoiceVersion(value: string) {
+  return value || undefined;
+}
+
 export async function listProjects(): Promise<ProjectFileSummary[]> {
   return listSavedProjects();
 }
@@ -594,7 +595,7 @@ export async function loadProject(projectPath: string) {
   return readSavedProject(projectPath);
 }
 
-export async function saveProjectChanges(
+async function saveProjectChangesLocked(
   serverEnv: ServerEnv,
   projectPath: string,
   request: SaveProjectChangesRequest,
@@ -657,21 +658,29 @@ export async function saveProjectChanges(
     serverEnv,
     plannedPages.flatMap((planned) => planned.tts),
   );
+
+  const jobs: SynthesisJob[] = [];
   for (const planned of plannedPages) {
-    const savedPage = await buildSavedPage(serverEnv, projectPath, planned);
-    itemsById.set(savedPage.id, savedPage);
-    if (!updatedItemIds.includes(savedPage.id)) {
-      updatedItemIds.push(savedPage.id);
+    const built = await buildSavedPage(serverEnv, projectPath, planned, forceResynthesis);
+    itemsById.set(built.page.id, built.page);
+    jobs.push(...built.jobs);
+    if (!updatedItemIds.includes(built.page.id)) {
+      updatedItemIds.push(built.page.id);
     }
   }
 
   const sequenceOrder = resolveSequenceOrder(previousProject, itemsById, request.sequenceOrder);
-  const pages = sequenceOrder.flatMap((itemId) => {
+  const assembled = sequenceOrder.flatMap((itemId) => {
     const item = itemsById.get(itemId);
     return item ? [item] : [];
   });
-  validateSequenceItems(pages);
-  validateTransitionSequenceDurations(pages);
+  validateSequenceItems(assembled);
+  const pages = finalizeSequenceDurations(
+    withSavedPageDurations(
+      assembled,
+      new Map(previousProject.pages.map((item) => [item.id, item])),
+    ),
+  );
 
   const meta = {
     ...normalizeProjectMeta(request.project?.meta ?? previousProject.meta, {
@@ -686,5 +695,16 @@ export async function saveProjectChanges(
     voicePresets: nextPresets,
   });
   await writeSavedProject(projectPath, project);
+  startSynthesisBatch(projectPath, jobs);
   return { project, updatedItemIds };
+}
+
+export async function saveProjectChanges(
+  serverEnv: ServerEnv,
+  projectPath: string,
+  request: SaveProjectChangesRequest,
+) {
+  return enqueueProjectMutation(projectPath, () =>
+    saveProjectChangesLocked(serverEnv, projectPath, request),
+  );
 }

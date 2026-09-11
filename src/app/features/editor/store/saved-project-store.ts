@@ -3,6 +3,7 @@ import type { SavedProject } from "@/_schemas";
 import {
   applySavedProjectHydrate,
   applySavedProjectSaveResult,
+  applySavedProjectExternalUpdate,
   createSavedProjectState,
   type SavedProjectState,
   type SaveProjectResult,
@@ -11,6 +12,7 @@ import {
 export type SavedProjectStore = SavedProjectState & {
   hydrate: (project: SavedProject) => void;
   applySaveResult: (result: SaveProjectResult) => void;
+  applyExternalProject: (project: SavedProject) => void;
 };
 
 export type SavedProjectStoreApi = StoreApi<SavedProjectStore>;
@@ -23,6 +25,9 @@ export function createSavedProjectStore(project: SavedProject): SavedProjectStor
     },
     applySaveResult: (result: SaveProjectResult) => {
       set((state) => applySavedProjectSaveResult(state, result));
+    },
+    applyExternalProject: (project: SavedProject) => {
+      set((state) => applySavedProjectExternalUpdate(state, project));
     },
   }));
 }

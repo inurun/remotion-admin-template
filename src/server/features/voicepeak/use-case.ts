@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import type { VoiceOption, VoicepeakSynthesisSettings } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
-import { synthesizeWithWavCache } from "@/server/features/tts/wav-cache";
+import { planWav, synthesizeWithWavCache } from "@/server/features/tts/wav-cache";
+import type { PlannedSynthesis } from "@/server/features/tts/providers/types";
 import { getVoicepeakPath, listNarrators, runVoicepeakSynthesis } from "./cli";
 import { voicepeakSynthesizeRequestSchema } from "./contract";
 import {
@@ -40,19 +41,18 @@ function resolveSynthesisSettings(
   return { speed, pitch, emotion };
 }
 
-export async function synthesizeVoicepeak(input: {
+export function planVoicepeakSynthesis(input: {
   serverEnv: ServerEnv;
   projectPath: string;
   text: string;
   voiceName: string;
   voiceVersion?: string;
   synthesisSettings?: VoicepeakSynthesisSettings;
-}) {
+}): PlannedSynthesis {
   const { serverEnv, projectPath, ...payload } = input;
   const parsed = voicepeakSynthesizeRequestSchema.parse(payload);
   const resolved = resolveSynthesisSettings(parsed.voiceName, parsed.synthesisSettings);
-
-  return synthesizeWithWavCache({
+  const wav = planWav({
     projectPath,
     cacheKey: {
       provider: "voicepeak",
@@ -63,20 +63,39 @@ export async function synthesizeVoicepeak(input: {
       pitch: resolved.pitch,
       emotion: resolved.emotion,
     },
-    writeWav: async (outputPath) => {
-      try {
-        await runVoicepeakSynthesis(serverEnv, {
-          text: parsed.text,
-          narrator: parsed.voiceName,
-          outputPath,
-          ...(resolved.emotion ? { emotion: resolved.emotion } : {}),
-          speed: resolved.speed,
-          pitch: resolved.pitch,
-        });
-      } catch (error) {
-        await fs.unlink(outputPath).catch(() => {});
-        throw error;
-      }
-    },
   });
+
+  return {
+    wav,
+    run: () =>
+      synthesizeWithWavCache({
+        wav,
+        writeWav: async (outputPath) => {
+          try {
+            await runVoicepeakSynthesis(serverEnv, {
+              text: parsed.text,
+              narrator: parsed.voiceName,
+              outputPath,
+              ...(resolved.emotion ? { emotion: resolved.emotion } : {}),
+              speed: resolved.speed,
+              pitch: resolved.pitch,
+            });
+          } catch (error) {
+            await fs.unlink(outputPath).catch(() => {});
+            throw error;
+          }
+        },
+      }),
+  };
+}
+
+export function synthesizeVoicepeak(input: {
+  serverEnv: ServerEnv;
+  projectPath: string;
+  text: string;
+  voiceName: string;
+  voiceVersion?: string;
+  synthesisSettings?: VoicepeakSynthesisSettings;
+}) {
+  return planVoicepeakSynthesis(input).run();
 }

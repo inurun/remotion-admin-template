@@ -134,6 +134,22 @@ describe("tts routes", () => {
     });
   });
 
+  it("returns conflict when clearing cache during pending synthesis", async () => {
+    const { TtsCacheClearConflictError } = await import("@/server/features/tts/errors");
+    clearTtsCacheMock.mockRejectedValueOnce(new TtsCacheClearConflictError());
+
+    const response = await ttsApp.request("/tts/cache", {
+      method: "DELETE",
+      body: JSON.stringify({ projectPath: "project" }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      error: "TTS synthesis is still pending",
+    });
+  });
+
   it("clears project tts cache", async () => {
     clearTtsCacheMock.mockResolvedValueOnce({ ok: true });
 

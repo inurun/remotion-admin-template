@@ -12,8 +12,7 @@ export function createSavedTts(
     padBeforeSec: 0,
     padAfterSec: 0,
     volume: 1,
-    durationSec: 1,
-    audio: { src: "/tts/hello.wav" },
+    audio: { status: "ready", src: "/tts/hello.wav", durationSec: 1 },
     speech: {},
     ...overrides,
   };

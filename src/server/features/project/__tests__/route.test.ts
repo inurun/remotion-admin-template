@@ -130,6 +130,31 @@ describe("project routes", () => {
     expect(response.status).toBe(400);
   });
 
+  it("returns saved project without waiting for synthesis", async () => {
+    let resolveSave: ((value: unknown) => void) | undefined;
+    const synthesis = new Promise((resolve) => {
+      resolveSave = resolve;
+    });
+    saveProjectChangesMock.mockImplementationOnce(async () => {
+      void synthesis;
+      return {
+        project: { pages: [] },
+        updatedItemIds: [],
+      };
+    });
+
+    const responsePromise = projectApp.request("/project/project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ upsertItems: [], removedItemIds: [] }),
+    });
+
+    await expect(responsePromise).resolves.toMatchObject({ status: 200 });
+    resolveSave?.({ ok: true });
+  });
+
   it("keeps analysis_failed status and diagnostics on save", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     saveProjectChangesMock.mockRejectedValueOnce(

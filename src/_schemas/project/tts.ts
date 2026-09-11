@@ -24,32 +24,48 @@ const ttsBaseSchema = z.object({
   avatar: avatarSettingsSchema.optional(),
 });
 
+export const savedTtsAudioSchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("pending"),
+      src: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("ready"),
+      src: z.string(),
+      durationSec: z.number().nonnegative(),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("failed"),
+      src: z.string(),
+      error: z.string().min(1),
+    })
+    .strict(),
+]);
+
+export type SavedTtsAudio = z.infer<typeof savedTtsAudioSchema>;
+
 export const savedTtsSchema = z.discriminatedUnion("provider", [
   ttsBaseSchema.extend({
     provider: z.literal("voisona"),
     synthesisSettings: voisonaSynthesisSettingsSchema.nullish(),
-    durationSec: z.number().nonnegative(),
-    audio: z.object({
-      src: z.string(),
-    }),
+    audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),
   ttsBaseSchema.extend({
     provider: z.literal("voicevox"),
     synthesisSettings: voicevoxSynthesisSettingsSchema.nullish(),
-    durationSec: z.number().nonnegative(),
-    audio: z.object({
-      src: z.string(),
-    }),
+    audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),
   ttsBaseSchema.extend({
     provider: z.literal("voicepeak"),
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),
-    durationSec: z.number().nonnegative(),
-    audio: z.object({
-      src: z.string(),
-    }),
+    audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),
 ]);

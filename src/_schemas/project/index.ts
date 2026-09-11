@@ -44,7 +44,12 @@ export {
   type WeatherLocation,
 } from "@/_schemas/project/primitives";
 
-export { savedTtsSchema, type SavedTts } from "@/_schemas/project/tts";
+export {
+  savedTtsAudioSchema,
+  savedTtsSchema,
+  type SavedTts,
+  type SavedTtsAudio,
+} from "@/_schemas/project/tts";
 
 export {
   savedPageSchema,

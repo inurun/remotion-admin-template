@@ -11,6 +11,8 @@ import {
 } from "@/server/_shared/storage";
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 import { thumbnailTimeToFrame } from "./render-thumbnail";
+import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
+import { projectHasPendingTts } from "@/_shared/lib/tts/tts-audio";
 
 type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
 
@@ -37,6 +39,7 @@ const listeners = new Set<(snapshot: RenderSnapshot) => void>();
 let activeChild: ChildProcess | null = null;
 let cancelRequested = false;
 let killTimer: ReturnType<typeof setTimeout> | null = null;
+let startReserved = false;
 
 function emit() {
   state.updatedAt = Date.now();
@@ -70,6 +73,21 @@ export function readRenderSnapshot() {
 }
 
 function resetRenderState() {
+  state.progress = 0;
+  state.videoPath = null;
+  state.lastError = null;
+}
+
+function isRenderStartBlocked() {
+  return startReserved || state.status === "running";
+}
+
+export function resetRenderStateForTests() {
+  startReserved = false;
+  cancelRequested = false;
+  activeChild = null;
+  clearKillTimer();
+  state.status = "idle";
   state.progress = 0;
   state.videoPath = null;
   state.lastError = null;
@@ -173,82 +191,37 @@ async function finishSuccessfulRender(outputPath: string) {
 }
 
 export async function startRender(projectPath: string) {
-  if (state.status === "running") {
-    return {
-      started: false as const,
-      reason: "already_running",
-    };
-  }
-
-  await fs.mkdir(OUT_DIR, { recursive: true });
-  const project = await readSavedProject(projectPath);
-  await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
-  const outputPath = getProjectOutputVideoPath(projectPath);
-  const inputProps = JSON.stringify({ project });
-  resetRenderState();
-  cancelRequested = false;
-  state.status = "running";
-  emit();
-  console.info("[render]", `Starting render for ${projectPath}...`);
-
-  const child = spawn(
-    REMOTION_BIN,
-    ["render", "src/remotion/core/runtime.ts", "Video", outputPath, "--props", inputProps],
-    {
-      cwd: PROJECT_ROOT,
-      detached: true,
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
-  activeChild = child;
-
-  pipeOutput(child.stdout, (line) => handleOutputLine(line, 0.9));
-  pipeOutput(child.stderr, (line) => handleOutputLine(line, 0.9));
-
-  child.on("error", (error) => {
-    if (state.status !== "running") {
-      return;
+  return enqueueProjectMutation(projectPath, async () => {
+    if (isRenderStartBlocked()) {
+      return {
+        started: false as const,
+        reason: "already_running" as const,
+      };
     }
 
-    state.status = "error";
-    state.lastError = error.message;
-    console.info("[render]", `Render process error: ${error.message}`);
-    emit();
-  });
-
-  child.on("close", async (code) => {
-    clearKillTimer();
-    activeChild = null;
-
-    if (cancelRequested) {
-      finishCanceledRender();
-      return;
-    }
-
-    if (code === 0) {
-      let thumbnailFrame: number;
-      try {
-        thumbnailFrame = thumbnailTimeToFrame(project.meta.niconico.thumbnailTime);
-      } catch (error) {
-        finishFailedRender(error instanceof Error ? error.message : String(error));
-        return;
+    startReserved = true;
+    try {
+      const project = await readSavedProject(projectPath);
+      if (projectHasPendingTts(project)) {
+        return {
+          started: false as const,
+          reason: "tts_pending" as const,
+        };
       }
-      setProgress(95);
-      console.info("[render]", `Rendering thumbnail.png at frame ${thumbnailFrame}...`);
-      const thumbnailChild = spawn(
+
+      await fs.mkdir(OUT_DIR, { recursive: true });
+      await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
+      const outputPath = getProjectOutputVideoPath(projectPath);
+      const inputProps = JSON.stringify({ project });
+      resetRenderState();
+      cancelRequested = false;
+      state.status = "running";
+      emit();
+      console.info("[render]", `Starting render for ${projectPath}...`);
+
+      const child = spawn(
         REMOTION_BIN,
-        [
-          "still",
-          "src/remotion/core/runtime.ts",
-          "Video",
-          LATEST_THUMBNAIL_PATH,
-          "--frame",
-          String(thumbnailFrame),
-          "--props",
-          inputProps,
-          "--overwrite",
-        ],
+        ["render", "src/remotion/core/runtime.ts", "Video", outputPath, "--props", inputProps],
         {
           cwd: PROJECT_ROOT,
           detached: true,
@@ -256,36 +229,95 @@ export async function startRender(projectPath: string) {
           stdio: ["ignore", "pipe", "pipe"],
         },
       );
-      activeChild = thumbnailChild;
-      pipeOutput(thumbnailChild.stdout, handleOutputLine);
-      pipeOutput(thumbnailChild.stderr, handleOutputLine);
-      thumbnailChild.on("error", (error) => {
-        if (state.status === "running") {
-          finishFailedRender(`Thumbnail process error: ${error.message}`);
+      activeChild = child;
+
+      pipeOutput(child.stdout, (line) => handleOutputLine(line, 0.9));
+      pipeOutput(child.stderr, (line) => handleOutputLine(line, 0.9));
+
+      child.on("error", (error) => {
+        if (state.status !== "running") {
+          return;
         }
+
+        state.status = "error";
+        state.lastError = error.message;
+        console.info("[render]", `Render process error: ${error.message}`);
+        emit();
       });
-      thumbnailChild.on("close", async (thumbnailCode) => {
+
+      child.on("close", async (code) => {
         clearKillTimer();
         activeChild = null;
+
         if (cancelRequested) {
           finishCanceledRender();
-        } else if (state.status !== "running") {
           return;
-        } else if (thumbnailCode === 0) {
-          await finishSuccessfulRender(outputPath);
-        } else {
-          finishFailedRender(`Thumbnail render exited with code ${thumbnailCode ?? "unknown"}`);
         }
+
+        if (code === 0) {
+          let thumbnailFrame: number;
+          try {
+            thumbnailFrame = thumbnailTimeToFrame(project.meta.niconico.thumbnailTime);
+          } catch (error) {
+            finishFailedRender(error instanceof Error ? error.message : String(error));
+            return;
+          }
+          setProgress(95);
+          console.info("[render]", `Rendering thumbnail.png at frame ${thumbnailFrame}...`);
+          const thumbnailChild = spawn(
+            REMOTION_BIN,
+            [
+              "still",
+              "src/remotion/core/runtime.ts",
+              "Video",
+              LATEST_THUMBNAIL_PATH,
+              "--frame",
+              String(thumbnailFrame),
+              "--props",
+              inputProps,
+              "--overwrite",
+            ],
+            {
+              cwd: PROJECT_ROOT,
+              detached: true,
+              env: process.env,
+              stdio: ["ignore", "pipe", "pipe"],
+            },
+          );
+          activeChild = thumbnailChild;
+          pipeOutput(thumbnailChild.stdout, handleOutputLine);
+          pipeOutput(thumbnailChild.stderr, handleOutputLine);
+          thumbnailChild.on("error", (error) => {
+            if (state.status === "running") {
+              finishFailedRender(`Thumbnail process error: ${error.message}`);
+            }
+          });
+          thumbnailChild.on("close", async (thumbnailCode) => {
+            clearKillTimer();
+            activeChild = null;
+            if (cancelRequested) {
+              finishCanceledRender();
+            } else if (state.status !== "running") {
+              return;
+            } else if (thumbnailCode === 0) {
+              await finishSuccessfulRender(outputPath);
+            } else {
+              finishFailedRender(`Thumbnail render exited with code ${thumbnailCode ?? "unknown"}`);
+            }
+          });
+          return;
+        }
+
+        finishFailedRender(`Render exited with code ${code ?? "unknown"}`);
       });
-      return;
+
+      return {
+        started: true as const,
+      };
+    } finally {
+      startReserved = false;
     }
-
-    finishFailedRender(`Render exited with code ${code ?? "unknown"}`);
   });
-
-  return {
-    started: true as const,
-  };
 }
 
 export function cancelRender() {

@@ -167,4 +167,55 @@ describe("saved project store and thumbnail spike", () => {
     expect(selectPageThumbnailBindingKey(store.getState(), "page-b")).toBe(pageBBefore);
     expect(store.getState().renderRevision).toBe(0);
   });
+
+  it("applies external synthesis updates without resetting revisions", () => {
+    const store = createSavedProjectStore(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({
+            id: "page-a",
+            tts: [createSavedTts({ audio: { status: "pending", src: "/tts/a.wav" } })],
+          }),
+          createSavedMainPage({ id: "page-b" }),
+        ],
+      }),
+    );
+    const pageBBefore = selectPageThumbnailBinding(store.getState(), "page-b");
+
+    store.getState().applyExternalProject(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({
+            id: "page-a",
+            tts: [
+              createSavedTts({
+                audio: { status: "ready", src: "/tts/a.wav", durationSec: 2 },
+              }),
+            ],
+          }),
+          createSavedMainPage({ id: "page-b" }),
+        ],
+      }),
+    );
+
+    expect(selectPageThumbnailBinding(store.getState(), "page-a").itemRevision).toBe(1);
+    expect(selectPageThumbnailBinding(store.getState(), "page-b").itemRevision).toBe(
+      pageBBefore.itemRevision,
+    );
+    expect(store.getState().renderRevision).toBe(1);
+  });
+
+  it("increments syncGeneration for save and external updates", () => {
+    const store = createSavedProjectStore(createSavedProject());
+    expect(store.getState().syncGeneration).toBe(0);
+
+    store.getState().applySaveResult({
+      project: reconstructSavedProject(store.getState()),
+      updatedItemIds: [],
+    });
+    expect(store.getState().syncGeneration).toBe(1);
+
+    store.getState().applyExternalProject(reconstructSavedProject(store.getState()));
+    expect(store.getState().syncGeneration).toBe(2);
+  });
 });

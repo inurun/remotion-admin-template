@@ -45,8 +45,7 @@ describe("project avatar schema", () => {
         id: "tts",
         provider: "voisona",
         text: "hello",
-        durationSec: 1,
-        audio: { src: "/tts/hello.wav" },
+        audio: { status: "ready", src: "/tts/hello.wav", durationSec: 1 },
       }),
     ).not.toHaveProperty("avatar");
   });
@@ -57,8 +56,7 @@ describe("project avatar schema", () => {
         id: "tts",
         provider: "voisona",
         text: "hello",
-        durationSec: 1,
-        audio: { src: "/tts/hello.wav" },
+        audio: { status: "ready", src: "/tts/hello.wav", durationSec: 1 },
       }),
     ).toMatchObject({
       padBeforeSec: 0,

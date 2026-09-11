@@ -259,6 +259,41 @@ describe("storage", () => {
     expect(writeFileMock).not.toHaveBeenCalled();
   });
 
+  it("orders projects by meta.updatedAt and falls back to mtime", async () => {
+    readdirMock.mockResolvedValueOnce([
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "older.json",
+      },
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "newer.json",
+      },
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "invalid.json",
+      },
+    ]);
+    statMock
+      .mockResolvedValueOnce({ mtimeMs: 100 })
+      .mockResolvedValueOnce({ mtimeMs: 200 })
+      .mockResolvedValueOnce({ mtimeMs: 50 });
+    readFileMock
+      .mockResolvedValueOnce(JSON.stringify({ meta: { updatedAt: "2026-01-01T00:00:00.000Z" } }))
+      .mockResolvedValueOnce(JSON.stringify({ meta: { updatedAt: "2026-02-01T00:00:00.000Z" } }))
+      .mockResolvedValueOnce("{");
+
+    const { listSavedProjects } = await import("../storage");
+    const projects = await listSavedProjects();
+
+    expect(projects.map((project) => project.path)).toEqual(["newer", "older", "invalid"]);
+    expect(projects[0]?.updatedAt).toBe(Date.parse("2026-02-01T00:00:00.000Z"));
+    expect(projects[2]?.updatedAt).toBe(50);
+  });
+
   it("creates an empty schedules file when none exists", async () => {
     readFileMock.mockRejectedValueOnce({ code: "ENOENT" });
 

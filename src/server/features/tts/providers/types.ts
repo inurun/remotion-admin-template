@@ -2,6 +2,7 @@ import type { G2pItem, SavedTts } from "@/_schemas";
 import type { SaveTtsItem } from "@/server/features/project/contract";
 import type { ServerEnv } from "@/server/core/env";
 import type { SynthesizeResponse } from "@/server/features/tts/contract";
+import type { PlannedWav } from "@/server/features/tts/wav-cache";
 
 export type TtsProvider = SaveTtsItem["provider"];
 export type TtsInputForProvider<TProvider extends TtsProvider> = Extract<
@@ -28,6 +29,11 @@ export type TtsSynthesisInput<TProvider extends TtsProvider> = TtsComparisonInpu
   voiceVersion?: string;
 };
 
+export type PlannedSynthesis = {
+  wav: PlannedWav;
+  run: () => Promise<SynthesizeResponse>;
+};
+
 export type TtsProviderAdapter<TProvider extends TtsProvider> = {
   provider: TProvider;
   usesG2p: boolean;
@@ -35,6 +41,7 @@ export type TtsProviderAdapter<TProvider extends TtsProvider> = {
   createPreviousComparisonInput: (
     item: SavedTtsForProvider<TProvider>,
   ) => TtsComparisonInput<TProvider>;
+  plan: (serverEnv: ServerEnv, input: TtsSynthesisInput<TProvider>) => PlannedSynthesis;
   synthesize: (
     serverEnv: ServerEnv,
     input: TtsSynthesisInput<TProvider>,

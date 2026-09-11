@@ -3,6 +3,11 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/_shared/lib/error-message";
 import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
+import {
+  useSavedProject,
+  useSavedProjectStoreApi,
+} from "@/app/features/editor/store/saved-project-store-context";
+import { selectHasPendingTts } from "@/app/features/editor/store/saved-project-state";
 import { usePublish } from "@/app/features/publish";
 import { cancelPublish } from "@/app/features/publish/api/publish-api";
 import { cancelRender, startRender, type RenderState } from "@/app/features/render/api/render-api";
@@ -15,12 +20,17 @@ export type DialogJobPhase = "render" | "publish";
 
 function getRenderExecuteLabel(
   saving: boolean,
+  synthesizing: boolean,
   renderStatus: RenderState["status"],
   publishStatus: "error" | "idle" | "running" | "success",
   alsoPublish: boolean,
 ) {
   if (saving) {
     return "Saving";
+  }
+
+  if (synthesizing) {
+    return "Synthesizing audio";
   }
 
   if (renderStatus === "running") {
@@ -57,6 +67,8 @@ export type RenderContextValue = {
 
 export function useRenderProviderValue(): RenderContextValue {
   const { isPending: saving, save } = useEditor();
+  const savedStore = useSavedProjectStoreApi();
+  const synthesizing = useSavedProject(selectHasPendingTts);
   const { options } = useSettings();
   const pageCount = useEditorSession((state) => state.sequenceOrder.length);
   const { projectPath } = useProject();
@@ -104,9 +116,10 @@ export function useRenderProviderValue(): RenderContextValue {
 
   const canSave = options.length > 0 && !saving && pageCount > 0;
   const isBusy = renderState.status === "running" || publishState.status === "running";
-  const renderExecuteDisabled = !canSave || isBusy;
+  const renderExecuteDisabled = !canSave || isBusy || synthesizing;
   const renderExecuteLabel = getRenderExecuteLabel(
     saving,
+    synthesizing,
     renderState.status,
     publishState.status,
     alsoPublish,
@@ -129,6 +142,11 @@ export function useRenderProviderValue(): RenderContextValue {
         return;
       }
 
+      if (selectHasPendingTts(savedStore.getState())) {
+        setRenderError("音声合成中。完了後にもう一度Renderしてください。");
+        return;
+      }
+
       try {
         await startRenderJob();
         toast.success("Render を開始した。");
@@ -136,7 +154,7 @@ export function useRenderProviderValue(): RenderContextValue {
         setRenderError(getErrorMessage(error));
       }
     })();
-  }, [armPublishAfterRender, resetPublishWatch, save, startRenderJob]);
+  }, [armPublishAfterRender, resetPublishWatch, save, savedStore, startRenderJob]);
 
   const handlePublishExecute = useCallback(() => {
     setDialogJobPhase("publish");
