@@ -2,9 +2,12 @@ export function useTtsSynthesisStatus({
   status,
   error,
 }: {
-  status: "pending" | "failed" | undefined;
+  status: "analyzing" | "pending" | "failed" | undefined;
   error?: string;
 }) {
+  if (status === "analyzing") {
+    return { title: "Analyzing" };
+  }
   if (status === "pending") {
     return { title: "Synthesizing" };
   }

@@ -17,8 +17,8 @@ import {
   ttsLlmAnalysisResponseSchema,
   type TtsLlmAnalysisResponse,
 } from "./contract";
+import { MANUAL_LLM_G2P_PROFILE } from "@/server/features/tts/llm-g2p-profile";
 import {
-  getOpenRouterConfig,
   OpenRouterError,
   OpenRouterValidationError,
   requestOpenRouterCorrections,
@@ -76,9 +76,9 @@ function addUsage(left: OpenRouterUsage, right: OpenRouterUsage): OpenRouterUsag
   };
 }
 
-function getLogFile(runId: string, startedAt: string) {
+function getLogFile(mode: "automatic" | "manual", runId: string, startedAt: string) {
   const fileName = `${startedAt.replaceAll(":", "-").replaceAll(".", "-")}-${runId}.json`;
-  return path.join(".logs", "llm-g2p", fileName);
+  return path.join(".logs", "llm-g2p", mode, fileName);
 }
 
 async function writeRunLog(logFile: string, value: unknown) {
@@ -206,8 +206,8 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
   const runStartedAt = performance.now();
   const startedAt = new Date().toISOString();
   const runId = randomUUID();
-  const logFile = getLogFile(runId, startedAt);
-  const config = getOpenRouterConfig(serverEnv);
+  const logFile = getLogFile("manual", runId, startedAt);
+  const profile = MANUAL_LLM_G2P_PROFILE;
   const request = ttsLlmAnalysisRequestSchema.parse(input);
   let stage: RunStage = "prepare";
   let stageStartedAt = runStartedAt;
@@ -255,12 +255,13 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       mergedCorrections = [];
 
       for (const attempt of [1, 2] as const) {
-        const reasoningEffort: ReasoningEffort = "none";
+        const reasoningEffort: ReasoningEffort = profile.reasoningEffort;
         stage = "openrouter";
         stageStartedAt = performance.now();
         let openRouterResult: Awaited<ReturnType<typeof requestOpenRouterCorrections>>;
         try {
           openRouterResult = await requestOpenRouterCorrections(serverEnv, pendingItems, {
+            profile,
             reasoningEffort,
             repairItems,
           });
@@ -413,8 +414,8 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       runId,
       logFile,
       requestId: lastAttempt?.requestId,
-      model: lastAttempt?.model ?? config.model,
-      provider: config.provider,
+      model: lastAttempt?.model ?? profile.model,
+      provider: profile.provider.only[0] ?? profile.model,
       actualProvider: lastAttempt?.provider,
       timings,
       usage,
@@ -426,6 +427,8 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
     stage = "log";
     await writeRunLog(logFile, {
       status: "success",
+      mode: profile.mode,
+      profileId: profile.id,
       runId,
       startedAt,
       request,
@@ -455,6 +458,8 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       .map((item) => item.id);
     const failure = {
       status: "failure",
+      mode: profile.mode,
+      profileId: profile.id,
       runId,
       startedAt,
       stage,

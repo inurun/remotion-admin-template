@@ -1,0 +1,82 @@
+export type LlmG2pProfile = {
+  id: string;
+  mode: "automatic" | "manual";
+  model: string;
+  provider: {
+    only: string[];
+    quantizations?: string[];
+    allowFallbacks: false;
+    requireParameters: true;
+  };
+  reasoningEffort: "none" | "low";
+  timeoutMs: number;
+  maxAttempts: 1 | 2;
+};
+
+export const AUTOMATIC_LLM_G2P_PROFILE = {
+  id: "gemma-4-31b-coreweave-fp4-v1",
+  mode: "automatic",
+  model: "google/gemma-4-31b-it",
+  provider: {
+    only: ["coreweave"],
+    quantizations: ["fp4"],
+    allowFallbacks: false,
+    requireParameters: true,
+  },
+  reasoningEffort: "low",
+  timeoutMs: 30_000,
+  maxAttempts: 1,
+} as const satisfies LlmG2pProfile;
+
+export const MANUAL_LLM_G2P_PROFILE = {
+  id: "gpt-5.6-luna-openai-low-v1",
+  mode: "manual",
+  model: "openai/gpt-5.6-luna",
+  provider: {
+    only: ["openai"],
+    allowFallbacks: false,
+    requireParameters: true,
+  },
+  reasoningEffort: "low",
+  timeoutMs: 60_000,
+  maxAttempts: 2,
+} as const satisfies LlmG2pProfile;
+
+const AUTOMATIC_MIN_COMPLETION_TOKENS = 4_096;
+const AUTOMATIC_TOKENS_PER_ITEM = 512;
+const AUTOMATIC_MAX_COMPLETION_TOKENS = 16_384;
+const MANUAL_MIN_COMPLETION_TOKENS = 4_096;
+const MANUAL_TOKENS_PER_ITEM = 512;
+const MANUAL_MAX_COMPLETION_TOKENS = 32_768;
+
+export function getLlmG2pMaxTokens(profile: LlmG2pProfile, itemCount: number) {
+  if (profile.mode === "automatic") {
+    return Math.min(
+      AUTOMATIC_MAX_COMPLETION_TOKENS,
+      Math.max(AUTOMATIC_MIN_COMPLETION_TOKENS, itemCount * AUTOMATIC_TOKENS_PER_ITEM),
+    );
+  }
+
+  return Math.min(
+    MANUAL_MAX_COMPLETION_TOKENS,
+    Math.max(MANUAL_MIN_COMPLETION_TOKENS, itemCount * MANUAL_TOKENS_PER_ITEM),
+  );
+}
+
+export function hasOpenRouterApiKey(serverEnv: { OPENROUTER_API_KEY?: string }) {
+  return Boolean(serverEnv.OPENROUTER_API_KEY?.trim());
+}
+
+let missingKeyWarned = false;
+
+export function warnMissingOpenRouterApiKeyOnce() {
+  if (missingKeyWarned) {
+    return;
+  }
+  missingKeyWarned = true;
+  console.warn("[llm-g2p] OPENROUTER_API_KEY is not set; automatic G2P correction is skipped");
+}
+
+export function resetMissingOpenRouterApiKeyWarningForTests() {
+  missingKeyWarned = false;
+}

@@ -328,4 +328,40 @@ describe("page form save speech reconcile", () => {
     expect(selectItemReconcileRevision(store.getState(), "page-a")).toBe(1);
     expect(otherPageNotifications).toBe(0);
   });
+
+  it("reconciles polled g2p into the form without dirtying the page", () => {
+    const baseline = createG2pItem("ここを出よ", "ココ|ヲ'/ダ|ヨ'");
+    const corrected = createG2pItem("ここを出よ", "ココ|ヲ'/デ|ヨ'");
+    const previous = createSavedProject({
+      pages: [
+        createSavedMainPage({
+          tts: [createSavedTts({ speech: { g2p: baseline } })],
+        }),
+      ],
+    });
+    const store = createEditorSessionStore(previous);
+    const { form, sync } = createActivePageForm(
+      requirePage(store.getState(), "page-1"),
+      store.getState().upsertPage,
+    );
+
+    store
+      .getState()
+      .applyExternalSavedSpeech(Object.fromEntries(previous.pages.map((page) => [page.id, page])), {
+        ...previous,
+        pages: [
+          createSavedMainPage({
+            tts: [createSavedTts({ speech: { g2p: corrected } })],
+          }),
+        ],
+      });
+    sync.applyWithoutSync(() =>
+      applyPageFormSavedSpeech(form, requirePage(store.getState(), "page-1")),
+    );
+
+    expect(requirePage(store.getState(), "page-1").tts[0]?.speech?.g2p).toBe(corrected);
+    expect(form.getValues().tts[0]?.speech?.g2p).toBe(corrected);
+    expect(selectItemReconcileRevision(store.getState(), "page-1")).toBe(1);
+    expect(hasDirtyChanges(store.getState())).toBe(false);
+  });
 });

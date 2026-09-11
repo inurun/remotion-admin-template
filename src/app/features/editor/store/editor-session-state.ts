@@ -1,4 +1,9 @@
-import { isContentPage, isSavedContentPage, type SavedProject } from "@/_schemas";
+import {
+  isContentPage,
+  isSavedContentPage,
+  type SavedProject,
+  type SavedSequenceItem,
+} from "@/_schemas";
 import { collectNiconicoParentWorkIds, mergeParentWorkIds } from "@/_shared/project/project-meta";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
@@ -6,6 +11,7 @@ import type { ProjectSettingsFormValues } from "@/app/features/project/model/pro
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   mergeSavedSpeechIntoPageForm,
+  mergeUneditedSavedSpeechIntoPageForm,
   toPageFormValues,
   toProjectSettingsFormValues,
   toSequenceFormItem,
@@ -169,6 +175,10 @@ export type EditorSessionActions = {
   reorderSequence: (itemIds: string[]) => void;
   markSaved: (savedChangeSet: EditorSavedChangeSet) => void;
   applySaveSuccess: (result: SaveProjectResult, savedChangeSet: EditorSavedChangeSet) => void;
+  applyExternalSavedSpeech: (
+    previousItemsById: Record<string, SavedSequenceItem>,
+    project: SavedProject,
+  ) => void;
   hydrate: (project: SavedProject) => void;
 };
 
@@ -431,6 +441,55 @@ export function applyReconcileSavedSpeech(
 
     itemsById[itemId] = nextPage;
     itemReconcileRevision[itemId] = bump(itemReconcileRevision[itemId]);
+  }
+
+  if (!copied) {
+    return state;
+  }
+
+  return {
+    ...state,
+    itemsById,
+    itemReconcileRevision,
+  };
+}
+
+export function applyExternalSavedSpeech(
+  state: EditorSessionState,
+  previousItemsById: Record<string, SavedSequenceItem>,
+  project: SavedProject,
+): EditorSessionState {
+  let itemsById = state.itemsById;
+  let itemReconcileRevision = state.itemReconcileRevision;
+  let copied = false;
+
+  for (const page of project.pages) {
+    if (!isSavedContentPage(page)) {
+      continue;
+    }
+
+    const current = itemsById[page.id];
+    if (!current || current.type === "transition") {
+      continue;
+    }
+
+    const nextPage = mergeUneditedSavedSpeechIntoPageForm(
+      current,
+      previousItemsById[page.id],
+      page,
+    );
+    if (nextPage === current) {
+      continue;
+    }
+
+    if (!copied) {
+      itemsById = { ...state.itemsById };
+      itemReconcileRevision = { ...state.itemReconcileRevision };
+      copied = true;
+    }
+
+    itemsById[page.id] = nextPage;
+    itemReconcileRevision[page.id] = bump(itemReconcileRevision[page.id]);
   }
 
   if (!copied) {

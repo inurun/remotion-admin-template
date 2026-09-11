@@ -16,7 +16,7 @@ import {
 import { ENDCARD_DURATION_SEC } from "@/_shared/lib/endcard/endcard-timing";
 import { EYECATCH_TEXT_MIN_DURATION_SEC } from "@/_shared/lib/page/page-timing";
 import {
-  contentPageHasPendingTts,
+  contentPageHasUnresolvedAudio,
   contentPageHasUnresolvedTts,
   listReadyTtsTimingInputs,
 } from "@/_shared/lib/tts/tts-audio";
@@ -154,7 +154,7 @@ export function withSettledPageDurations(pages: SavedSequenceItem[], affectedPag
       return item;
     }
 
-    if (contentPageHasPendingTts(item)) {
+    if (contentPageHasUnresolvedAudio(item)) {
       return item;
     }
 

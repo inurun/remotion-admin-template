@@ -61,6 +61,31 @@ describe("page duration", () => {
     ).toBe(4);
   });
 
+  it("keeps previous duration for an existing page with analyzing tts", () => {
+    const page = mainPage({
+      tts: [
+        {
+          id: "tts-1",
+          provider: "voisona",
+          text: "Hello",
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          volume: 1,
+          audio: { status: "analyzing", analysisKey: "key-1" },
+          speech: {},
+        },
+      ],
+    });
+
+    expect(
+      resolveSavePageDurationSec({
+        page,
+        previousDurationSec: 4,
+        adjacentTransitionSec: 0.8,
+      }),
+    ).toBe(4);
+  });
+
   it("uses pads and transition minimum for a new intro/main page", () => {
     const page = mainPage({
       padBeforeSec: 1,

@@ -73,7 +73,7 @@ function getItemPreviewSignature(item: SavedSequenceItem | undefined, itemId: st
       if (tts.audio.status === "failed") {
         return `${tts.id}:failed:${tts.audio.src}:${tts.audio.error}`;
       }
-      return `${tts.id}:pending:${tts.audio.src}`;
+      return `${tts.id}:processing`;
     })
     .join("|");
   return `${itemId}:${item.durationSec}:${item.padBeforeSec}:${item.padAfterSec}:${ttsSignature}`;
@@ -154,9 +154,11 @@ export function applySavedProjectExternalUpdate(
   };
 }
 
-export function selectHasPendingTts(state: SavedProjectState) {
+export function selectHasUnresolvedAudio(state: SavedProjectState) {
   return Object.values(state.itemsById).some(
-    (item) => isSavedContentPage(item) && item.tts.some((tts) => tts.audio.status === "pending"),
+    (item) =>
+      isSavedContentPage(item) &&
+      item.tts.some((tts) => tts.audio.status === "analyzing" || tts.audio.status === "pending"),
   );
 }
 

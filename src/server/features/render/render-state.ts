@@ -12,7 +12,7 @@ import {
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 import { thumbnailTimeToFrame } from "./render-thumbnail";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
-import { projectHasPendingTts } from "@/_shared/lib/tts/tts-audio";
+import { projectHasUnresolvedAudio } from "@/_shared/lib/tts/tts-audio";
 
 type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
 
@@ -202,7 +202,7 @@ export async function startRender(projectPath: string) {
     startReserved = true;
     try {
       const project = await readSavedProject(projectPath);
-      if (projectHasPendingTts(project)) {
+      if (projectHasUnresolvedAudio(project)) {
         return {
           started: false as const,
           reason: "tts_pending" as const,

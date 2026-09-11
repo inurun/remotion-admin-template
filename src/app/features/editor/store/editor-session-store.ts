@@ -12,6 +12,7 @@ import {
   applyRemoveTts,
   applyReorderSequence,
   applySaveSuccess,
+  applyExternalSavedSpeech,
   applyUpdateProjectSettings,
   applyUpdateTts,
   applyUpsertPage,
@@ -57,6 +58,9 @@ export function createEditorSessionStore(project: SavedProject): EditorSessionSt
     },
     applySaveSuccess: (result: SaveProjectResult, savedChangeSet: EditorSavedChangeSet) => {
       set((state) => applySaveSuccess(state, result, savedChangeSet));
+    },
+    applyExternalSavedSpeech: (previousItemsById, project) => {
+      set((state) => applyExternalSavedSpeech(state, previousItemsById, project));
     },
     hydrate: (nextProject: SavedProject) => {
       set((state) => ({

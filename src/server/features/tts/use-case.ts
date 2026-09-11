@@ -18,7 +18,7 @@ import {
 import { getEffectiveReadText, getUsableG2p } from "./providers/comparison";
 import { getTtsProvider } from "./providers/registry";
 import type { TtsSynthesisInput } from "./providers/types";
-import { projectHasPendingTts } from "@/_shared/lib/tts/tts-audio";
+import { projectHasUnresolvedAudio } from "@/_shared/lib/tts/tts-audio";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
 import { TtsCacheClearConflictError } from "@/server/features/tts/errors";
 
@@ -97,7 +97,7 @@ export async function clearTtsCache(input: unknown) {
   const parsed = ttsClearCacheRequestSchema.parse(input);
   return enqueueProjectMutation(parsed.projectPath, async () => {
     const project = await readSavedProject(parsed.projectPath);
-    if (projectHasPendingTts(project)) {
+    if (projectHasUnresolvedAudio(project)) {
       throw new TtsCacheClearConflictError();
     }
     await clearProjectTtsCache(parsed.projectPath);

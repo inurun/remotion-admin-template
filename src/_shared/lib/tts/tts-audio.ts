@@ -12,6 +12,12 @@ export function isReadyTtsAudio(
   return audio.status === "ready";
 }
 
+export function isAnalyzingTtsAudio(
+  audio: SavedTtsAudio,
+): audio is Extract<SavedTtsAudio, { status: "analyzing" }> {
+  return audio.status === "analyzing";
+}
+
 export function isPendingTtsAudio(
   audio: SavedTtsAudio,
 ): audio is Extract<SavedTtsAudio, { status: "pending" }> {
@@ -22,6 +28,12 @@ export function isFailedTtsAudio(
   audio: SavedTtsAudio,
 ): audio is Extract<SavedTtsAudio, { status: "failed" }> {
   return audio.status === "failed";
+}
+
+export function isUnresolvedTtsAudio(
+  audio: SavedTtsAudio,
+): audio is Extract<SavedTtsAudio, { status: "analyzing" | "pending" }> {
+  return audio.status === "analyzing" || audio.status === "pending";
 }
 
 export function isPlayableTtsAudio(
@@ -59,10 +71,20 @@ export function contentPageHasPendingTts(item: { tts: readonly SavedTts[] }) {
   return item.tts.some((tts) => tts.audio.status === "pending");
 }
 
+export function contentPageHasUnresolvedAudio(item: { tts: readonly SavedTts[] }) {
+  return item.tts.some((tts) => isUnresolvedTtsAudio(tts.audio));
+}
+
 export function contentPageHasUnresolvedTts(item: { tts: readonly SavedTts[] }) {
-  return item.tts.some((tts) => tts.audio.status === "pending" || tts.audio.status === "failed");
+  return item.tts.some((tts) => isUnresolvedTtsAudio(tts.audio) || tts.audio.status === "failed");
 }
 
 export function projectHasPendingTts(project: Pick<SavedProject, "pages">) {
   return project.pages.some((page) => isSavedContentPage(page) && contentPageHasPendingTts(page));
+}
+
+export function projectHasUnresolvedAudio(project: Pick<SavedProject, "pages">) {
+  return project.pages.some(
+    (page) => isSavedContentPage(page) && contentPageHasUnresolvedAudio(page),
+  );
 }

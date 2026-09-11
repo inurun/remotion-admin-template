@@ -2,22 +2,24 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { fetchProject } from "@/app/features/project/api/project-api";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
-import { selectHasPendingTts } from "@/app/features/editor/store/saved-project-state";
+import { selectHasUnresolvedAudio } from "@/app/features/editor/store/saved-project-state";
 import {
   useSavedProject,
   useSavedProjectStoreApi,
 } from "@/app/features/editor/store/saved-project-store-context";
+import { useEditorSessionStoreApi } from "@/app/features/editor/store/editor-session-store-context";
 import { resolveSynthesisPollUpdate } from "@/app/features/editor/lib/project-synthesis-state";
 
 const SYNTHESIS_POLL_INTERVAL_MS = 2000;
 
 export function useSyncProjectSynthesis() {
   const savedStore = useSavedProjectStoreApi();
+  const editorStore = useEditorSessionStoreApi();
   const { projectPath } = useProjectRoute();
-  const hasPending = useSavedProject(selectHasPendingTts);
+  const hasUnresolved = useSavedProject(selectHasUnresolvedAudio);
 
   useEffect(() => {
-    if (!projectPath || !hasPending) {
+    if (!projectPath || !hasUnresolved) {
       return;
     }
 
@@ -41,13 +43,14 @@ export function useSyncProjectSynthesis() {
           return;
         }
         savedStore.getState().applyExternalProject(project);
+        editorStore.getState().applyExternalSavedSpeech(current.itemsById, project);
         for (const item of update.failedToasts) {
           toast.error(item.message);
         }
       } catch {
         // keep polling while pending remains
       } finally {
-        if (!cancelled && selectHasPendingTts(savedStore.getState())) {
+        if (!cancelled && selectHasUnresolvedAudio(savedStore.getState())) {
           timer = setTimeout(() => {
             void poll();
           }, SYNTHESIS_POLL_INTERVAL_MS);
@@ -63,5 +66,5 @@ export function useSyncProjectSynthesis() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [hasPending, projectPath, savedStore]);
+  }, [editorStore, hasUnresolved, projectPath, savedStore]);
 }

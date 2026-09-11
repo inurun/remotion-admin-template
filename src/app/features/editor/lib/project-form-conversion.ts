@@ -1,4 +1,10 @@
-import { isSavedContentPage, type SavedPage, type SavedProject, type SavedTts } from "@/_schemas";
+import {
+  isSavedContentPage,
+  type SavedPage,
+  type SavedProject,
+  type SavedSequenceItem,
+  type SavedTts,
+} from "@/_schemas";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
@@ -88,6 +94,43 @@ export function mergeSavedSpeechIntoPageForm(
       speech: {
         ...item.speech,
         g2p,
+      },
+    };
+  });
+
+  return changed ? { ...current, tts } : current;
+}
+
+export function mergeUneditedSavedSpeechIntoPageForm(
+  current: PageFormValues,
+  previousSavedPage: SavedSequenceItem | undefined,
+  nextSavedPage: SavedPage,
+): PageFormValues {
+  const previousTts =
+    previousSavedPage && isSavedContentPage(previousSavedPage)
+      ? new Map(previousSavedPage.tts.map((item) => [item.id, item]))
+      : new Map();
+  const nextById = new Map(nextSavedPage.tts.map((item) => [item.id, item]));
+
+  let changed = false;
+  const tts = current.tts.map((item) => {
+    const nextG2p = nextById.get(item.id)?.speech.g2p;
+    if (!nextG2p) {
+      return item;
+    }
+
+    const currentKana = item.speech?.g2p?.kana;
+    const previousKana = previousTts.get(item.id)?.speech.g2p?.kana;
+    if (currentKana !== previousKana || currentKana === nextG2p.kana) {
+      return item;
+    }
+
+    changed = true;
+    return {
+      ...item,
+      speech: {
+        ...item.speech,
+        g2p: nextG2p,
       },
     };
   });

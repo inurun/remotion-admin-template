@@ -5,11 +5,11 @@ export function TtsSynthesisStatus({
   status,
   error,
 }: {
-  status: "pending" | "failed" | undefined;
+  status: "analyzing" | "pending" | "failed" | undefined;
   error?: string;
 }) {
   const { title } = useTtsSynthesisStatus({ status, error });
-  if (status === "pending") {
+  if (status === "analyzing" || status === "pending") {
     return (
       <span title={title} className="inline-flex shrink-0">
         <LoaderCircle className="size-3.5 animate-spin text-muted-foreground" />

@@ -27,6 +27,12 @@ const ttsBaseSchema = z.object({
 export const savedTtsAudioSchema = z.discriminatedUnion("status", [
   z
     .object({
+      status: z.literal("analyzing"),
+      analysisKey: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
       status: z.literal("pending"),
       src: z.string(),
     })

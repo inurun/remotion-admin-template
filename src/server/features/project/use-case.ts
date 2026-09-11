@@ -41,7 +41,7 @@ import {
   createTtsComparisonInput,
   getTtsProvider,
 } from "@/server/features/tts/providers/registry";
-import { getUsableG2p } from "@/server/features/tts/providers/comparison";
+import { getUsableG2p, getEffectiveReadText } from "@/server/features/tts/providers/comparison";
 import { stableStringify } from "@/server/_shared/stable-stringify";
 import type { PlannedSynthesis, TtsComparisonInput } from "@/server/features/tts/providers/types";
 import { readCachedWav } from "@/server/features/tts/wav-cache";
@@ -57,6 +57,15 @@ import {
   startSynthesisBatch,
   type SynthesisJob,
 } from "@/server/features/project/tts-synthesis-jobs";
+import {
+  startAnalysisBatch,
+  type AnalysisJobTarget,
+} from "@/server/features/project/tts-analysis-jobs";
+import { createTtsAnalysisKey } from "@/server/features/tts/analysis-key";
+import {
+  hasOpenRouterApiKey,
+  warnMissingOpenRouterApiKeyOnce,
+} from "@/server/features/tts/llm-g2p-profile";
 
 const DEFAULT_TTS_PLAYBACK_SETTINGS = {
   padBeforeSec: 0,
@@ -160,7 +169,36 @@ function comparisonInputMatches(
   );
 }
 
-type TtsReuseKind = "ready" | "pending" | "failed" | "none";
+type TtsReuseKind = "ready" | "pending" | "failed" | "analyzing" | "none";
+
+function requestG2pDiffersFromBaseline(item: SaveTtsItem, previous: SavedTts, readText: string) {
+  const requestG2p = getUsableG2p(item.speech?.g2p, readText);
+  const baseline = previous.speech.g2p;
+  if (!requestG2p || !baseline) {
+    return false;
+  }
+  return requestG2p.text !== baseline.text || requestG2p.kana !== baseline.kana;
+}
+
+function canKeepAnalyzing(item: SaveTtsItem, previous: SavedTts) {
+  if (previous.audio.status !== "analyzing") {
+    return false;
+  }
+  if (item.provider === "voicepeak" || previous.provider === "voicepeak") {
+    return false;
+  }
+  if (!getTtsProvider(item.provider).usesG2p) {
+    return false;
+  }
+
+  const previousReadText = getEffectiveReadText(previous);
+  const nextReadText = getEffectiveReadText(item);
+  if (item.text !== previous.text || nextReadText !== previousReadText) {
+    return false;
+  }
+
+  return !requestG2pDiffersFromBaseline(item, previous, nextReadText);
+}
 
 async function classifyTtsReuse(
   item: SaveTtsItem,
@@ -170,7 +208,15 @@ async function classifyTtsReuse(
   previousPresets: VoicePreset[],
   forceResynthesis: boolean,
 ): Promise<TtsReuseKind> {
-  if (!previous || forceResynthesis) {
+  if (!previous) {
+    return "none";
+  }
+
+  if (canKeepAnalyzing(item, previous)) {
+    return "analyzing";
+  }
+
+  if (forceResynthesis) {
     return "none";
   }
 
@@ -184,6 +230,10 @@ async function classifyTtsReuse(
 
   if (previous.audio.status === "failed") {
     return "failed";
+  }
+
+  if (previous.audio.status === "analyzing") {
+    return "none";
   }
 
   if (!isProjectTtsSrc(previous.audio.src, projectPath)) {
@@ -202,22 +252,26 @@ type PlannedTts = {
   previous?: SavedTts;
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>;
   reuse: TtsReuseKind;
+  needsG2pAnalyze: boolean;
 };
 
-function needsG2pAnalyze(plan: PlannedTts) {
-  if (plan.reuse !== "none") {
+function computeNeedsG2pAnalyze(
+  reuse: TtsReuseKind,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+) {
+  if (reuse !== "none") {
     return false;
   }
 
-  if (!getTtsProvider(plan.nextInput.provider).usesG2p) {
+  if (!getTtsProvider(nextInput.provider).usesG2p) {
     return false;
   }
 
-  return !getUsableG2p(plan.nextInput.g2p, plan.nextInput.readText);
+  return !getUsableG2p(nextInput.g2p, nextInput.readText);
 }
 
 async function assignBatchG2p(serverEnv: ServerEnv, plans: PlannedTts[]) {
-  const targets = plans.filter(needsG2pAnalyze);
+  const targets = plans.filter((plan) => plan.needsG2pAnalyze);
   if (targets.length === 0) {
     return;
   }
@@ -301,6 +355,40 @@ function createPendingSavedTts(
   };
 }
 
+function createAnalyzingSavedTts(
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+  analysisKey: string,
+  voiceVersion?: string,
+) {
+  return {
+    ...createTtsFields(item, nextInput, voiceVersion),
+    audio: {
+      status: "analyzing" as const,
+      analysisKey,
+    },
+  };
+}
+
+function createAnalyzingReuseTts(
+  item: SaveTtsItem,
+  nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
+  previous: SavedTts,
+) {
+  if (previous.audio.status !== "analyzing") {
+    throw new Error(`expected analyzing audio for tts ${item.id}`);
+  }
+
+  return {
+    ...createTtsFields(
+      item,
+      { ...nextInput, g2p: previous.speech.g2p },
+      getOptionalVoiceVersion(nextInput.voiceVersion),
+    ),
+    audio: previous.audio,
+  };
+}
+
 async function planSavedTts(
   projectPath: string,
   item: SaveTtsItem,
@@ -311,18 +399,20 @@ async function planSavedTts(
 ): Promise<PlannedTts> {
   validateTts(item);
   const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
+  const reuse = await classifyTtsReuse(
+    item,
+    projectPath,
+    previous,
+    nextPresets,
+    previousPresets,
+    forceResynthesis,
+  );
   return {
     item,
     previous,
     nextInput,
-    reuse: await classifyTtsReuse(
-      item,
-      projectPath,
-      previous,
-      nextPresets,
-      previousPresets,
-      forceResynthesis,
-    ),
+    reuse,
+    needsG2pAnalyze: computeNeedsG2pAnalyze(reuse, nextInput),
   };
 }
 
@@ -364,9 +454,51 @@ async function buildSavedTts(
   pageId: string,
   plan: PlannedTts,
   forceResynthesis: boolean,
-): Promise<{ tts: SavedTts; job?: SynthesisJob }> {
+): Promise<{ tts: SavedTts; job?: SynthesisJob; analysis?: AnalysisJobTarget }> {
+  if (plan.reuse === "analyzing" && plan.previous?.audio.status === "analyzing") {
+    return {
+      tts: createAnalyzingReuseTts(plan.item, plan.nextInput, plan.previous) as SavedTts,
+      analysis: forceResynthesis
+        ? {
+            pageId,
+            ttsId: plan.item.id,
+            analysisKey: plan.previous.audio.analysisKey,
+          }
+        : undefined,
+    };
+  }
+
   if (plan.reuse !== "none" && plan.previous) {
     return { tts: createReusedSavedTts(plan.item, plan.previous) as SavedTts };
+  }
+
+  if (plan.needsG2pAnalyze && hasOpenRouterApiKey(serverEnv)) {
+    const baseline = plan.nextInput.g2p;
+    if (!baseline) {
+      throw new Error(`haqumei-api analyze returned no item for tts ${plan.item.id}`);
+    }
+    const analysisKey = createTtsAnalysisKey({
+      projectPath,
+      pageId,
+      ttsId: plan.item.id,
+      provider: plan.nextInput.provider,
+      text: plan.item.text,
+      effectiveReadText: plan.nextInput.readText,
+      baselineKana: baseline.kana,
+    });
+    return {
+      tts: createAnalyzingSavedTts(
+        plan.item,
+        plan.nextInput,
+        analysisKey,
+        getOptionalVoiceVersion(plan.nextInput.voiceVersion),
+      ) as SavedTts,
+      analysis: {
+        pageId,
+        ttsId: plan.item.id,
+        analysisKey,
+      },
+    };
   }
 
   const voiceVersion = getOptionalVoiceVersion(plan.nextInput.voiceVersion);
@@ -429,7 +561,7 @@ async function buildSavedPage(
   projectPath: string,
   planned: { page: SavePageItem; tts: PlannedTts[] },
   forceResynthesis: boolean,
-): Promise<{ page: SavedPage; jobs: SynthesisJob[] }> {
+): Promise<{ page: SavedPage; jobs: SynthesisJob[]; analysisTargets: AnalysisJobTarget[] }> {
   const built = await Promise.all(
     planned.tts.map((plan) =>
       buildSavedTts(serverEnv, projectPath, planned.page.id, plan, forceResynthesis),
@@ -437,10 +569,12 @@ async function buildSavedPage(
   );
   const tts = built.map((item) => item.tts);
   const jobs = built.flatMap((item) => (item.job ? [item.job] : []));
+  const analysisTargets = built.flatMap((item) => (item.analysis ? [item.analysis] : []));
   const page = planned.page;
 
   return {
     jobs,
+    analysisTargets,
     page: {
       id: page.id,
       title: page.title,
@@ -659,11 +793,20 @@ async function saveProjectChangesLocked(
     plannedPages.flatMap((planned) => planned.tts),
   );
 
+  const needsAutomaticAnalyze = plannedPages.some((planned) =>
+    planned.tts.some((plan) => plan.needsG2pAnalyze),
+  );
+  if (needsAutomaticAnalyze && !hasOpenRouterApiKey(serverEnv)) {
+    warnMissingOpenRouterApiKeyOnce();
+  }
+
   const jobs: SynthesisJob[] = [];
+  const analysisJobs: AnalysisJobTarget[] = [];
   for (const planned of plannedPages) {
     const built = await buildSavedPage(serverEnv, projectPath, planned, forceResynthesis);
     itemsById.set(built.page.id, built.page);
     jobs.push(...built.jobs);
+    analysisJobs.push(...built.analysisTargets);
     if (!updatedItemIds.includes(built.page.id)) {
       updatedItemIds.push(built.page.id);
     }
@@ -695,6 +838,7 @@ async function saveProjectChangesLocked(
     voicePresets: nextPresets,
   });
   await writeSavedProject(projectPath, project);
+  startAnalysisBatch(serverEnv, projectPath, analysisJobs);
   startSynthesisBatch(projectPath, jobs);
   return { project, updatedItemIds };
 }

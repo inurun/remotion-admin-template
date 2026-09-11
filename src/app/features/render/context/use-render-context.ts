@@ -7,7 +7,7 @@ import {
   useSavedProject,
   useSavedProjectStoreApi,
 } from "@/app/features/editor/store/saved-project-store-context";
-import { selectHasPendingTts } from "@/app/features/editor/store/saved-project-state";
+import { selectHasUnresolvedAudio } from "@/app/features/editor/store/saved-project-state";
 import { usePublish } from "@/app/features/publish";
 import { cancelPublish } from "@/app/features/publish/api/publish-api";
 import { cancelRender, startRender, type RenderState } from "@/app/features/render/api/render-api";
@@ -30,7 +30,7 @@ function getRenderExecuteLabel(
   }
 
   if (synthesizing) {
-    return "Synthesizing audio";
+    return "Preparing audio";
   }
 
   if (renderStatus === "running") {
@@ -68,7 +68,7 @@ export type RenderContextValue = {
 export function useRenderProviderValue(): RenderContextValue {
   const { isPending: saving, save } = useEditor();
   const savedStore = useSavedProjectStoreApi();
-  const synthesizing = useSavedProject(selectHasPendingTts);
+  const synthesizing = useSavedProject(selectHasUnresolvedAudio);
   const { options } = useSettings();
   const pageCount = useEditorSession((state) => state.sequenceOrder.length);
   const { projectPath } = useProject();
@@ -142,8 +142,8 @@ export function useRenderProviderValue(): RenderContextValue {
         return;
       }
 
-      if (selectHasPendingTts(savedStore.getState())) {
-        setRenderError("音声合成中。完了後にもう一度Renderしてください。");
+      if (selectHasUnresolvedAudio(savedStore.getState())) {
+        setRenderError("音声準備中。完了後にもう一度Renderしてください。");
         return;
       }
 

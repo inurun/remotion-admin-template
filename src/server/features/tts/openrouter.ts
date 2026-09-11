@@ -1,9 +1,12 @@
 import { z } from "zod";
 import type { ServerEnv } from "@/server/core/env";
+import {
+  getLlmG2pMaxTokens,
+  MANUAL_LLM_G2P_PROFILE,
+  type LlmG2pProfile,
+} from "@/server/features/tts/llm-g2p-profile";
 import { getOpenRouterG2pSystemPrompt } from "./openrouter-prompt";
 
-const DEFAULT_MODEL = "openai/gpt-5.6-luna";
-const DEFAULT_PROVIDER = "openai";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const READING_PATTERN = /^[^'|/、？！_\s]+$/u;
@@ -111,11 +114,6 @@ const openRouterEnvelopeSchema = z
     usage: usageSchema.optional(),
   })
   .passthrough();
-
-const MIN_COMPLETION_TOKENS = 4_096;
-const TOKENS_PER_ITEM = 512;
-const MAX_COMPLETION_TOKENS = 32_768;
-const OPENROUTER_TIMEOUT_MS = 60_000;
 
 const correctionJsonSchema = {
   type: "object",
@@ -248,17 +246,12 @@ export class OpenRouterValidationError extends Error {
 }
 
 export function getOpenRouterMaxTokens(itemCount: number) {
-  return Math.min(
-    MAX_COMPLETION_TOKENS,
-    Math.max(MIN_COMPLETION_TOKENS, itemCount * TOKENS_PER_ITEM),
-  );
+  return getLlmG2pMaxTokens(MANUAL_LLM_G2P_PROFILE, itemCount);
 }
 
 export function getOpenRouterConfig(serverEnv: ServerEnv) {
   return {
     apiKey: serverEnv.OPENROUTER_API_KEY?.trim(),
-    model: serverEnv.OPENROUTER_G2P_MODEL?.trim() || DEFAULT_MODEL,
-    provider: serverEnv.OPENROUTER_G2P_PROVIDER?.trim() || DEFAULT_PROVIDER,
   };
 }
 
@@ -333,17 +326,56 @@ function toValidationErrors(error: z.ZodError, raw?: unknown): OpenRouterValidat
   });
 }
 
+function parseCorrectionItems(correctionJson: unknown, allowPartial: boolean) {
+  const parsed = correctionSchema.safeParse(correctionJson);
+  if (parsed.success) {
+    return { items: parsed.data.items };
+  }
+  if (!allowPartial) {
+    return { error: parsed.error };
+  }
+
+  const rawItems =
+    correctionJson &&
+    typeof correctionJson === "object" &&
+    "items" in correctionJson &&
+    Array.isArray((correctionJson as { items: unknown }).items)
+      ? (correctionJson as { items: unknown[] }).items
+      : [];
+  const items: StructuredCorrection[] = [];
+  const parseErrors: OpenRouterValidationIssue[] = [];
+  for (const [index, item] of rawItems.entries()) {
+    const one = structuredCorrectionSchema.safeParse(item);
+    if (one.success) {
+      items.push(one.data);
+      continue;
+    }
+    parseErrors.push(
+      ...toValidationErrors(one.error, { items: [item] }).map((issue) => ({
+        ...issue,
+        path: `items.${index}${issue.path ? `.${issue.path}` : ""}`,
+        ttsId:
+          typeof (item as { id?: unknown })?.id === "string"
+            ? (item as { id: string }).id
+            : issue.ttsId,
+      })),
+    );
+  }
+
+  return { items, parseErrors };
+}
+
 function mapCorrections(
   promptItems: OpenRouterPromptItem[],
   output: z.infer<typeof correctionSchema>,
+  allowPartial = false,
 ) {
   const expected = new Map(promptItems.map((item) => [item.id, item]));
   const seen = new Set<string>();
   const validationErrors: OpenRouterValidationIssue[] = [];
-  const renderedKana: string[] = [];
-  const corrections: OpenRouterCorrection[] = [];
+  const correctionsById = new Map<string, OpenRouterCorrection>();
 
-  if (output.items.length !== promptItems.length) {
+  if (!allowPartial && output.items.length !== promptItems.length) {
     throw Object.assign(new Error("item count mismatch"), {
       validationErrors: [
         {
@@ -375,8 +407,7 @@ function mapCorrections(
     seen.add(item.id);
 
     if (!item.changed) {
-      renderedKana.push(baseline.kana);
-      corrections.push({
+      correctionsById.set(item.id, {
         id: item.id,
         changed: false,
         kana: baseline.kana,
@@ -395,8 +426,7 @@ function mapCorrections(
         });
         continue;
       }
-      renderedKana.push(kana);
-      corrections.push({ id: item.id, changed: true, kana, reason: item.reason });
+      correctionsById.set(item.id, { id: item.id, changed: true, kana, reason: item.reason });
     } catch (error) {
       validationErrors.push({
         path: `items.${item.id}.phrases`,
@@ -406,20 +436,35 @@ function mapCorrections(
     }
   }
 
-  if (validationErrors.length > 0) {
+  if (!allowPartial && validationErrors.length > 0) {
     throw Object.assign(new Error(validationErrors.map((item) => item.reason).join(", ")), {
       validationErrors,
       structuredOutput: output.items,
-      renderedKana: renderedKana.length > 0 ? renderedKana : undefined,
+      renderedKana: promptItems.flatMap((item) => {
+        const correction = correctionsById.get(item.id);
+        return correction ? [correction.kana] : [];
+      }),
     });
   }
 
+  const corrections = promptItems.map((item) => {
+    const mapped = correctionsById.get(item.id);
+    if (mapped) {
+      return mapped;
+    }
+    return {
+      id: item.id,
+      changed: false,
+      kana: item.kana,
+      reason: "",
+    };
+  });
+
   return {
-    structuredOutput: output.items,
-    corrections: promptItems.map((item) => corrections.find((result) => result.id === item.id)!),
-    renderedKana: promptItems.map(
-      (item) => corrections.find((result) => result.id === item.id)!.kana,
-    ),
+    structuredOutput: output.items.filter((item) => expected.has(item.id)),
+    corrections,
+    renderedKana: corrections.map((item) => item.kana),
+    partialErrors: allowPartial && validationErrors.length > 0 ? validationErrors : undefined,
   };
 }
 
@@ -427,8 +472,10 @@ export async function requestOpenRouterCorrections(
   serverEnv: ServerEnv,
   promptItems: OpenRouterPromptItem[],
   options?: {
+    profile?: LlmG2pProfile;
     reasoningEffort?: ReasoningEffort;
     repairItems?: OpenRouterRepairItem[];
+    userContent?: unknown;
   },
 ) {
   const config = getOpenRouterConfig(serverEnv);
@@ -436,7 +483,8 @@ export async function requestOpenRouterCorrections(
     throw new Error("OPENROUTER_API_KEY is required");
   }
 
-  const reasoningEffort = options?.reasoningEffort ?? "none";
+  const profile = options?.profile ?? MANUAL_LLM_G2P_PROFILE;
+  const reasoningEffort = options?.reasoningEffort ?? profile.reasoningEffort;
   const repairById = new Map((options?.repairItems ?? []).map((item) => [item.id, item]));
   const userItems = promptItems.map((item) => {
     const repair = repairById.get(item.id);
@@ -449,6 +497,15 @@ export async function requestOpenRouterCorrections(
       validationErrors: repair.validationErrors,
     };
   });
+  const userContent = options?.userContent ?? { items: userItems };
+  const quantizations =
+    "quantizations" in profile.provider ? profile.provider.quantizations : undefined;
+  const provider = {
+    only: [...profile.provider.only],
+    allow_fallbacks: profile.provider.allowFallbacks,
+    require_parameters: profile.provider.requireParameters,
+    ...(quantizations ? { quantizations: [...quantizations] } : {}),
+  };
 
   const response = await fetch(OPENROUTER_URL, {
     method: "POST",
@@ -458,28 +515,28 @@ export async function requestOpenRouterCorrections(
       "X-OpenRouter-Title": "Remotion Admin G2P Lab",
     },
     body: JSON.stringify({
-      model: config.model,
+      model: profile.model,
       messages: [
         {
           role: "system",
-          content: getOpenRouterG2pSystemPrompt(Boolean(options?.repairItems?.length)),
+          content: getOpenRouterG2pSystemPrompt({
+            mode: profile.mode,
+            repair: Boolean(options?.repairItems?.length),
+          }),
         },
-        { role: "user", content: JSON.stringify({ items: userItems }) },
+        { role: "user", content: JSON.stringify(userContent) },
       ],
       reasoning: { effort: reasoningEffort },
+      ...(profile.mode === "automatic" ? { temperature: 0 } : {}),
       response_format: {
         type: "json_schema",
         json_schema: { name: "g2p_corrections", strict: true, schema: correctionJsonSchema },
       },
-      provider: {
-        only: [config.provider],
-        allow_fallbacks: false,
-        require_parameters: true,
-      },
-      max_tokens: getOpenRouterMaxTokens(promptItems.length),
+      provider,
+      max_tokens: getLlmG2pMaxTokens(profile, promptItems.length),
       stream: false,
     }),
-    signal: AbortSignal.timeout(OPENROUTER_TIMEOUT_MS),
+    signal: AbortSignal.timeout(profile.timeoutMs),
   });
 
   const responseBody = await response.text();
@@ -507,7 +564,7 @@ export async function requestOpenRouterCorrections(
     throw new OpenRouterValidationError(
       "OpenRouter returned an unexpected response envelope",
       undefined,
-      config.model,
+      profile.model,
       undefined,
       ZERO_USAGE,
       toValidationErrors(envelope.error, json),
@@ -530,7 +587,7 @@ export async function requestOpenRouterCorrections(
     new OpenRouterValidationError(
       message,
       envelope.data.id,
-      envelope.data.model ?? config.model,
+      envelope.data.model ?? profile.model,
       envelope.data.provider,
       usage,
       validationErrors,
@@ -560,8 +617,8 @@ export async function requestOpenRouterCorrections(
     ]);
   }
 
-  const parsedCorrections = correctionSchema.safeParse(correctionJson);
-  if (!parsedCorrections.success) {
+  const parsedCorrections = parseCorrectionItems(correctionJson, profile.mode === "automatic");
+  if ("error" in parsedCorrections && parsedCorrections.error) {
     throw fail(
       "OpenRouter structured output failed validation",
       toValidationErrors(parsedCorrections.error, correctionJson),
@@ -569,10 +626,18 @@ export async function requestOpenRouterCorrections(
   }
 
   try {
-    const mapped = mapCorrections(promptItems, parsedCorrections.data);
+    const mapped = mapCorrections(
+      promptItems,
+      { items: parsedCorrections.items ?? [] },
+      profile.mode === "automatic",
+    );
+    const partialErrors = [
+      ...(parsedCorrections.parseErrors ?? []),
+      ...(mapped.partialErrors ?? []),
+    ];
     return {
       requestId: envelope.data.id,
-      model: envelope.data.model ?? config.model,
+      model: envelope.data.model ?? profile.model,
       actualProvider: envelope.data.provider,
       reasoningEffort,
       finishReason,
@@ -581,6 +646,7 @@ export async function requestOpenRouterCorrections(
       corrections: mapped.corrections,
       usage,
       rawResponse: json,
+      ...(partialErrors.length > 0 ? { partialErrors } : {}),
     };
   } catch (error) {
     const details = error as {

@@ -33,7 +33,8 @@ export function TtsItem({
       className={cn(
         "flex gap-2 overflow-hidden items-center py-1 pr-3 transition data-[dragging=true]:opacity-70",
         isSelected ? "bg-muted/20" : "bg-card",
-        synthesisStatus === "pending" && "text-muted-foreground",
+        (synthesisStatus === "analyzing" || synthesisStatus === "pending") &&
+          "text-muted-foreground",
         synthesisStatus === "failed" && "ring-1 ring-destructive/40",
       )}
     >

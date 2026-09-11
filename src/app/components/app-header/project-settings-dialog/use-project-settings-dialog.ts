@@ -12,7 +12,7 @@ import {
 } from "@/_shared/project/project-meta";
 import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
-import { selectHasPendingTts } from "@/app/features/editor/store/saved-project-state";
+import { selectHasUnresolvedAudio } from "@/app/features/editor/store/saved-project-state";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import {
   getProjectSettingsDialogHref,
@@ -53,7 +53,7 @@ export function useProjectSettingsDialog() {
   const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
   const updateProjectSettings = useEditorSession((state) => state.updateProjectSettings);
   const { isPending, save } = useEditor();
-  const hasPendingTts = useSavedProject(selectHasPendingTts);
+  const hasUnresolvedAudio = useSavedProject(selectHasUnresolvedAudio);
   const [isRetryingPending, setIsRetryingPending] = useState(false);
   const { projectPath, route, navigate } = useProjectRoute();
   const open = isProjectSettingsRoute(route);
@@ -101,23 +101,23 @@ export function useProjectSettingsDialog() {
   });
 
   const retryPendingSynthesis = useCallback(async () => {
-    if (!projectPath || isPending || isRetryingPending || !hasPendingTts) {
+    if (!projectPath || isPending || isRetryingPending || !hasUnresolvedAudio) {
       return;
     }
 
     setIsRetryingPending(true);
     try {
       await save({ forceResynthesis: true });
-      toast.success("Pending synthesis restarted");
+      toast.success("Audio processing restarted");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to retry synthesis");
+      toast.error(error instanceof Error ? error.message : "Failed to retry audio processing");
     } finally {
       setIsRetryingPending(false);
     }
-  }, [hasPendingTts, isPending, isRetryingPending, projectPath, save]);
+  }, [hasUnresolvedAudio, isPending, isRetryingPending, projectPath, save]);
 
   const clearTtsCacheAndResynthesize = useCallback(async () => {
-    if (!projectPath || isPending || isClearingTts || hasPendingTts) {
+    if (!projectPath || isPending || isClearingTts || hasUnresolvedAudio) {
       return;
     }
     if (!window.confirm("Clear TTS cache and resynthesize on save?")) {
@@ -135,14 +135,14 @@ export function useProjectSettingsDialog() {
     } finally {
       setIsClearingTts(false);
     }
-  }, [handleOpenChange, hasPendingTts, isClearingTts, isPending, projectPath, save]);
+  }, [handleOpenChange, hasUnresolvedAudio, isClearingTts, isPending, projectPath, save]);
 
   return {
     form,
     isPending,
     isClearingTts,
     isRetryingPending,
-    hasPendingTts,
+    hasUnresolvedAudio,
     open,
     handleOpenChange,
     submit,

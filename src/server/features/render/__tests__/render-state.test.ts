@@ -60,6 +60,16 @@ const pendingProject = {
   ],
 };
 
+const analyzingProject = {
+  pages: [
+    {
+      id: "page-1",
+      type: "main",
+      tts: [{ audio: { status: "analyzing", analysisKey: "key-1" } }],
+    },
+  ],
+};
+
 afterEach(() => {
   resetProjectMutationQueueForTests();
   resetRenderStateForTests();
@@ -90,6 +100,16 @@ describe("startRender project queue", () => {
       reason: "tts_pending",
     });
     expect(readSavedProjectMock).toHaveBeenCalledTimes(1);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks render while TTS audio is analyzing", async () => {
+    readSavedProjectMock.mockResolvedValue(analyzingProject);
+
+    await expect(startRender("analyzing-project")).resolves.toEqual({
+      started: false,
+      reason: "tts_pending",
+    });
     expect(spawnMock).not.toHaveBeenCalled();
   });
 

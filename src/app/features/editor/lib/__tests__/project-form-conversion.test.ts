@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   mergeSavedSpeechIntoPageForm,
+  mergeUneditedSavedSpeechIntoPageForm,
   toPageFormValues,
   toTtsFormValues,
 } from "@/app/features/editor/lib/project-form-conversion";
@@ -58,5 +59,30 @@ describe("page form values", () => {
     expect(merged.tts[1]?.speech?.g2p).toBe(first);
     expect(merged).not.toHaveProperty("durationSec");
     expect(merged.tts[0]).not.toHaveProperty("audio");
+  });
+
+  it("applies polled g2p only when the form still matches the previous saved kana", () => {
+    const baseline = createG2pItem("ここを出よ", "ココ|ヲ'/ダ|ヨ'");
+    const corrected = createG2pItem("ここを出よ", "ココ|ヲ'/デ|ヨ'");
+    const previous = createSavedMainPage({
+      tts: [createSavedTts({ speech: { g2p: baseline } })],
+    });
+    const current = toPageFormValues(previous);
+    const next = createSavedMainPage({
+      tts: [createSavedTts({ speech: { g2p: corrected } })],
+    });
+
+    expect(mergeUneditedSavedSpeechIntoPageForm(current, previous, next).tts[0]?.speech?.g2p).toBe(
+      corrected,
+    );
+
+    const edited = {
+      ...current,
+      tts: [
+        { ...current.tts[0]!, speech: { g2p: createG2pItem("ここを出よ", "ココ'|ヲ/デ'|ヨ") } },
+      ],
+    };
+    expect(mergeUneditedSavedSpeechIntoPageForm(edited, previous, next)).toBe(edited);
+    expect(mergeUneditedSavedSpeechIntoPageForm(current, previous, previous)).toBe(current);
   });
 });

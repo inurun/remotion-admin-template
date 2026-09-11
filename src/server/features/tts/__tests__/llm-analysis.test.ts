@@ -108,7 +108,13 @@ describe("analyzeTtsPageWithLlm", () => {
     );
 
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(1);
-    expect(requestCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({ reasoningEffort: "none" });
+    expect(requestCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({
+      profile: expect.objectContaining({
+        id: "gpt-5.6-luna-openai-low-v1",
+        reasoningEffort: "low",
+      }),
+      reasoningEffort: "low",
+    });
     expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
     expect(analyzeTextsMock).toHaveBeenCalledWith(expect.anything(), ["人気"]);
     expect(validateG2pItemsMock).toHaveBeenCalledTimes(1);
@@ -121,6 +127,7 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(result.items[0]?.correctedKana).toBe("ヒトケ'");
     expect(result.monthlyUsdAt3000Tts).toBe(9);
     expect(writeFileMock).toHaveBeenCalledOnce();
+    expect(String(writeFileMock.mock.calls[0]?.[0])).toContain("llm-g2p/manual/");
     const log = JSON.parse(String(writeFileMock.mock.calls[0]?.[1]));
     expect(log.openRouter[0].rawResponse).toEqual({
       id: "generation-1",
@@ -206,7 +213,7 @@ describe("analyzeTtsPageWithLlm", () => {
     );
 
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(2);
-    expect(requestCorrectionsMock.mock.calls[1]?.[2]).toMatchObject({ reasoningEffort: "none" });
+    expect(requestCorrectionsMock.mock.calls[1]?.[2]).toMatchObject({ reasoningEffort: "low" });
     expect(requestCorrectionsMock.mock.calls[1]?.[2]?.repairItems).toEqual([
       expect.objectContaining({
         id: "tts-1",

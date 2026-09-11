@@ -205,6 +205,31 @@ describe("saved project store and thumbnail spike", () => {
     expect(store.getState().renderRevision).toBe(1);
   });
 
+  it("does not bump preview revisions from analyzing to pending", () => {
+    const store = createSavedProjectStore(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({
+            tts: [createSavedTts({ audio: { status: "analyzing", analysisKey: "key-1" } })],
+          }),
+        ],
+      }),
+    );
+
+    store.getState().applyExternalProject(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({
+            tts: [createSavedTts({ audio: { status: "pending", src: "/tts/a.wav" } })],
+          }),
+        ],
+      }),
+    );
+
+    expect(store.getState().itemRevision["page-1"]).toBe(0);
+    expect(store.getState().renderRevision).toBe(0);
+  });
+
   it("increments syncGeneration for save and external updates", () => {
     const store = createSavedProjectStore(createSavedProject());
     expect(store.getState().syncGeneration).toBe(0);

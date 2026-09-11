@@ -2,7 +2,7 @@ import { cancelScheduledAutoSave } from "@/app/features/editor/lib/auto-save";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/_shared/lib/error-message";
-import { projectHasPendingTts } from "@/_shared/lib/tts/tts-audio";
+import { projectHasUnresolvedAudio } from "@/_shared/lib/tts/tts-audio";
 import { saveProjectChanges } from "@/app/features/project/api/project-api";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import { useEditorSessionStoreApi } from "@/app/features/editor/store/editor-session-store-context";
@@ -68,7 +68,7 @@ export function useSaveProjectChanges() {
         toast.promise(savePromise, {
           loading: "保存中...",
           success: () =>
-            projectHasPendingTts(reconstructSavedProject(savedStore.getState()))
+            projectHasUnresolvedAudio(reconstructSavedProject(savedStore.getState()))
               ? "保存した。音声をバックグラウンドで更新中。"
               : "保存した。",
           error: (error) => getErrorMessage(error, "Save failed"),

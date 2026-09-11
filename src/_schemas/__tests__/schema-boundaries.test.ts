@@ -141,8 +141,11 @@ describe("schema boundaries", () => {
       ...formTts,
       audio: { status: "ready", src: "/tts/hello.wav", durationSec: 1 },
     });
-    expect(saved.audio.src).toBe("/tts/hello.wav");
-    expect(saved.audio).toMatchObject({ status: "ready", durationSec: 1 });
+    expect(saved.audio).toMatchObject({
+      status: "ready",
+      src: "/tts/hello.wav",
+      durationSec: 1,
+    });
   });
 
   it("keeps page duration on saved pages only", () => {

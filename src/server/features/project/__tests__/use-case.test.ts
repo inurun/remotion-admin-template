@@ -7,6 +7,8 @@ import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const accessMock = vi.fn();
+const mkdirMock = vi.fn();
+const writeFileMock = vi.fn();
 const readSavedProjectMock = vi.fn();
 const writeSavedProjectMock = vi.fn();
 const createSavedProjectMock = vi.fn();
@@ -20,10 +22,14 @@ const planVoisonaSynthesisMock = vi.fn();
 const planVoicevoxSynthesisMock = vi.fn();
 const planVoicepeakSynthesisMock = vi.fn();
 const readCachedWavMock = vi.fn();
+const requestOpenRouterCorrectionsMock = vi.fn();
+const validateG2pItemsMock = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   default: {
     access: (...args: unknown[]) => accessMock(...args),
+    mkdir: (...args: unknown[]) => mkdirMock(...args),
+    writeFile: (...args: unknown[]) => writeFileMock(...args),
   },
 }));
 
@@ -66,6 +72,20 @@ vi.mock("@/server/features/tts/wav-cache", async () => {
     readCachedWav: (...args: unknown[]) => readCachedWavMock(...args),
   };
 });
+
+vi.mock("@/server/features/tts/openrouter", async () => {
+  const actual = await vi.importActual<typeof import("@/server/features/tts/openrouter")>(
+    "@/server/features/tts/openrouter",
+  );
+  return {
+    ...actual,
+    requestOpenRouterCorrections: (...args: unknown[]) => requestOpenRouterCorrectionsMock(...args),
+  };
+});
+
+vi.mock("@/server/features/haqumei-api/validate", () => ({
+  validateG2pItems: (...args: unknown[]) => validateG2pItemsMock(...args),
+}));
 
 async function saveProject(
   serverEnv: object,
@@ -140,7 +160,9 @@ function lastWrittenProject() {
 }
 
 async function flushJobs() {
+  const { flushAnalysisJobsForTests } = await import("../tts-analysis-jobs");
   const { flushSynthesisJobsForTests } = await import("../tts-synthesis-jobs");
+  await flushAnalysisJobsForTests();
   await flushSynthesisJobsForTests();
 }
 
@@ -165,6 +187,8 @@ describe("project use-case", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     accessMock.mockResolvedValue(undefined);
+    mkdirMock.mockResolvedValue(undefined);
+    writeFileMock.mockResolvedValue(undefined);
     readCachedWavMock.mockResolvedValue(null);
     readSavedProjectMock.mockImplementation(async () => {
       const last = writeSavedProjectMock.mock.calls.at(-1);
@@ -174,9 +198,14 @@ describe("project use-case", () => {
     mockPlannedSynthesis(planVoicevoxSynthesisMock, synthesizeVoicevoxMock, "voicevox");
     mockPlannedSynthesis(planVoicepeakSynthesisMock, synthesizeVoicepeakMock, "voicepeak");
     const { resetSynthesisJobsForTests } = await import("../tts-synthesis-jobs");
+    const { resetAnalysisJobsForTests } = await import("../tts-analysis-jobs");
     const { resetProjectMutationQueueForTests } = await import("../project-mutation-queue");
+    const { resetMissingOpenRouterApiKeyWarningForTests } =
+      await import("@/server/features/tts/llm-g2p-profile");
     resetSynthesisJobsForTests();
+    resetAnalysisJobsForTests();
     resetProjectMutationQueueForTests();
+    resetMissingOpenRouterApiKeyWarningForTests();
     vi.useFakeTimers();
     vi.setSystemTime(now);
   });
@@ -1014,7 +1043,10 @@ describe("project use-case", () => {
     });
 
     expect(synthesizeVoicevoxMock).not.toHaveBeenCalled();
-    expect(contentPage(saved.pages).tts[0]?.audio.src).toBe("/tts/project/old.wav");
+    expect(contentPage(saved.pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      src: "/tts/project/old.wav",
+    });
   });
 
   it("saves a freshly synthesized VoicePeak project without analyze", async () => {
@@ -2047,5 +2079,427 @@ describe("project use-case", () => {
     expect(result.updatedItemIds).toEqual(["page-a", "page-b"]);
     expect(synthesizeVoisonaMock).toHaveBeenCalledTimes(2);
     expect(result.project.pages.map((page) => page.id)).toEqual(["page-a", "page-b"]);
+  });
+
+  it("writes analyzing audio before Gemma finishes when an API key is set", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    let resolveLlm: ((value: unknown) => void) | undefined;
+    requestOpenRouterCorrectionsMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveLlm = resolve;
+      }),
+    );
+    validateG2pItemsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav", 2));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("analyzing");
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(helloG2p);
+    expect(writeSavedProjectMock).toHaveBeenCalledTimes(1);
+    expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
+    expect(requestOpenRouterCorrectionsMock).toHaveBeenCalledTimes(1);
+    expect(requestOpenRouterCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({
+      profile: expect.objectContaining({ id: "gemma-4-31b-coreweave-fp4-v1" }),
+    });
+
+    resolveLlm?.({
+      requestId: "generation-1",
+      model: "google/gemma-4-31b-it",
+      actualProvider: "coreweave",
+      reasoningEffort: "none",
+      structuredOutput: [{ id: "tts-1", changed: false, phrases: [], reason: "維持" }],
+      renderedKana: [helloG2p.kana],
+      corrections: [{ id: "tts-1", changed: false, kana: helloG2p.kana, reason: "維持" }],
+      usage: {
+        promptTokens: 1,
+        completionTokens: 1,
+        reasoningTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 2,
+        costUsd: 0,
+      },
+    });
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      durationSec: 2.1,
+    });
+  });
+
+  it("reuses analyzing after baseline G2P is reconciled onto the form", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    let rejectLlm: ((error: Error) => void) | undefined;
+    requestOpenRouterCorrectionsMock.mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectLlm = reject;
+      }),
+    );
+
+    const first = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+    const firstAudio = contentPage(first.pages).tts[0]?.audio;
+    const analysisKey = firstAudio?.status === "analyzing" ? firstAudio.analysisKey : undefined;
+
+    const second = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(second.pages).tts[0]?.audio).toEqual({
+      status: "analyzing",
+      analysisKey,
+    });
+    expect(requestOpenRouterCorrectionsMock).toHaveBeenCalledTimes(1);
+    expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
+    synthesizeVoisonaMock.mockResolvedValue(audio("/tts/project/voisona-1.wav"));
+    rejectLlm?.(new Error("stop"));
+    await flushJobs();
+  });
+
+  it("keeps analyzing when only the voice changes", async () => {
+    const analysisKey = "keep-me";
+    readSavedProjectMock.mockResolvedValueOnce({
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "old-voice",
+              audio: { status: "analyzing", analysisKey },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "new-voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]).toMatchObject({
+      voiceName: "new-voice",
+      audio: { status: "analyzing", analysisKey },
+      speech: { g2p: helloG2p },
+    });
+    expect(requestOpenRouterCorrectionsMock).not.toHaveBeenCalled();
+  });
+
+  it("ends analyzing when the provider changes to VoicePeak", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              audio: { status: "analyzing", analysisKey: "old-key" },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoicepeakMock.mockResolvedValueOnce(audio("/tts/project/voicepeak-1.wav", 1));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicepeak",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("pending");
+    expect(contentPage(saved.pages).tts[0]?.provider).toBe("voicepeak");
+    expect(requestOpenRouterCorrectionsMock).not.toHaveBeenCalled();
+    await flushJobs();
+  });
+
+  it("skips automatic analyze when usable G2P is already present", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav"));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("pending");
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+    expect(requestOpenRouterCorrectionsMock).not.toHaveBeenCalled();
+    await flushJobs();
+  });
+
+  it("does not create analyzing when the OpenRouter API key is missing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav"));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("pending");
+    expect(requestOpenRouterCorrectionsMock).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "[llm-g2p] OPENROUTER_API_KEY is not set; automatic G2P correction is skipped",
+    );
+    warn.mockRestore();
+    await flushJobs();
+  });
+
+  it("re-registers stuck analyzing jobs on force resynthesis", async () => {
+    const analysisKey = "stuck-key";
+    readSavedProjectMock.mockResolvedValueOnce({
+      meta: defaultMeta,
+      bgm: [],
+      voicePresets: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              audio: { status: "analyzing", analysisKey },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+    requestOpenRouterCorrectionsMock.mockResolvedValueOnce({
+      requestId: "generation-1",
+      model: "google/gemma-4-31b-it",
+      actualProvider: "coreweave",
+      reasoningEffort: "none",
+      structuredOutput: [{ id: "tts-1", changed: false, phrases: [], reason: "維持" }],
+      renderedKana: [helloG2p.kana],
+      corrections: [{ id: "tts-1", changed: false, kana: helloG2p.kana, reason: "維持" }],
+      usage: {
+        promptTokens: 1,
+        completionTokens: 1,
+        reasoningTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 2,
+        costUsd: 0,
+      },
+    });
+    validateG2pItemsMock.mockResolvedValueOnce([helloG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav", 2));
+
+    const { saveProjectChanges } = await import("../use-case");
+    const result = await saveProjectChanges({ OPENROUTER_API_KEY: "secret" }, "project", {
+      upsertItems: [],
+      removedItemIds: [],
+      forceResynthesis: true,
+    });
+
+    expect(contentPage(result.project.pages).tts[0]?.audio).toEqual({
+      status: "analyzing",
+      analysisKey,
+    });
+    expect(requestOpenRouterCorrectionsMock).toHaveBeenCalledTimes(1);
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio.status).toBe("ready");
   });
 });

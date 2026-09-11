@@ -30,7 +30,9 @@ export function useTtsItem(ttsId: string, index: number) {
     isDragging,
     isSelected: selectedTtsId === ttsId,
     synthesisStatus:
-      audio?.status === "pending" || audio?.status === "failed" ? audio.status : undefined,
+      audio?.status === "analyzing" || audio?.status === "pending" || audio?.status === "failed"
+        ? audio.status
+        : undefined,
     synthesisError: audio?.status === "failed" ? audio.error : undefined,
   };
 }

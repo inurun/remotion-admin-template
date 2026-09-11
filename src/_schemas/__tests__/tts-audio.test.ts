@@ -30,6 +30,28 @@ describe("saved TTS audio schema", () => {
     ).toThrow();
   });
 
+  it("requires analysisKey for analyzing and rejects src, duration, or error", () => {
+    expect(
+      savedTtsSchema.parse({
+        ...base,
+        audio: { status: "analyzing", analysisKey: "key-1" },
+      }).audio,
+    ).toEqual({ status: "analyzing", analysisKey: "key-1" });
+
+    expect(() =>
+      savedTtsSchema.parse({
+        ...base,
+        audio: { status: "analyzing" },
+      }),
+    ).toThrow();
+    expect(() =>
+      savedTtsSchema.parse({
+        ...base,
+        audio: { status: "analyzing", analysisKey: "key-1", src: "/tts/a.wav" },
+      }),
+    ).toThrow();
+  });
+
   it("requires src and durationSec for ready", () => {
     expect(
       savedTtsSchema.parse({

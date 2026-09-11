@@ -8,6 +8,7 @@ import {
   type OpenRouterPromptItem,
   type StructuredCorrection,
 } from "../openrouter";
+import { AUTOMATIC_LLM_G2P_PROFILE, getLlmG2pMaxTokens } from "../llm-g2p-profile";
 
 function promptItem(): OpenRouterPromptItem {
   return {
@@ -210,23 +211,18 @@ describe("requestOpenRouterCorrections", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await requestOpenRouterCorrections(
-      {
-        OPENROUTER_API_KEY: "secret",
-        OPENROUTER_G2P_MODEL: "model/test",
-        OPENROUTER_G2P_PROVIDER: "provider-test",
-      },
-      [promptItem()],
-    );
+    const result = await requestOpenRouterCorrections({ OPENROUTER_API_KEY: "secret" }, [
+      promptItem(),
+    ]);
 
     const request = fetchMock.mock.calls[0]![1] as RequestInit;
     const body = JSON.parse(String(request.body));
     expect(request.headers).toMatchObject({ Authorization: "Bearer secret" });
     expect(body).toMatchObject({
-      model: "model/test",
-      reasoning: { effort: "none" },
+      model: "openai/gpt-5.6-luna",
+      reasoning: { effort: "low" },
       provider: {
-        only: ["provider-test"],
+        only: ["openai"],
         allow_fallbacks: false,
         require_parameters: true,
       },
@@ -260,6 +256,48 @@ describe("requestOpenRouterCorrections", () => {
       totalTokens: 120,
       costUsd: 0.001,
     });
+  });
+
+  it("sends the automatic Gemma profile, temperature 0, and page context", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      successResponse([
+        {
+          id: "tts-1",
+          changed: false,
+          phrases: [],
+          reason: "維持",
+        },
+      ]),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestOpenRouterCorrections({ OPENROUTER_API_KEY: "secret" }, [promptItem()], {
+      profile: AUTOMATIC_LLM_G2P_PROFILE,
+      userContent: {
+        pages: [{ id: "page-1", title: "Main", utterances: [{ id: "tts-1", target: true }] }],
+      },
+    });
+
+    const body = JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body));
+    expect(body).toMatchObject({
+      model: "google/gemma-4-31b-it",
+      temperature: 0,
+      reasoning: { effort: "low" },
+      provider: {
+        only: ["coreweave"],
+        quantizations: ["fp4"],
+        allow_fallbacks: false,
+        require_parameters: true,
+      },
+    });
+    expect(body.messages[0].content).toContain("The baseline reading is usually correct");
+    expect(body.messages[0].content).toContain("baselinePhrases");
+    expect(body.messages[0].content).toContain("Never return only the corrected fragment");
+    expect(body.messages[0].content).not.toContain(
+      "at least one contextual reading is likely wrong",
+    );
+    expect(JSON.parse(body.messages[1].content).pages[0].id).toBe("page-1");
+    expect(body.max_tokens).toBe(getLlmG2pMaxTokens(AUTOMATIC_LLM_G2P_PROFILE, 1));
   });
 
   it("uses the baseline when changed is false", async () => {
@@ -408,6 +446,41 @@ describe("requestOpenRouterCorrections", () => {
     ).rejects.toThrow("unknown TTS id");
   });
 
+  it("keeps valid automatic items when another id is unknown", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        successResponse([
+          {
+            id: "other",
+            changed: true,
+            phrases: [phrase()],
+            reason: "文脈",
+          },
+          {
+            id: "tts-1",
+            changed: false,
+            phrases: [],
+            reason: "維持",
+          },
+        ]),
+      ),
+    );
+
+    const result = await requestOpenRouterCorrections(
+      { OPENROUTER_API_KEY: "secret" },
+      [promptItem()],
+      { profile: AUTOMATIC_LLM_G2P_PROFILE },
+    );
+
+    expect(result.corrections).toEqual([
+      { id: "tts-1", changed: false, kana: "ニンキ'", reason: "維持" },
+    ]);
+    expect(result.partialErrors).toEqual([
+      { path: "items.other", reason: "unknown TTS id: other", ttsId: "other" },
+    ]);
+  });
+
   it("keeps provider HTTP details", async () => {
     vi.stubGlobal(
       "fetch",
@@ -483,5 +556,9 @@ describe("requestOpenRouterCorrections", () => {
     expect(getOpenRouterMaxTokens(1)).toBe(4096);
     expect(getOpenRouterMaxTokens(20)).toBe(10_240);
     expect(getOpenRouterMaxTokens(256)).toBe(32_768);
+    expect(getLlmG2pMaxTokens(AUTOMATIC_LLM_G2P_PROFILE, 1)).toBe(4096);
+    expect(getLlmG2pMaxTokens(AUTOMATIC_LLM_G2P_PROFILE, 10)).toBe(5120);
+    expect(getLlmG2pMaxTokens(AUTOMATIC_LLM_G2P_PROFILE, 50)).toBe(16_384);
+    expect(getLlmG2pMaxTokens(AUTOMATIC_LLM_G2P_PROFILE, 256)).toBe(16_384);
   });
 });
