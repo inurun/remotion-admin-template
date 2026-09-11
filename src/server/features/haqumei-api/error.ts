@@ -19,7 +19,13 @@ function parseFieldErrors(value: unknown): HaqumeiFieldError[] {
       return [];
     }
 
-    return [{ path: item.path, reason: item.reason }];
+    return [
+      {
+        path: item.path,
+        reason: item.reason,
+        ...(typeof item.message === "string" && item.message ? { message: item.message } : {}),
+      },
+    ];
   });
 }
 
@@ -89,6 +95,23 @@ export function formatHaqumeiApiLog(error: HaqumeiApiError) {
   const fields = formatFieldErrors(error.errors);
   const fieldSuffix = fields ? ` [${fields}]` : "";
   return `${error.status} ${error.code}: ${error.message}${fieldSuffix}${formatChunkLog(error)}`;
+}
+
+export function haqumeiReadableError(error: HaqumeiApiError) {
+  const messages = error.errors
+    .map((item) => item.message)
+    .filter((item): item is string => Boolean(item));
+  if (messages.length > 0) {
+    return messages.join("; ");
+  }
+  if (error.detail) {
+    return error.detail;
+  }
+  const reasons = error.errors.map((item) => `${item.path}: ${item.reason}`);
+  if (reasons.length > 0) {
+    return reasons.join("; ");
+  }
+  return error.message;
 }
 
 export class HaqumeiApiError extends Error {

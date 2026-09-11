@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ServerEnv } from "@/server/core/env";
+import type { CorrectionError } from "@/server/features/tts/g2p-topology";
 import {
   getLlmG2pMaxTokens,
   MANUAL_LLM_G2P_PROFILE,
@@ -9,67 +10,31 @@ import { getOpenRouterG2pSystemPrompt } from "./openrouter-prompt";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-const READING_PATTERN = /^[^'|/、？！_\s]+$/u;
-const OPTIONAL_READING_PATTERN = /^[^'|/、？！_\s]*$/u;
-const JSON_READING_PATTERN = "^[^'|/、？！_\\s]+$";
-const JSON_OPTIONAL_READING_PATTERN = "^[^'|/、？！_\\s]*$";
-
-const accentedWordSchema = z.object({
-  beforeNucleus: z.string().min(1).regex(READING_PATTERN),
-  afterNucleus: z.string().regex(OPTIONAL_READING_PATTERN),
-});
-
-const phraseSchema = z.object({
-  leadingWords: z.array(z.string().min(1).regex(READING_PATTERN)),
-  accentedWord: accentedWordSchema,
-  trailingWords: z.array(z.string().min(1).regex(READING_PATTERN)),
-  boundaryAfter: z.enum(["/", "、", "？", "！", ""]),
-});
-
 export const structuredCorrectionSchema = z
   .object({
     id: z.string().min(1),
     changed: z.boolean(),
-    phrases: z.array(phraseSchema),
+    kana: z.string(),
     reason: z.string(),
   })
   .superRefine((item, ctx) => {
     if (!item.changed) {
-      if (item.phrases.length > 0) {
+      if (item.kana.length > 0) {
         ctx.addIssue({
           code: "custom",
-          message: "changed=false requires phrases to be empty",
-          path: ["phrases"],
+          message: "changed=false requires kana to be empty",
+          path: ["kana"],
         });
       }
       return;
     }
 
-    if (item.phrases.length === 0) {
+    if (!item.kana) {
       ctx.addIssue({
         code: "custom",
-        message: "changed=true requires at least one phrase",
-        path: ["phrases"],
+        message: "changed=true requires kana",
+        path: ["kana"],
       });
-      return;
-    }
-
-    for (const [index, phrase] of item.phrases.entries()) {
-      const isLast = index === item.phrases.length - 1;
-      if (isLast && phrase.boundaryAfter === "/") {
-        ctx.addIssue({
-          code: "custom",
-          message: 'the last phrase must not use boundaryAfter="/"',
-          path: ["phrases", index, "boundaryAfter"],
-        });
-      }
-      if (!isLast && phrase.boundaryAfter === "") {
-        ctx.addIssue({
-          code: "custom",
-          message: "non-final phrases require a non-empty boundaryAfter",
-          path: ["phrases", index, "boundaryAfter"],
-        });
-      }
     }
   });
 
@@ -125,42 +90,11 @@ const correctionJsonSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["id", "changed", "phrases", "reason"],
+        required: ["id", "changed", "kana", "reason"],
         properties: {
           id: { type: "string" },
           changed: { type: "boolean" },
-          phrases: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["leadingWords", "accentedWord", "trailingWords", "boundaryAfter"],
-              properties: {
-                leadingWords: {
-                  type: "array",
-                  items: { type: "string", minLength: 1, pattern: JSON_READING_PATTERN },
-                },
-                accentedWord: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["beforeNucleus", "afterNucleus"],
-                  properties: {
-                    beforeNucleus: {
-                      type: "string",
-                      minLength: 1,
-                      pattern: JSON_READING_PATTERN,
-                    },
-                    afterNucleus: { type: "string", pattern: JSON_OPTIONAL_READING_PATTERN },
-                  },
-                },
-                trailingWords: {
-                  type: "array",
-                  items: { type: "string", minLength: 1, pattern: JSON_READING_PATTERN },
-                },
-                boundaryAfter: { type: "string", enum: ["/", "、", "？", "！", ""] },
-              },
-            },
-          },
+          kana: { type: "string" },
           reason: { type: "string" },
         },
       },
@@ -210,10 +144,11 @@ export type OpenRouterValidationIssue = {
 
 export type OpenRouterRepairItem = {
   id: string;
+  text: string;
+  readText: string;
   baselineKana: string;
-  previousCorrection: StructuredCorrection | Record<string, never>;
-  renderedKana: string;
-  validationErrors: OpenRouterValidationIssue[];
+  previousKana: string;
+  errors: CorrectionError[];
 };
 
 export class OpenRouterError extends Error {
@@ -253,23 +188,6 @@ export function getOpenRouterConfig(serverEnv: ServerEnv) {
   return {
     apiKey: serverEnv.OPENROUTER_API_KEY?.trim(),
   };
-}
-
-export function renderCorrection(correction: StructuredCorrection): string {
-  if (!correction.changed) {
-    throw new Error(`changed=false cannot be rendered for TTS ${correction.id}`);
-  }
-
-  return correction.phrases
-    .map((phrase) => {
-      const words = [
-        ...phrase.leadingWords,
-        `${phrase.accentedWord.beforeNucleus}'${phrase.accentedWord.afterNucleus}`,
-        ...phrase.trailingWords,
-      ];
-      return `${words.join("|")}${phrase.boundaryAfter}`;
-    })
-    .join("");
 }
 
 const ZERO_USAGE: OpenRouterUsage = {
@@ -416,24 +334,12 @@ function mapCorrections(
       continue;
     }
 
-    try {
-      const kana = renderCorrection(item);
-      if (!kana) {
-        validationErrors.push({
-          path: `items.${item.id}.phrases`,
-          reason: `empty kana for TTS ${item.id}`,
-          ttsId: item.id,
-        });
-        continue;
-      }
-      correctionsById.set(item.id, { id: item.id, changed: true, kana, reason: item.reason });
-    } catch (error) {
-      validationErrors.push({
-        path: `items.${item.id}.phrases`,
-        reason: error instanceof Error ? error.message : String(error),
-        ttsId: item.id,
-      });
-    }
+    correctionsById.set(item.id, {
+      id: item.id,
+      changed: true,
+      kana: item.kana,
+      reason: item.reason,
+    });
   }
 
   if (!allowPartial && validationErrors.length > 0) {
@@ -485,19 +391,11 @@ export async function requestOpenRouterCorrections(
 
   const profile = options?.profile ?? MANUAL_LLM_G2P_PROFILE;
   const reasoningEffort = options?.reasoningEffort ?? profile.reasoningEffort;
-  const repairById = new Map((options?.repairItems ?? []).map((item) => [item.id, item]));
-  const userItems = promptItems.map((item) => {
-    const repair = repairById.get(item.id);
-    if (!repair) return item;
-    return {
-      ...item,
-      baselineKana: repair.baselineKana,
-      previousCorrection: repair.previousCorrection,
-      renderedKana: repair.renderedKana,
-      validationErrors: repair.validationErrors,
-    };
-  });
-  const userContent = options?.userContent ?? { items: userItems };
+  const repairItems = options?.repairItems ?? [];
+  const userContent =
+    repairItems.length > 0
+      ? { items: repairItems }
+      : (options?.userContent ?? { items: promptItems });
   const quantizations =
     "quantizations" in profile.provider ? profile.provider.quantizations : undefined;
   const provider = {

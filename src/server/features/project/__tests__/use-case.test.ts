@@ -2134,7 +2134,7 @@ describe("project use-case", () => {
       model: "google/gemma-4-31b-it",
       actualProvider: "coreweave",
       reasoningEffort: "none",
-      structuredOutput: [{ id: "tts-1", changed: false, phrases: [], reason: "維持" }],
+      structuredOutput: [{ id: "tts-1", changed: false, kana: "", reason: "維持" }],
       renderedKana: [helloG2p.kana],
       corrections: [{ id: "tts-1", changed: false, kana: helloG2p.kana, reason: "維持" }],
       usage: {
@@ -2472,7 +2472,7 @@ describe("project use-case", () => {
       model: "google/gemma-4-31b-it",
       actualProvider: "coreweave",
       reasoningEffort: "none",
-      structuredOutput: [{ id: "tts-1", changed: false, phrases: [], reason: "維持" }],
+      structuredOutput: [{ id: "tts-1", changed: false, kana: "", reason: "維持" }],
       renderedKana: [helloG2p.kana],
       corrections: [{ id: "tts-1", changed: false, kana: helloG2p.kana, reason: "維持" }],
       usage: {

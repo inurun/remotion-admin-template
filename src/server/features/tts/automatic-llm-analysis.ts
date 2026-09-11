@@ -4,17 +4,25 @@ import path from "node:path";
 import type { G2pItem } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
-import { validateG2pItem, validateG2pItems } from "@/server/features/haqumei-api/validate";
-import type { AutomaticG2pPageContext } from "@/server/features/tts/automatic-g2p-context";
-import { automaticTopologyGuardError } from "@/server/features/tts/g2p-topology";
-import { AUTOMATIC_LLM_G2P_PROFILE } from "@/server/features/tts/llm-g2p-profile";
+import {
+  contextForChunk,
+  type AutomaticG2pPageContext,
+} from "@/server/features/tts/automatic-g2p-context";
+import {
+  classifyCorrection,
+  toRepairItem,
+  validateReadyKana,
+} from "@/server/features/tts/g2p-correction";
+import type { CorrectionError } from "@/server/features/tts/g2p-topology";
+import { remountG2pKana } from "@/server/features/tts/g2p-topology";
+import { AUTOMATIC_LLM_G2P_PROFILE, chunkItems } from "@/server/features/tts/llm-g2p-profile";
 import {
   OpenRouterError,
   OpenRouterValidationError,
   requestOpenRouterCorrections,
   type OpenRouterCorrection,
   type OpenRouterPromptItem,
-  type StructuredCorrection,
+  type OpenRouterRepairItem,
 } from "@/server/features/tts/openrouter";
 
 export type AutomaticAnalyzeTarget = {
@@ -97,131 +105,170 @@ type ItemOutcome = {
   ttsId: string;
   applied: "corrected" | "unchanged" | "baseline";
   reason?: string;
+  remounted?: boolean;
 };
 
-function planAutomaticItems(
-  targets: AutomaticAnalyzeTarget[],
-  structuredOutput: StructuredCorrection[],
-  corrections: OpenRouterCorrection[],
-) {
-  const structuredById = new Map(structuredOutput.map((item) => [item.id, item]));
-  const correctionById = new Map(corrections.map((item) => [item.id, item]));
+type TargetPrompt = {
+  target: AutomaticAnalyzeTarget;
+  promptItem: OpenRouterPromptItem;
+};
 
-  return targets.map((target) => {
-    const structured = structuredById.get(target.ttsId);
-    const correction = correctionById.get(target.ttsId);
-    if (!structured || !correction) {
-      return {
-        target,
-        kana: target.baseline.kana,
-        applied: "baseline" as const,
-        reason: "missing structured output",
-      };
-    }
-    if (!correction.changed) {
-      return {
-        target,
-        kana: target.baseline.kana,
-        applied: "unchanged" as const,
-      };
-    }
-
-    const topologyError = automaticTopologyGuardError(target.baseline.kana, structured);
-    if (topologyError) {
-      return {
-        target,
-        kana: target.baseline.kana,
-        applied: "baseline" as const,
-        reason: topologyError,
-      };
-    }
-
-    return {
-      target,
-      kana: correction.kana,
-      applied: "corrected" as const,
-      reason: structured.reason || undefined,
-    };
-  });
+function promptForTarget(target: AutomaticAnalyzeTarget): OpenRouterPromptItem {
+  return {
+    id: target.ttsId,
+    text: target.text,
+    readText: target.readText,
+    kana: target.baseline.kana,
+  };
 }
 
-async function validatePlannedItems(
-  serverEnv: ServerEnv,
-  planned: ReturnType<typeof planAutomaticItems>,
-) {
-  const g2pByTtsId = new Map<string, G2pItem>();
-  const outcomes: ItemOutcome[] = [];
-  const toValidate = planned.filter((item) => item.applied === "corrected");
+async function applyCorrections(input: {
+  serverEnv: ServerEnv;
+  targets: TargetPrompt[];
+  corrections: OpenRouterCorrection[];
+  settled: Map<string, ItemOutcome>;
+  g2pByTtsId: Map<string, G2pItem>;
+}) {
+  const correctionById = new Map(input.corrections.map((item) => [item.id, item]));
+  const ready: Array<{
+    target: AutomaticAnalyzeTarget;
+    kana: string;
+    reason?: string;
+    remounted?: boolean;
+  }> = [];
+  const repairs: Array<{
+    target: AutomaticAnalyzeTarget;
+    promptItem: OpenRouterPromptItem;
+    previousKana: string;
+    errors: CorrectionError[];
+    reason?: string;
+  }> = [];
 
-  const assignBaseline = (item: (typeof planned)[number], reason: string) => {
+  for (const item of input.targets) {
+    if (input.settled.has(item.target.ttsId)) {
+      continue;
+    }
+
+    const classified = classifyCorrection(
+      item.promptItem,
+      correctionById.get(item.target.ttsId),
+      true,
+    );
+    if (classified.status === "unchanged") {
+      input.g2pByTtsId.set(item.target.ttsId, item.target.baseline);
+      input.settled.set(item.target.ttsId, { ttsId: item.target.ttsId, applied: "unchanged" });
+      continue;
+    }
+    if (classified.status === "repair") {
+      const remounted = remountG2pKana(item.target.baseline.kana, classified.previousKana);
+      if (remounted) {
+        if (remounted === item.target.baseline.kana) {
+          input.g2pByTtsId.set(item.target.ttsId, item.target.baseline);
+          input.settled.set(item.target.ttsId, {
+            ttsId: item.target.ttsId,
+            applied: "unchanged",
+            remounted: true,
+          });
+          continue;
+        }
+        ready.push({
+          target: item.target,
+          kana: remounted,
+          reason: classified.reason,
+          remounted: true,
+        });
+        continue;
+      }
+      repairs.push({
+        target: item.target,
+        promptItem: item.promptItem,
+        previousKana: classified.previousKana,
+        errors: classified.errors,
+        reason: classified.reason,
+      });
+      continue;
+    }
+
+    ready.push({ target: item.target, kana: classified.kana, reason: classified.reason });
+  }
+
+  const validated = await validateReadyKana(
+    input.serverEnv,
+    ready.map((item) => ({
+      id: item.target.ttsId,
+      text: item.target.readText,
+      kana: item.kana,
+    })),
+  );
+
+  for (const item of ready) {
+    const g2p = validated.ok.get(item.target.ttsId);
+    if (g2p) {
+      input.g2pByTtsId.set(item.target.ttsId, g2p);
+      input.settled.set(item.target.ttsId, {
+        ttsId: item.target.ttsId,
+        applied: "corrected",
+        ...(item.reason ? { reason: item.reason } : {}),
+        ...(item.remounted ? { remounted: true } : {}),
+      });
+      continue;
+    }
+
+    const error = validated.failed.get(item.target.ttsId);
+    repairs.push({
+      target: item.target,
+      promptItem: promptForTarget(item.target),
+      previousKana: item.kana,
+      errors: [error ?? { kind: "validate", message: "haqumei validate failed" }],
+      reason: item.reason,
+    });
+  }
+
+  return {
+    repairs,
+    haqumeiValidate: {
+      ok: validated.failed.size === 0,
+      passedIds: [...validated.ok.keys()],
+      failed: [...validated.failed.entries()],
+    },
+  };
+}
+
+function fallbackRemaining(
+  remaining: TargetPrompt[],
+  settled: Map<string, ItemOutcome>,
+  g2pByTtsId: Map<string, G2pItem>,
+  reason: string,
+) {
+  for (const item of remaining) {
+    if (settled.has(item.target.ttsId)) {
+      continue;
+    }
     g2pByTtsId.set(item.target.ttsId, item.target.baseline);
-    outcomes.push({
+    settled.set(item.target.ttsId, {
       ttsId: item.target.ttsId,
       applied: "baseline",
       reason,
     });
-  };
-
-  for (const item of planned) {
-    if (item.applied !== "corrected") {
-      g2pByTtsId.set(item.target.ttsId, item.target.baseline);
-      outcomes.push({
-        ttsId: item.target.ttsId,
-        applied: item.applied,
-        ...(item.reason ? { reason: item.reason } : {}),
-      });
-    }
   }
+}
 
-  if (toValidate.length === 0) {
-    return { g2pByTtsId, outcomes };
-  }
-
-  const validateRequest = toValidate.map((item) => ({
-    text: item.target.readText,
-    kana: item.kana,
-  }));
-
-  try {
-    const validatedItems = await validateG2pItems(serverEnv, validateRequest);
-    for (const [index, item] of toValidate.entries()) {
-      g2pByTtsId.set(item.target.ttsId, validatedItems[index] ?? item.target.baseline);
-      outcomes.push({
-        ttsId: item.target.ttsId,
-        applied: validatedItems[index] ? "corrected" : "baseline",
-        ...(item.reason ? { reason: item.reason } : {}),
-        ...(!validatedItems[index] ? { reason: "haqumei validate returned no item" } : {}),
-      });
-    }
-    return { g2pByTtsId, outcomes, haqumeiValidate: { ok: true, items: validatedItems } };
-  } catch (error) {
-    const validatedItems: G2pItem[] = [];
-    for (const item of toValidate) {
-      try {
-        const validated = await validateG2pItem(serverEnv, {
-          text: item.target.readText,
-          kana: item.kana,
-        });
-        g2pByTtsId.set(item.target.ttsId, validated);
-        validatedItems.push(validated);
-        outcomes.push({
-          ttsId: item.target.ttsId,
-          applied: "corrected",
-          ...(item.reason ? { reason: item.reason } : {}),
-        });
-      } catch (itemError) {
-        assignBaseline(item, itemError instanceof Error ? itemError.message : String(itemError));
-      }
-    }
-    return {
+function fallbackRepairs(
+  remaining: Array<{
+    target: AutomaticAnalyzeTarget;
+    promptItem: OpenRouterPromptItem;
+    errors: CorrectionError[];
+  }>,
+  settled: Map<string, ItemOutcome>,
+  g2pByTtsId: Map<string, G2pItem>,
+) {
+  for (const item of remaining) {
+    fallbackRemaining(
+      [{ target: item.target, promptItem: item.promptItem }],
+      settled,
       g2pByTtsId,
-      outcomes,
-      haqumeiValidate: {
-        ok: false,
-        batchError: serializeError(error),
-        items: validatedItems,
-      },
-    };
+      item.errors.map((error) => error.message).join("; ") || "repair still failed",
+    );
   }
 }
 
@@ -250,11 +297,9 @@ export async function runAutomaticG2pBatch(
   const logFile = getLogFile(runId, startedAt);
   const profile = AUTOMATIC_LLM_G2P_PROFILE;
   const baselines = baselineMap(input.targets);
-  const promptItems: OpenRouterPromptItem[] = input.targets.map((target) => ({
-    id: target.ttsId,
-    text: target.text,
-    readText: target.readText,
-    kana: target.baseline.kana,
+  const targetPrompts: TargetPrompt[] = input.targets.map((target) => ({
+    target,
+    promptItem: promptForTarget(target),
   }));
 
   const log: Record<string, unknown> = {
@@ -279,6 +324,7 @@ export async function runAutomaticG2pBatch(
       provider: profile.provider,
       reasoningEffort: profile.reasoningEffort,
       timeoutMs: profile.timeoutMs,
+      chunkSize: profile.chunkSize,
     },
   };
 
@@ -312,39 +358,164 @@ export async function runAutomaticG2pBatch(
     return { ...result, log };
   };
 
-  try {
-    const openRouterStartedAt = performance.now();
-    const openRouterResult = await requestOpenRouterCorrections(serverEnv, promptItems, {
-      profile,
-      userContent: { pages: input.pages },
-    });
-    const openRouterMs = elapsedMs(openRouterStartedAt);
-    log.openRouter = {
-      requestId: openRouterResult.requestId,
-      model: openRouterResult.model,
-      actualProvider: openRouterResult.actualProvider,
-      reasoningEffort: openRouterResult.reasoningEffort,
-      finishReason: openRouterResult.finishReason,
-      structuredOutput: openRouterResult.structuredOutput,
-      renderedKana: openRouterResult.renderedKana,
-      usage: openRouterResult.usage,
-      ...("partialErrors" in openRouterResult &&
-      Array.isArray(openRouterResult.partialErrors) &&
-      openRouterResult.partialErrors.length > 0
-        ? { partialErrors: openRouterResult.partialErrors }
-        : {}),
-    };
+  const g2pByTtsId = new Map<string, G2pItem>();
+  const settled = new Map<string, ItemOutcome>();
+  const openRouterAttempts: Array<Record<string, unknown>> = [];
+  let openRouterMs = 0;
+  let validationMs = 0;
+  const haqumeiValidate: unknown[] = [];
+  const repairs: Array<{
+    target: AutomaticAnalyzeTarget;
+    promptItem: OpenRouterPromptItem;
+    previousKana: string;
+    errors: CorrectionError[];
+    reason?: string;
+  }> = [];
 
-    const planned = planAutomaticItems(
-      input.targets,
-      openRouterResult.structuredOutput ?? [],
-      openRouterResult.corrections,
+  const logOpenRouter = (
+    attempt: 1 | 2,
+    chunkIndex: number,
+    result: Awaited<ReturnType<typeof requestOpenRouterCorrections>>,
+    extra?: Record<string, unknown>,
+  ) => {
+    openRouterAttempts.push({
+      attempt,
+      chunk: chunkIndex,
+      requestId: result.requestId,
+      model: result.model,
+      actualProvider: result.actualProvider,
+      reasoningEffort: result.reasoningEffort,
+      finishReason: result.finishReason,
+      structuredOutput: result.structuredOutput,
+      renderedKana: result.renderedKana,
+      usage: result.usage,
+      ...("partialErrors" in result &&
+      Array.isArray(result.partialErrors) &&
+      result.partialErrors.length > 0
+        ? { partialErrors: result.partialErrors }
+        : {}),
+      ...extra,
+    });
+  };
+
+  try {
+    const targetChunks = chunkItems(targetPrompts, profile.chunkSize);
+    for (const [chunkIndex, chunk] of targetChunks.entries()) {
+      try {
+        const firstStartedAt = performance.now();
+        const firstResult = await requestOpenRouterCorrections(
+          serverEnv,
+          chunk.map((item) => item.promptItem),
+          {
+            profile,
+            userContent: {
+              pages: contextForChunk(input.pages, new Set(chunk.map((item) => item.target.ttsId))),
+            },
+          },
+        );
+        openRouterMs += elapsedMs(firstStartedAt);
+        logOpenRouter(1, chunkIndex, firstResult);
+
+        const firstValidateStartedAt = performance.now();
+        const firstPass = await applyCorrections({
+          serverEnv,
+          targets: chunk,
+          corrections: firstResult.corrections,
+          settled,
+          g2pByTtsId,
+        });
+        validationMs += elapsedMs(firstValidateStartedAt);
+        haqumeiValidate.push({ attempt: 1, chunk: chunkIndex, ...firstPass.haqumeiValidate });
+        repairs.push(...firstPass.repairs);
+      } catch (error) {
+        openRouterAttempts.push({
+          attempt: 1,
+          chunk: chunkIndex,
+          error: serializeError(error),
+        });
+        fallbackRemaining(
+          chunk,
+          settled,
+          g2pByTtsId,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
+    if (repairs.length > 0 && profile.maxAttempts > 1) {
+      for (const [chunkIndex, repairChunk] of chunkItems(repairs, profile.chunkSize).entries()) {
+        const repairItems: OpenRouterRepairItem[] = repairChunk.map((item) =>
+          toRepairItem(item.promptItem, item.previousKana, item.errors),
+        );
+        try {
+          const repairStartedAt = performance.now();
+          const repairResult = await requestOpenRouterCorrections(
+            serverEnv,
+            repairChunk.map((item) => item.promptItem),
+            {
+              profile,
+              repairItems,
+            },
+          );
+          openRouterMs += elapsedMs(repairStartedAt);
+          logOpenRouter(2, chunkIndex, repairResult, { repairItems });
+
+          const repairValidateStartedAt = performance.now();
+          const secondPass = await applyCorrections({
+            serverEnv,
+            targets: repairChunk.map((item) => ({
+              target: item.target,
+              promptItem: item.promptItem,
+            })),
+            corrections: repairResult.corrections,
+            settled,
+            g2pByTtsId,
+          });
+          validationMs += elapsedMs(repairValidateStartedAt);
+          haqumeiValidate.push({ attempt: 2, chunk: chunkIndex, ...secondPass.haqumeiValidate });
+          fallbackRepairs(secondPass.repairs, settled, g2pByTtsId);
+        } catch (error) {
+          openRouterAttempts.push({
+            attempt: 2,
+            chunk: chunkIndex,
+            error: serializeError(error),
+          });
+          fallbackRemaining(
+            repairChunk.map((item) => ({
+              target: item.target,
+              promptItem: item.promptItem,
+            })),
+            settled,
+            g2pByTtsId,
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      }
+    } else {
+      fallbackRepairs(repairs, settled, g2pByTtsId);
+    }
+
+    for (const target of input.targets) {
+      if (!g2pByTtsId.has(target.ttsId)) {
+        g2pByTtsId.set(target.ttsId, target.baseline);
+        settled.set(target.ttsId, {
+          ttsId: target.ttsId,
+          applied: "baseline",
+          reason: "missing structured output",
+        });
+      }
+    }
+
+    const outcomes = input.targets.map(
+      (target) =>
+        settled.get(target.ttsId) ?? {
+          ttsId: target.ttsId,
+          applied: "baseline" as const,
+          reason: "missing structured output",
+        },
     );
-    const validateStartedAt = performance.now();
-    const validated = await validatePlannedItems(serverEnv, planned);
-    const validationMs = elapsedMs(validateStartedAt);
-    const status = resultStatus(validated.outcomes);
-    const failed = validated.outcomes.filter((item) => item.applied === "baseline");
+    const status = resultStatus(outcomes);
+    const failed = outcomes.filter((item) => item.applied === "baseline");
 
     return finish(
       {
@@ -354,12 +525,13 @@ export async function runAutomaticG2pBatch(
             .map((item) => item.reason)
             .filter(Boolean)
             .join("; ") || undefined,
-        g2pByTtsId: validated.g2pByTtsId,
+        g2pByTtsId,
       },
       {
         status,
-        items: validated.outcomes,
-        haqumeiValidate: validated.haqumeiValidate,
+        items: outcomes,
+        openRouter: openRouterAttempts,
+        haqumeiValidate,
         timings: { openRouterMs, validationMs },
       },
     );

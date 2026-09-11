@@ -11,13 +11,14 @@ import {
   HAQUMEI_MAX_TEXT_CHARS,
   HAQUMEI_MAX_TOTAL_CHARS,
 } from "@/server/features/haqumei-api/limits";
-import { validateG2pItems } from "@/server/features/haqumei-api/validate";
 import {
   ttsLlmAnalysisRequestSchema,
   ttsLlmAnalysisResponseSchema,
   type TtsLlmAnalysisResponse,
 } from "./contract";
 import { MANUAL_LLM_G2P_PROFILE } from "@/server/features/tts/llm-g2p-profile";
+import { classifyCorrection, toRepairItem, validateReadyKana } from "./g2p-correction";
+import type { CorrectionError } from "./g2p-topology";
 import {
   OpenRouterError,
   OpenRouterValidationError,
@@ -139,7 +140,9 @@ function formatPipelineError(error: unknown, eligibleIds: string[]) {
       .map((item) => {
         const match = /^items\[(\d+)\]/u.exec(item.path);
         const ttsId = match ? eligibleIds[Number(match[1])] : undefined;
-        return ttsId ? `${item.path}: ${item.reason} (${ttsId})` : `${item.path}: ${item.reason}`;
+        return ttsId
+          ? `${item.path}: ${item.message ?? item.reason} (${ttsId})`
+          : `${item.path}: ${item.message ?? item.reason}`;
       })
       .filter(Boolean)
       .join(", ");
@@ -152,54 +155,21 @@ function formatPipelineError(error: unknown, eligibleIds: string[]) {
 }
 
 function isRetryableAiError(error: unknown) {
-  if (error instanceof OpenRouterValidationError) return true;
-  return error instanceof HaqumeiApiError && error.status === 422;
+  return error instanceof OpenRouterValidationError;
 }
 
-function failedIndexesFromHaqumei(error: HaqumeiApiError, itemCount: number) {
-  const indexes = new Set<number>();
-  for (const item of error.errors) {
-    const match = /^items\[(\d+)\]/u.exec(item.path);
-    if (!match) continue;
-    const index = Number(match[1]);
-    if (Number.isInteger(index) && index >= 0 && index < itemCount) {
-      indexes.add(index);
-    }
-  }
-  return indexes.size > 0 ? [...indexes] : Array.from({ length: itemCount }, (_, index) => index);
-}
-
-function haqumeiValidationErrors(
-  error: HaqumeiApiError,
-  promptItems: OpenRouterPromptItem[],
-): OpenRouterValidationIssue[] {
-  return error.errors.map((item) => {
-    const match = /^items\[(\d+)\]/u.exec(item.path);
-    const ttsId = match ? promptItems[Number(match[1])]?.id : undefined;
-    return { path: item.path, reason: item.reason, ttsId };
-  });
-}
-
-function repairItemsForIndexes(
-  indexes: number[],
-  promptItems: OpenRouterPromptItem[],
-  corrections: OpenRouterCorrection[],
-  structuredOutput: StructuredCorrection[] | undefined,
-  validationErrors: OpenRouterValidationIssue[],
-): OpenRouterRepairItem[] {
-  return indexes.map((index) => {
-    const item = promptItems[index]!;
-    const errors = validationErrors.filter(
-      (error) => error.ttsId === item.id || error.path.startsWith(`items[${index}]`),
-    );
-    return {
-      id: item.id,
-      baselineKana: item.kana,
-      previousCorrection: structuredOutput?.find((correction) => correction.id === item.id) ?? {},
-      renderedKana: corrections[index]?.kana ?? "",
-      validationErrors: errors.length > 0 ? errors : validationErrors,
-    };
-  });
+function throwRemainingRepairs(
+  repairs: Array<{ promptItem: OpenRouterPromptItem; errors: CorrectionError[] }>,
+) {
+  const message = repairs
+    .map((item) =>
+      item.errors
+        .map((error) => `${error.kind}: ${error.message} (${item.promptItem.id})`)
+        .join(", "),
+    )
+    .filter(Boolean)
+    .join(", ");
+  throw new Error(message || "LLM G2P repair failed");
 }
 
 export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown) {
@@ -250,9 +220,19 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
         ...(item.next ? { next: item.next } : {}),
       }));
 
+      const baselineById = new Map(
+        eligible.map((item, index) => [item.id, baselineItems[index]!] as const),
+      );
+      const g2pById = new Map<string, G2pItem>();
+      const settledIds = new Set<string>();
       let pendingItems = promptItems;
       let repairItems: OpenRouterRepairItem[] | undefined;
-      mergedCorrections = [];
+      mergedCorrections = promptItems.map((item) => ({
+        id: item.id,
+        changed: false,
+        kana: item.kana,
+        reason: "",
+      }));
 
       for (const attempt of [1, 2] as const) {
         const reasoningEffort: ReasoningEffort = profile.reasoningEffort;
@@ -285,13 +265,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
             });
             if (attempt === 1 && isRetryableAiError(error)) {
               pendingItems = promptItems;
-              repairItems = repairItemsForIndexes(
-                promptItems.map((_, index) => index),
-                promptItems,
-                mergedCorrections,
-                error.structuredOutput,
-                error.validationErrors,
-              );
+              repairItems = undefined;
               continue;
             }
           }
@@ -301,77 +275,126 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
         const openRouterMs = elapsedMs(stageStartedAt);
         timings.openRouterMs += openRouterMs;
 
-        if (attempt === 1) {
-          mergedCorrections = openRouterResult.corrections;
-        } else {
-          for (const correction of openRouterResult.corrections) {
-            const index = promptItems.findIndex((item) => item.id === correction.id);
-            if (index >= 0) mergedCorrections[index] = correction;
+        const correctionsById = new Map(mergedCorrections.map((item) => [item.id, item]));
+        for (const correction of openRouterResult.corrections) {
+          if (settledIds.has(correction.id)) {
+            continue;
           }
+          correctionsById.set(correction.id, correction);
         }
+        mergedCorrections = promptItems.map(
+          (item) =>
+            correctionsById.get(item.id) ?? {
+              id: item.id,
+              changed: false,
+              kana: item.kana,
+              reason: "",
+            },
+        );
 
-        validateRequest = eligible.map((item, index) => ({
-          text: item.effectiveText,
-          kana: mergedCorrections[index]!.kana,
-        }));
+        const repairs: Array<{
+          promptItem: OpenRouterPromptItem;
+          previousKana: string;
+          errors: CorrectionError[];
+        }> = [];
+        const ready: Array<{ promptItem: OpenRouterPromptItem; kana: string }> = [];
+
+        for (const item of pendingItems) {
+          const classified = classifyCorrection(item, correctionsById.get(item.id), false);
+          if (classified.status === "unchanged") {
+            const baseline = baselineById.get(item.id);
+            if (baseline) {
+              g2pById.set(item.id, baseline);
+            }
+            settledIds.add(item.id);
+            continue;
+          }
+          if (classified.status === "repair") {
+            repairs.push({
+              promptItem: item,
+              previousKana: classified.previousKana,
+              errors: classified.errors,
+            });
+            continue;
+          }
+          ready.push({ promptItem: item, kana: classified.kana });
+        }
 
         stage = "haqumei-validate";
         stageStartedAt = performance.now();
-        try {
-          validatedItems = await validateG2pItems(serverEnv, validateRequest);
-          const validationMs = elapsedMs(stageStartedAt);
-          timings.haqumeiValidationMs += validationMs;
-          openRouterAttempts.push({
-            attempt,
-            requestId: openRouterResult.requestId,
-            model: openRouterResult.model,
-            provider: openRouterResult.actualProvider,
-            reasoningEffort,
-            finishReason: openRouterResult.finishReason,
-            structuredOutput: openRouterResult.structuredOutput,
-            renderedKana: openRouterResult.renderedKana,
-            rawResponse: openRouterResult.rawResponse,
-            timings: { openRouterMs, validationMs },
-            usage: openRouterResult.usage,
-          });
-          break;
-        } catch (error) {
-          const validationMs = elapsedMs(stageStartedAt);
-          timings.haqumeiValidationMs += validationMs;
-          const validationErrors =
-            error instanceof HaqumeiApiError
-              ? haqumeiValidationErrors(error, promptItems)
-              : undefined;
-          openRouterAttempts.push({
-            attempt,
-            requestId: openRouterResult.requestId,
-            model: openRouterResult.model,
-            provider: openRouterResult.actualProvider,
-            reasoningEffort,
-            finishReason: openRouterResult.finishReason,
-            structuredOutput: openRouterResult.structuredOutput,
-            renderedKana: openRouterResult.renderedKana,
-            validationErrors,
-            rawResponse: openRouterResult.rawResponse,
-            timings: { openRouterMs, validationMs },
-            usage: openRouterResult.usage,
-          });
-          if (attempt === 1 && error instanceof HaqumeiApiError && error.status === 422) {
-            const failedIndexes = failedIndexesFromHaqumei(error, promptItems.length);
-            pendingItems = failedIndexes.map((index) => promptItems[index]!);
-            repairItems = repairItemsForIndexes(
-              failedIndexes,
-              promptItems,
-              mergedCorrections,
-              openRouterResult.structuredOutput,
-              validationErrors ?? [],
-            );
+        validateRequest = ready.map((item) => ({
+          text: item.promptItem.readText,
+          kana: item.kana,
+        }));
+        const validated = await validateReadyKana(
+          serverEnv,
+          ready.map((item) => ({
+            id: item.promptItem.id,
+            text: item.promptItem.readText,
+            kana: item.kana,
+          })),
+        );
+        const validationMs = elapsedMs(stageStartedAt);
+        timings.haqumeiValidationMs += validationMs;
+
+        for (const item of ready) {
+          const g2p = validated.ok.get(item.promptItem.id);
+          if (g2p) {
+            g2pById.set(item.promptItem.id, g2p);
+            settledIds.add(item.promptItem.id);
             continue;
           }
-          throw error;
+          repairs.push({
+            promptItem: item.promptItem,
+            previousKana: item.kana,
+            errors: [
+              validated.failed.get(item.promptItem.id) ?? {
+                kind: "validate",
+                message: "haqumei validate failed",
+              },
+            ],
+          });
         }
+
+        const validationErrors = repairs.flatMap((item) =>
+          item.errors.map((error) => ({
+            path: `items.${item.promptItem.id}`,
+            reason: error.message,
+            ttsId: item.promptItem.id,
+          })),
+        );
+        openRouterAttempts.push({
+          attempt,
+          requestId: openRouterResult.requestId,
+          model: openRouterResult.model,
+          provider: openRouterResult.actualProvider,
+          reasoningEffort,
+          finishReason: openRouterResult.finishReason,
+          structuredOutput: openRouterResult.structuredOutput,
+          renderedKana: openRouterResult.renderedKana,
+          ...(validationErrors.length > 0 ? { validationErrors } : {}),
+          rawResponse: openRouterResult.rawResponse,
+          timings: { openRouterMs, validationMs },
+          usage: openRouterResult.usage,
+        });
+
+        if (repairs.length === 0) {
+          break;
+        }
+        if (attempt === 1) {
+          pendingItems = repairs.map((item) => item.promptItem);
+          repairItems = repairs.map((item) =>
+            toRepairItem(item.promptItem, item.previousKana, item.errors),
+          );
+          continue;
+        }
+        throwRemainingRepairs(repairs);
       }
 
+      validatedItems = promptItems.flatMap((item) => {
+        const g2p = g2pById.get(item.id);
+        return g2p ? [g2p] : [];
+      });
       const eligibleById = new Map(eligible.map((item, index) => [item.id, { item, index }]));
       results = request.items.map((item) => {
         if (item.provider === "voicepeak") {
@@ -385,7 +408,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
         const entry = eligibleById.get(item.id)!;
         const baseline = baselineItems[entry.index]!;
         const correction = mergedCorrections[entry.index]!;
-        const g2p = validatedItems[entry.index]!;
+        const g2p = g2pById.get(item.id) ?? baseline;
         return {
           id: item.id,
           status: g2p.kana === baseline.kana ? ("unchanged" as const) : ("corrected" as const),

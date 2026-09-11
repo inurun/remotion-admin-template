@@ -1,5 +1,4 @@
 import { PageSettingsDialog } from "@/app/components/app-editor/editor-card/page-header/page-settings-dialog/page-settings-dialog";
-import { LlmG2pDialog } from "@/app/components/app-editor/editor-card/page-header/llm-g2p-dialog/llm-g2p-dialog";
 import { ZenDialog } from "@/app/components/app-editor/editor-card/page-header/zen-dialog/zen-dialog";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import { useSelectedPageId } from "@/app/features/project/context/project-route-context";
@@ -19,7 +18,6 @@ export function PageHeader() {
       </div>
       {isTransition ? null : (
         <div className="flex items-center gap-1">
-          <LlmG2pDialog />
           {supportsZen ? <ZenDialog key={selectedPageId} /> : null}
           <PageSettingsDialog />
         </div>

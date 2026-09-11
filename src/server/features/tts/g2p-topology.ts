@@ -1,17 +1,5 @@
 export type G2pBoundaryAfter = "/" | "、" | "？" | "！" | "";
 
-type StructuredPhraseLike = {
-  leadingWords: string[];
-  trailingWords: string[];
-  boundaryAfter: G2pBoundaryAfter;
-};
-
-type StructuredCorrectionLike = {
-  id: string;
-  changed: boolean;
-  phrases: StructuredPhraseLike[];
-};
-
 export type G2pPhraseTopology = {
   wordCount: number;
   accentedWordIndex: number;
@@ -22,19 +10,21 @@ export type G2pTopology = {
   phrases: G2pPhraseTopology[];
 };
 
-export type StructuredG2pPhrase = {
-  leadingWords: string[];
-  accentedWord: {
-    beforeNucleus: string;
-    afterNucleus: string;
-  };
-  trailingWords: string[];
-  boundaryAfter: G2pBoundaryAfter;
+export type CorrectionErrorKind = "syntax" | "topology" | "validate";
+
+export type CorrectionError = {
+  kind: CorrectionErrorKind;
+  message: string;
 };
 
 type ParsedG2pPhrase = {
   words: string[];
   accentedWordIndex: number;
+  boundaryAfter: G2pBoundaryAfter;
+};
+
+type PhraseSlice = {
+  body: string;
   boundaryAfter: G2pBoundaryAfter;
 };
 
@@ -44,12 +34,12 @@ function isBoundaryChar(value: string | undefined): value is Exclude<G2pBoundary
   return value === "/" || value === "、" || value === "？" || value === "！";
 }
 
-function parseG2pPhrases(kana: string): ParsedG2pPhrase[] | null {
-  if (!kana) {
-    return null;
-  }
+function quote(value: string) {
+  return JSON.stringify(value);
+}
 
-  const phrases: ParsedG2pPhrase[] = [];
+function sliceG2pPhrases(kana: string): PhraseSlice[] {
+  const phrases: PhraseSlice[] = [];
   let start = 0;
 
   for (let index = 0; index <= kana.length; index += 1) {
@@ -61,24 +51,12 @@ function parseG2pPhrases(kana: string): ParsedG2pPhrase[] | null {
     }
 
     const body = kana.slice(start, index);
-    if (!body) {
-      return null;
-    }
-
-    const words = body.split("|");
-    const accentedWordIndex = words.findIndex((word) => word.includes("'"));
-    const quoteCount = [...body].filter((item) => item === "'").length;
-    if (
-      accentedWordIndex < 0 ||
-      quoteCount !== 1 ||
-      words.some((word) => word.replaceAll("'", "").length === 0)
-    ) {
-      return null;
+    if (atEnd && !body && phrases.length > 0) {
+      break;
     }
 
     phrases.push({
-      words,
-      accentedWordIndex,
+      body,
       boundaryAfter: isBoundaryChar(char) ? char : "",
     });
 
@@ -88,17 +66,73 @@ function parseG2pPhrases(kana: string): ParsedG2pPhrase[] | null {
     start = index + 1;
   }
 
-  if (phrases.length === 0) {
-    return null;
-  }
-  if (phrases.at(-1)?.boundaryAfter === "/") {
-    return null;
-  }
   return phrases;
 }
 
+function phraseLabel(index: number, slice: PhraseSlice) {
+  return `phrase ${index + 1} ${quote(`${slice.body}${slice.boundaryAfter}`)}`;
+}
+
+export function dslSyntaxErrors(kana: string): string[] {
+  if (!kana) {
+    return ["kana is empty"];
+  }
+
+  const slices = sliceG2pPhrases(kana);
+  if (slices.length === 0) {
+    return ["kana is empty"];
+  }
+
+  const issues: string[] = [];
+  for (const [index, slice] of slices.entries()) {
+    if (!slice.body) {
+      issues.push(`${phraseLabel(index, slice)} is empty`);
+      continue;
+    }
+
+    const words = slice.body.split("|");
+    const quoteCount = [...slice.body].filter((item) => item === "'").length;
+    const emptyWord = words.some((word) => word.replaceAll("'", "").length === 0);
+    const label = phraseLabel(index, slice);
+    if (emptyWord) {
+      issues.push(`${label}: empty word slot`);
+    }
+    if (quoteCount === 0) {
+      issues.push(`${label}: missing accent nucleus '`);
+    } else if (quoteCount !== 1) {
+      issues.push(
+        `${label}: ${quoteCount} accent nuclei (must be exactly 1). Restore '/' from baselineKana if two phrases were merged`,
+      );
+    }
+  }
+
+  if (slices.at(-1)?.boundaryAfter === "/") {
+    issues.push(`last phrase must not end with '/'; copy the baseline final boundary`);
+  }
+  return issues;
+}
+
+export function dslSyntaxError(kana: string): string | undefined {
+  return dslSyntaxErrors(kana)[0];
+}
+
+function parseValidPhrases(kana: string): ParsedG2pPhrase[] | undefined {
+  if (dslSyntaxErrors(kana).length > 0) {
+    return undefined;
+  }
+
+  return sliceG2pPhrases(kana).map((slice) => {
+    const words = slice.body.split("|");
+    return {
+      words,
+      accentedWordIndex: words.findIndex((word) => word.includes("'")),
+      boundaryAfter: slice.boundaryAfter,
+    };
+  });
+}
+
 export function parseG2pTopology(kana: string): G2pTopology | null {
-  const phrases = parseG2pPhrases(kana);
+  const phrases = parseValidPhrases(kana);
   if (!phrases) {
     return null;
   }
@@ -107,44 +141,6 @@ export function parseG2pTopology(kana: string): G2pTopology | null {
     phrases: phrases.map((phrase) => ({
       wordCount: phrase.words.length,
       accentedWordIndex: phrase.accentedWordIndex,
-      boundaryAfter: phrase.boundaryAfter,
-    })),
-  };
-}
-
-export function structuredPhrasesFromKana(kana: string): StructuredG2pPhrase[] | undefined {
-  const phrases = parseG2pPhrases(kana);
-  if (!phrases) {
-    return undefined;
-  }
-
-  const structured = phrases.map((phrase) => {
-    const accented = phrase.words[phrase.accentedWordIndex] ?? "";
-    const quote = accented.indexOf("'");
-    if (quote < 1) {
-      return undefined;
-    }
-    return {
-      leadingWords: phrase.words.slice(0, phrase.accentedWordIndex),
-      accentedWord: {
-        beforeNucleus: accented.slice(0, quote),
-        afterNucleus: accented.slice(quote + 1),
-      },
-      trailingWords: phrase.words.slice(phrase.accentedWordIndex + 1),
-      boundaryAfter: phrase.boundaryAfter,
-    };
-  });
-  if (structured.some((phrase) => phrase === undefined)) {
-    return undefined;
-  }
-  return structured.filter((phrase): phrase is StructuredG2pPhrase => phrase !== undefined);
-}
-
-export function topologyFromStructuredPhrases(phrases: StructuredPhraseLike[]): G2pTopology {
-  return {
-    phrases: phrases.map((phrase) => ({
-      wordCount: phrase.leadingWords.length + 1 + phrase.trailingWords.length,
-      accentedWordIndex: phrase.leadingWords.length,
       boundaryAfter: phrase.boundaryAfter,
     })),
   };
@@ -166,23 +162,175 @@ export function topologiesEqual(left: G2pTopology, right: G2pTopology) {
   });
 }
 
+function countChar(value: string, char: string) {
+  return [...value].filter((item) => item === char).length;
+}
+
+function hintDroppedPhraseBreaks(baselineKana: string, candidateKana: string) {
+  const droppedSlashes = countChar(baselineKana, "/") - countChar(candidateKana, "/");
+  if (droppedSlashes > 0) {
+    return ` Candidate dropped ${droppedSlashes} '/'. Copy phrase breaks from baselineKana and keep the intended reading.`;
+  }
+  return "";
+}
+
+function topologyDiffMessage(baseline: G2pTopology, candidate: G2pTopology) {
+  if (baseline.phrases.length !== candidate.phrases.length) {
+    return `topology changed: phrase count baseline=${baseline.phrases.length} candidate=${candidate.phrases.length}. Restore baseline '/' 、 ？ ！ breaks; keep the intended reading.`;
+  }
+
+  const diffs: string[] = [];
+  for (const [index, phrase] of baseline.phrases.entries()) {
+    const other = candidate.phrases[index]!;
+    const parts: string[] = [];
+    if (phrase.wordCount !== other.wordCount) {
+      parts.push(`word slots ${phrase.wordCount}->${other.wordCount}`);
+    }
+    if (phrase.accentedWordIndex !== other.accentedWordIndex) {
+      parts.push(`nucleus slot ${phrase.accentedWordIndex}->${other.accentedWordIndex}`);
+    }
+    if (phrase.boundaryAfter !== other.boundaryAfter) {
+      parts.push(`boundaryAfter ${quote(phrase.boundaryAfter)}->${quote(other.boundaryAfter)}`);
+    }
+    if (parts.length > 0) {
+      diffs.push(`phrase ${index + 1}: ${parts.join(", ")}`);
+    }
+  }
+
+  return `topology changed: ${diffs.join("; ")}. Copy baseline | / ' slots; keep mora readings.`;
+}
+
 export function automaticTopologyGuardError(
   baselineKana: string,
-  correction: StructuredCorrectionLike,
+  candidateKana: string,
+  ttsId: string,
 ) {
-  if (!correction.changed) {
-    return undefined;
-  }
-
   const baseline = parseG2pTopology(baselineKana);
   if (!baseline) {
-    return `unparseable baseline kana for TTS ${correction.id}`;
+    return `unparseable baseline kana for TTS ${ttsId}`;
   }
 
-  const candidate = topologyFromStructuredPhrases(correction.phrases);
+  const candidate = parseG2pTopology(candidateKana);
+  if (!candidate) {
+    return `unparseable candidate kana for TTS ${ttsId}`;
+  }
+
   if (!topologiesEqual(baseline, candidate)) {
-    return `automatic topology changed for TTS ${correction.id}`;
+    return topologyDiffMessage(baseline, candidate);
   }
 
   return undefined;
+}
+
+function insertQuote(reading: string, at: number) {
+  if (!reading) {
+    return reading;
+  }
+  const index = Math.min(Math.max(at, 1), reading.length);
+  return `${reading.slice(0, index)}'${reading.slice(index)}`;
+}
+
+function quoteOffsetInWord(word: string) {
+  const index = word.indexOf("'");
+  if (index < 0) {
+    return undefined;
+  }
+  return word.slice(0, index).replaceAll("'", "").length;
+}
+
+function extractG2pWords(kana: string) {
+  return sliceG2pPhrases(kana).flatMap((slice) =>
+    slice.body.split("|").filter((word) => word.replaceAll("'", "").length > 0),
+  );
+}
+
+function groupCandidateWords(slotCount: number, words: string[]) {
+  if (words.length < slotCount) {
+    return undefined;
+  }
+
+  const groups: string[][] = [];
+  let index = 0;
+  for (let slot = 0; slot < slotCount; slot += 1) {
+    const remainSlots = slotCount - slot;
+    const remainWords = words.length - index;
+    const take = remainWords - (remainSlots - 1);
+    if (take < 1) {
+      return undefined;
+    }
+    groups.push(words.slice(index, index + take));
+    index += take;
+  }
+  return index === words.length ? groups : undefined;
+}
+
+function mergeCandidateReading(parts: string[], nucleusAt: number | undefined) {
+  const reading = parts.map((part) => part.replaceAll("'", "")).join("");
+  if (nucleusAt === undefined) {
+    return reading;
+  }
+
+  let offset = 0;
+  for (const part of parts) {
+    const quoteAt = quoteOffsetInWord(part);
+    if (quoteAt !== undefined) {
+      return insertQuote(reading, offset + quoteAt);
+    }
+    offset += part.replaceAll("'", "").length;
+  }
+
+  return insertQuote(reading, nucleusAt);
+}
+
+export function remountG2pKana(baselineKana: string, candidateKana: string) {
+  const baseline = parseValidPhrases(baselineKana);
+  if (!baseline || !candidateKana) {
+    return undefined;
+  }
+
+  const slots = baseline.flatMap((phrase) =>
+    phrase.words.map((word, wordIndex) => ({
+      reading: word.replaceAll("'", ""),
+      nucleusAt: quoteOffsetInWord(word),
+      boundaryAfter: wordIndex === phrase.words.length - 1 ? phrase.boundaryAfter : "|",
+    })),
+  );
+  const groups = groupCandidateWords(slots.length, extractG2pWords(candidateKana));
+  if (!groups) {
+    return undefined;
+  }
+
+  const remounted = slots
+    .map((slot, index) => {
+      const parts = groups[index] ?? [slot.reading];
+      const word = mergeCandidateReading(parts, slot.nucleusAt);
+      return `${word}${slot.boundaryAfter ?? ""}`;
+    })
+    .join("");
+
+  if (syntaxOrTopologyErrors(baselineKana, remounted, "remount", true).length > 0) {
+    return undefined;
+  }
+  return remounted;
+}
+
+export function syntaxOrTopologyErrors(
+  baselineKana: string,
+  candidateKana: string,
+  ttsId: string,
+  checkTopology: boolean,
+): CorrectionError[] {
+  const syntax = dslSyntaxErrors(candidateKana);
+  if (syntax.length > 0) {
+    const hint = hintDroppedPhraseBreaks(baselineKana, candidateKana);
+    return syntax.map((message) => ({
+      kind: "syntax",
+      message: `${message}${hint}`,
+    }));
+  }
+  if (!checkTopology) {
+    return [];
+  }
+  const topology = automaticTopologyGuardError(baselineKana, candidateKana, ttsId);
+  return topology ? [{ kind: "topology", message: topology }] : [];
 }

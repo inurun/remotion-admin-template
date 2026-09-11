@@ -1,17 +1,12 @@
 const OPENROUTER_G2P_DSL_PROMPT = [
-  "Do not emit kana DSL. Return structured phrases, words, and one accent nucleus per phrase.",
-  "The server will render the DSL from your JSON.",
+  "Return kana as editor DSL. Example: ニンキ|ノ'/ナ'イ.",
   "Do not add, delete, or paraphrase the source text.",
-  "Each phrase has leadingWords, one accentedWord, trailingWords, and boundaryAfter.",
-  "accentedWord.beforeNucleus is required and must contain at least one mora.",
-  "accentedWord.afterNucleus is the rest of that word after the nucleus and may be empty.",
-  "Word slots are leadingWords, the accented word, and trailingWords, in source order.",
-  "Reading fields must not contain ', |, /, 、, ？, ！, _, or whitespace.",
-  "If changed is false, return phrases as [] and the baseline kana will be used.",
-  "Copy 、, ？, and ！ from the baseline kana as boundaryAfter values; never add, remove, move, or replace them.",
-  'Source … and …… are already 、 in the baseline. Use boundaryAfter "、" for them. Never drop them and never emit ….',
-  'Use boundaryAfter "/" to end an accent phrase without punctuation.',
-  'The last phrase must use the baseline\'s final 、, ？, or ！ when present, otherwise "". The last phrase must never use "/". Earlier phrases must use a non-empty boundary.',
+  "Each accent phrase has exactly one ' nucleus. Separate words with |.",
+  "Use / to end an accent phrase without punctuation. Copy 、, ？, and ！ from the baseline kana; never add, remove, move, or replace them.",
+  "Source … and …… are already 、 in the baseline. Keep those 、. Never drop them and never emit ….",
+  "The last phrase must keep the baseline's final 、, ？, or ！ when present. The last phrase must never end with /.",
+  "If changed is false, return kana as an empty string and the baseline kana will be used.",
+  "If changed is true, kana must cover the entire utterance. Never return only the corrected fragment.",
   "reason must be brief Japanese.",
   "Return only the JSON schema output.",
 ].join(" ");
@@ -29,17 +24,15 @@ export const OPENROUTER_G2P_MANUAL_SYSTEM_PROMPT = [
   "Actively inspect homographs, unknown words, romanized words, colloquial expressions, and repeated words with different meanings.",
   "Prefer a justified contextual correction over preserving an obviously suspicious baseline reading.",
   "Do not use changed=false as a shortcut; use it only after checking every potentially ambiguous reading in the item.",
-  "Valid phrase merge: カラ'/イ'シ becomes one phrase accentedWord.beforeNucleus=カラ afterNucleus=イ trailingWords=[シ].",
-  "Valid word merge: ウワテ'/ナゲ' becomes accentedWord.beforeNucleus=ウワテナゲ afterNucleus=\"\".",
+  "Valid phrase merge: カラ'/イ'シ becomes カラ'イ|シ.",
+  "Valid word merge: ウワテ'/ナゲ' becomes ウワテナゲ'.",
   "Valid example: ニンキ|ノ'/ナ'イ/ニンキ|スポ'ット -> ヒトケ|ノ'/ナ'イ/ニンキ|スポ'ット.",
 ].join(" ");
 
 const OPENROUTER_G2P_AUTOMATIC_OUTPUT_PROMPT = [
-  "Do not emit kana DSL. Return structured phrases in the same JSON shape as baselinePhrases.",
-  "accentedWord.beforeNucleus is required and must contain at least one mora.",
-  "accentedWord.afterNucleus is the rest of that word after the nucleus and may be empty.",
-  "Reading fields must not contain ', |, /, 、, ？, ！, _, or whitespace.",
-  "If changed is false, return phrases as [] and the baseline will be used.",
+  "Copy baselineKana and change only misread mora strings.",
+  "If changed is false, return kana as an empty string and the baseline will be used.",
+  "If changed is true, kana must be the full-utterance DSL. Never return only the corrected fragment.",
   "reason must be brief Japanese.",
   "Return only the JSON schema output.",
 ].join(" ");
@@ -48,9 +41,8 @@ export const OPENROUTER_G2P_AUTOMATIC_SYSTEM_PROMPT = [
   "You proofread Japanese TTS readings.",
   "The pages JSON lists utterances in page order. Use non-target utterances as context only.",
   "Return corrections only for utterances with target=true. Never return ids for target=false.",
-  "Each target includes baselinePhrases in the output schema. Copy that structure.",
-  "If changed=true, phrases must cover the entire utterance. Never return only the corrected fragment.",
-  "Change only mora strings of misread word slots. Keep leadingWords, accentedWord, and trailingWords array lengths and every boundaryAfter.",
+  "Each target includes baselineKana. Copy that DSL and change readings only.",
+  "Keep the same phrase count, | word slots, ' nucleus slot, and every / 、 ？ ！ boundary.",
   "Do not merge, split, drop, or reorder words. Do not move the nucleus to another word slot.",
   "The baseline reading is usually correct. Do not assume there is an error.",
   "Correct only almost-certain misreadings given the page context.",
@@ -59,13 +51,14 @@ export const OPENROUTER_G2P_AUTOMATIC_SYSTEM_PROMPT = [
   "Do not change accent to improve intonation.",
   "changed=false is the normal default result.",
   "If changed=true, reason must briefly name only the written form and reading you changed, in Japanese.",
-  'Example: あそこを出ようね with baselinePhrases [{leadingWords:[アソコ], accentedWord:{beforeNucleus:ヲ, afterNucleus:""}, trailingWords:[], boundaryAfter:"/"}, {leadingWords:[ダ], accentedWord:{beforeNucleus:ヨ, afterNucleus:ー}, trailingWords:[ネ], boundaryAfter:""}]. A valid changed=true result keeps both phrases and only replaces ダ with デ.',
+  "Example: あそこを出ようね with baselineKana アソコ|ヲ'/ダ|ヨ'ー|ネ. A valid changed=true result is アソコ|ヲ'/デ|ヨ'ー|ネ.",
   OPENROUTER_G2P_AUTOMATIC_OUTPUT_PROMPT,
 ].join(" ");
 
 export const OPENROUTER_G2P_REPAIR_PROMPT = [
-  "The previous correction failed validation.",
-  "Preserve the intended reading correction and repair only the invalid structure.",
+  "The previous correction failed syntax, topology, or Validate.",
+  "Keep the intended reading correction. Fix only the cited syntax, topology, or Validate errors.",
+  "Do not change items that were not listed.",
   "If it cannot be repaired safely, return changed=false.",
 ].join(" ");
 
@@ -77,7 +70,7 @@ export function getOpenRouterG2pSystemPrompt(input: {
     input.mode === "automatic"
       ? OPENROUTER_G2P_AUTOMATIC_SYSTEM_PROMPT
       : OPENROUTER_G2P_MANUAL_SYSTEM_PROMPT;
-  if (input.mode === "manual" && input.repair) {
+  if (input.repair) {
     return `${prompt} ${OPENROUTER_G2P_REPAIR_PROMPT}`;
   }
   return prompt;

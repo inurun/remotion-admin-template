@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatHaqumeiApiLog, HaqumeiApiError, parseHaqumeiProblemDetails } from "../error";
+import {
+  formatHaqumeiApiLog,
+  HaqumeiApiError,
+  haqumeiReadableError,
+  parseHaqumeiProblemDetails,
+} from "../error";
 
 const analysisFailed = {
   type: "about:blank",
@@ -20,6 +25,40 @@ describe("HaqumeiApiError", () => {
       detail: analysisFailed.detail,
     });
     expect(error.errors).toEqual([{ path: "texts[37]", reason: "mora_mismatch" }]);
+  });
+
+  it("keeps the human-readable field message for repair", () => {
+    const error = HaqumeiApiError.fromUnknown(
+      {
+        type: "about:blank",
+        title: "Invalid G2P",
+        status: 422,
+        code: "invalid_g2p",
+        detail: 'item.kana: missing accent marker (\') in "ハイ"',
+        errors: [
+          {
+            path: "item.kana",
+            reason: "invalid_accent_nucleus",
+            message: 'missing accent marker (\') in "ハイ"',
+          },
+        ],
+      },
+      422,
+    );
+
+    expect(error.errors).toEqual([
+      {
+        path: "item.kana",
+        reason: "invalid_accent_nucleus",
+        message: 'missing accent marker (\') in "ハイ"',
+      },
+    ]);
+    expect(haqumeiReadableError(error)).toBe('missing accent marker (\') in "ハイ"');
+  });
+
+  it("falls back to detail then path:reason when message is absent", () => {
+    const error = HaqumeiApiError.fromUnknown(analysisFailed, 500);
+    expect(haqumeiReadableError(error)).toBe(analysisFailed.detail);
   });
 
   it("prefers detail over field paths in the message", () => {

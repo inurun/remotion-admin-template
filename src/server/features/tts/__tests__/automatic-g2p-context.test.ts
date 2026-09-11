@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAutomaticG2pContext } from "../automatic-g2p-context";
+import { buildAutomaticG2pContext, contextForChunk } from "../automatic-g2p-context";
 import {
   createSavedMainPage,
   createSavedTts,
@@ -37,14 +37,6 @@ describe("automatic G2P context", () => {
             text: "対象",
             readText: "対象",
             baselineKana: "タイショウ'",
-            baselinePhrases: [
-              {
-                leadingWords: [],
-                accentedWord: { beforeNucleus: "タイショウ", afterNucleus: "" },
-                trailingWords: [],
-                boundaryAfter: "",
-              },
-            ],
             target: true,
           },
           {
@@ -53,6 +45,44 @@ describe("automatic G2P context", () => {
             readText: "peak",
             target: false,
           },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps page context and marks only the chunk as target", () => {
+    const pages = buildAutomaticG2pContext(
+      [
+        createSavedMainPage({
+          id: "page-1",
+          title: "Main",
+          tts: [
+            createSavedTts({ id: "tts-1", text: "一", readText: "一" }),
+            createSavedTts({ id: "tts-2", text: "二", readText: "二" }),
+            createSavedTts({ id: "tts-3", text: "三", readText: "三" }),
+          ],
+        }),
+      ],
+      [
+        { pageId: "page-1", ttsId: "tts-1", baselineKana: "イチ'" },
+        { pageId: "page-1", ttsId: "tts-2", baselineKana: "ニ'" },
+      ],
+    );
+
+    expect(contextForChunk(pages, new Set(["tts-2"]))).toEqual([
+      {
+        id: "page-1",
+        title: "Main",
+        utterances: [
+          { id: "tts-1", text: "一", readText: "一", target: false },
+          {
+            id: "tts-2",
+            text: "二",
+            readText: "二",
+            baselineKana: "ニ'",
+            target: true,
+          },
+          { id: "tts-3", text: "三", readText: "三", target: false },
         ],
       },
     ]);

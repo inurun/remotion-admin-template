@@ -280,6 +280,7 @@ export interface components {
         FieldError: {
             path: string;
             reason: string;
+            message?: string;
         };
         FixedEntry: {
             accent_nucleus: number;

@@ -1,16 +1,11 @@
 import { isSavedContentPage, type SavedSequenceItem, type SavedTts } from "@/_schemas";
 import { getEffectiveReadText } from "@/server/features/tts/providers/comparison";
-import {
-  structuredPhrasesFromKana,
-  type StructuredG2pPhrase,
-} from "@/server/features/tts/g2p-topology";
 
 export type AutomaticG2pUtterance = {
   id: string;
   text: string;
   readText: string;
   baselineKana?: string;
-  baselinePhrases?: StructuredG2pPhrase[];
   target: boolean;
 };
 
@@ -38,12 +33,37 @@ function toUtterance(
   };
   if (target) {
     utterance.baselineKana = target.baselineKana;
-    const baselinePhrases = structuredPhrasesFromKana(target.baselineKana);
-    if (baselinePhrases) {
-      utterance.baselinePhrases = baselinePhrases;
-    }
   }
   return utterance;
+}
+
+export function contextForChunk(
+  pages: readonly AutomaticG2pPageContext[],
+  targetIds: ReadonlySet<string>,
+): AutomaticG2pPageContext[] {
+  return pages.flatMap((page) => {
+    if (!page.utterances.some((utterance) => targetIds.has(utterance.id))) {
+      return [];
+    }
+
+    return [
+      {
+        id: page.id,
+        title: page.title,
+        utterances: page.utterances.map((utterance) => {
+          if (targetIds.has(utterance.id)) {
+            return { ...utterance, target: true };
+          }
+          return {
+            id: utterance.id,
+            text: utterance.text,
+            readText: utterance.readText,
+            target: false,
+          };
+        }),
+      },
+    ];
+  });
 }
 
 export function buildAutomaticG2pContext(

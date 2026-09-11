@@ -11,6 +11,7 @@ export type LlmG2pProfile = {
   reasoningEffort: "none" | "low";
   timeoutMs: number;
   maxAttempts: 1 | 2;
+  chunkSize: number;
 };
 
 export const AUTOMATIC_LLM_G2P_PROFILE = {
@@ -23,9 +24,10 @@ export const AUTOMATIC_LLM_G2P_PROFILE = {
     allowFallbacks: false,
     requireParameters: true,
   },
-  reasoningEffort: "low",
-  timeoutMs: 30_000,
-  maxAttempts: 1,
+  reasoningEffort: "none",
+  timeoutMs: 60_000,
+  maxAttempts: 2,
+  chunkSize: 5,
 } as const satisfies LlmG2pProfile;
 
 export const MANUAL_LLM_G2P_PROFILE = {
@@ -40,14 +42,24 @@ export const MANUAL_LLM_G2P_PROFILE = {
   reasoningEffort: "low",
   timeoutMs: 60_000,
   maxAttempts: 2,
+  chunkSize: 5,
 } as const satisfies LlmG2pProfile;
 
-const AUTOMATIC_MIN_COMPLETION_TOKENS = 4_096;
+const AUTOMATIC_MIN_COMPLETION_TOKENS = 8_192;
 const AUTOMATIC_TOKENS_PER_ITEM = 512;
-const AUTOMATIC_MAX_COMPLETION_TOKENS = 16_384;
+const AUTOMATIC_MAX_COMPLETION_TOKENS = 32_768;
 const MANUAL_MIN_COMPLETION_TOKENS = 4_096;
 const MANUAL_TOKENS_PER_ITEM = 512;
 const MANUAL_MAX_COMPLETION_TOKENS = 32_768;
+
+export function chunkItems<T>(items: readonly T[], chunkSize: number) {
+  const size = Math.max(1, chunkSize);
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
 
 export function getLlmG2pMaxTokens(profile: LlmG2pProfile, itemCount: number) {
   if (profile.mode === "automatic") {

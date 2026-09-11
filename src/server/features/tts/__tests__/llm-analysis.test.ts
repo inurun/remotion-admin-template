@@ -4,20 +4,28 @@ import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 import { getUsableG2p } from "../providers/comparison";
 import { OpenRouterError, OpenRouterValidationError } from "../openrouter";
 
-const { analyzeTextsMock, mkdirMock, requestCorrectionsMock, validateG2pItemsMock, writeFileMock } =
-  vi.hoisted(() => ({
-    analyzeTextsMock: vi.fn(),
-    mkdirMock: vi.fn(),
-    requestCorrectionsMock: vi.fn(),
-    validateG2pItemsMock: vi.fn(),
-    writeFileMock: vi.fn(),
-  }));
+const {
+  analyzeTextsMock,
+  mkdirMock,
+  requestCorrectionsMock,
+  validateG2pItemMock,
+  validateG2pItemsMock,
+  writeFileMock,
+} = vi.hoisted(() => ({
+  analyzeTextsMock: vi.fn(),
+  mkdirMock: vi.fn(),
+  requestCorrectionsMock: vi.fn(),
+  validateG2pItemMock: vi.fn(),
+  validateG2pItemsMock: vi.fn(),
+  writeFileMock: vi.fn(),
+}));
 
 vi.mock("node:fs/promises", () => ({
   default: { mkdir: mkdirMock, writeFile: writeFileMock },
 }));
 vi.mock("@/server/features/haqumei-api/analyze", () => ({ analyzeTexts: analyzeTextsMock }));
 vi.mock("@/server/features/haqumei-api/validate", () => ({
+  validateG2pItem: validateG2pItemMock,
   validateG2pItems: validateG2pItemsMock,
 }));
 vi.mock("../openrouter", async (importOriginal) => {
@@ -45,19 +53,12 @@ const usageB = {
   costUsd: 0.005,
 };
 
-function structured(id: string, beforeNucleus: string) {
+function structured(id: string, kana: string, reason = "文脈") {
   return {
     id,
     changed: true as const,
-    phrases: [
-      {
-        leadingWords: [],
-        accentedWord: { beforeNucleus, afterNucleus: "" },
-        trailingWords: [],
-        boundaryAfter: "" as const,
-      },
-    ],
-    reason: "文脈",
+    kana,
+    reason,
   };
 }
 
@@ -72,7 +73,7 @@ function openRouterResult(
     model: "openai/gpt-5.6-luna",
     actualProvider: "openai",
     reasoningEffort: "none",
-    structuredOutput: [structured(id, kana.replaceAll("'", ""))],
+    structuredOutput: [structured(id, kana)],
     renderedKana: [kana],
     corrections: [{ id, changed: true, kana, reason: "文脈" }],
     usage,
@@ -188,7 +189,7 @@ describe("analyzeTtsPageWithLlm", () => {
   it("retries once after a 422 and then succeeds", async () => {
     analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
     requestCorrectionsMock
-      .mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ"))
+      .mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ'"))
       .mockResolvedValueOnce({
         ...openRouterResult("tts-1", "ヒトケ'", usageB),
         requestId: "generation-2",
@@ -201,8 +202,14 @@ describe("analyzeTtsPageWithLlm", () => {
           title: "Invalid G2P",
           status: 422,
           code: "invalid_g2p",
-          detail: "items[0].kana is invalid",
-          errors: [{ path: "items[0].kana", reason: "invalid_accent_nucleus" }],
+          detail: 'items[0].kana: missing accent marker (\') in "ヒトケ"',
+          errors: [
+            {
+              path: "items[0].kana",
+              reason: "invalid_accent_nucleus",
+              message: 'missing accent marker (\') in "ヒトケ"',
+            },
+          ],
         }),
       )
       .mockResolvedValueOnce([createG2pItem("人気", "ヒトケ'")]);
@@ -217,14 +224,14 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(requestCorrectionsMock.mock.calls[1]?.[2]?.repairItems).toEqual([
       expect.objectContaining({
         id: "tts-1",
+        text: "人気",
+        readText: "人気",
         baselineKana: "ニンキ'",
-        renderedKana: "ヒトケ",
-        previousCorrection: expect.objectContaining({ id: "tts-1" }),
-        validationErrors: [
+        previousKana: "ヒトケ'",
+        errors: [
           expect.objectContaining({
-            path: "items[0].kana",
-            reason: "invalid_accent_nucleus",
-            ttsId: "tts-1",
+            kind: "validate",
+            message: 'missing accent marker (\') in "ヒトケ"',
           }),
         ],
       }),
@@ -259,7 +266,7 @@ describe("analyzeTtsPageWithLlm", () => {
         model: "openai/gpt-5.6-luna",
         actualProvider: "openai",
         reasoningEffort: "none",
-        structuredOutput: [structured("tts-1", "ヒトケ"), structured("tts-2", "バショ")],
+        structuredOutput: [structured("tts-1", "ヒトケ"), structured("tts-2", "バショ'")],
         renderedKana: ["ヒトケ", "バショ'"],
         corrections: [
           { id: "tts-1", changed: true, kana: "ヒトケ", reason: "読み" },
@@ -272,23 +279,14 @@ describe("analyzeTtsPageWithLlm", () => {
         model: "openai/gpt-5.6-luna",
         actualProvider: "openai",
         reasoningEffort: "none",
-        structuredOutput: [structured("tts-1", "ヒトケ")],
+        structuredOutput: [structured("tts-1", "ヒトケ'")],
         renderedKana: ["ヒトケ'"],
         corrections: [{ id: "tts-1", changed: true, kana: "ヒトケ'", reason: "修復" }],
         usage: usageB,
       });
     validateG2pItemsMock
-      .mockRejectedValueOnce(
-        new HaqumeiApiError({
-          type: "about:blank",
-          title: "Invalid G2P",
-          status: 422,
-          code: "invalid_g2p",
-          detail: "items[0].kana is invalid",
-          errors: [{ path: "items[0].kana", reason: "invalid_accent_nucleus" }],
-        }),
-      )
-      .mockResolvedValueOnce([createG2pItem("人気", "ヒトケ'"), createG2pItem("場所", "バショ'")]);
+      .mockResolvedValueOnce([createG2pItem("場所", "バショ'")])
+      .mockResolvedValueOnce([createG2pItem("人気", "ヒトケ'")]);
 
     const result = await analyzeTtsPageWithLlm(
       { OPENROUTER_API_KEY: "secret" },
@@ -304,10 +302,15 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(requestCorrectionsMock.mock.calls[1]?.[1]).toEqual([
       expect.objectContaining({ id: "tts-1" }),
     ]);
-    expect(validateG2pItemsMock.mock.calls[1]?.[1]).toEqual([
-      { text: "人気", kana: "ヒトケ'" },
-      { text: "場所", kana: "バショ'" },
+    expect(requestCorrectionsMock.mock.calls[1]?.[2]?.repairItems).toEqual([
+      expect.objectContaining({
+        id: "tts-1",
+        previousKana: "ヒトケ",
+        errors: [expect.objectContaining({ kind: "syntax" })],
+      }),
     ]);
+    expect(validateG2pItemsMock.mock.calls[0]?.[1]).toEqual([{ text: "場所", kana: "バショ'" }]);
+    expect(validateG2pItemsMock.mock.calls[1]?.[1]).toEqual([{ text: "人気", kana: "ヒトケ'" }]);
     expect(result.items[0]?.reason).toBe("修復");
     expect(result.items[1]?.reason).toBe("維持");
   });
@@ -315,9 +318,9 @@ describe("analyzeTtsPageWithLlm", () => {
   it("does not return an applyable result when the second attempt also fails", async () => {
     analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
     requestCorrectionsMock
-      .mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ"))
+      .mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ'"))
       .mockResolvedValueOnce({
-        ...openRouterResult("tts-1", "ヒトケ", usageB),
+        ...openRouterResult("tts-1", "ヒトケ'", usageB),
         requestId: "generation-2",
       });
     validateG2pItemsMock
@@ -327,8 +330,14 @@ describe("analyzeTtsPageWithLlm", () => {
           title: "Invalid G2P",
           status: 422,
           code: "invalid_g2p",
-          detail: "items[0].kana is invalid",
-          errors: [{ path: "items[0].kana", reason: "invalid_accent_nucleus" }],
+          detail: 'items[0].kana: missing accent marker (\') in "ヒトケ"',
+          errors: [
+            {
+              path: "items[0].kana",
+              reason: "invalid_accent_nucleus",
+              message: 'missing accent marker (\') in "ヒトケ"',
+            },
+          ],
         }),
       )
       .mockRejectedValueOnce(
@@ -337,8 +346,14 @@ describe("analyzeTtsPageWithLlm", () => {
           title: "Invalid G2P",
           status: 422,
           code: "invalid_g2p",
-          detail: "items[0].kana is invalid",
-          errors: [{ path: "items[0].kana", reason: "invalid_kana_syntax" }],
+          detail: 'items[0].kana: hiragana is not allowed in "ヒトけ"',
+          errors: [
+            {
+              path: "items[0].kana",
+              reason: "invalid_kana_syntax",
+              message: 'hiragana is not allowed in "ヒトけ"',
+            },
+          ],
         }),
       );
 
@@ -347,13 +362,13 @@ describe("analyzeTtsPageWithLlm", () => {
         { OPENROUTER_API_KEY: "secret" },
         { pageId: "page-1", items: [{ id: "tts-1", provider: "voisona", text: "人気" }] },
       ),
-    ).rejects.toThrow("items[0].kana: invalid_kana_syntax (tts-1)");
+    ).rejects.toThrow('validate: hiragana is not allowed in "ヒトけ" (tts-1)');
     expect(validateG2pItemsMock).toHaveBeenCalledTimes(2);
     const log = JSON.parse(String(writeFileMock.mock.calls[0]?.[1]));
     expect(log.status).toBe("failure");
     expect(log.openRouter).toHaveLength(2);
     expect(log.openRouter[1].validationErrors).toEqual([
-      expect.objectContaining({ reason: "invalid_kana_syntax", ttsId: "tts-1" }),
+      expect.objectContaining({ reason: 'hiragana is not allowed in "ヒトけ"', ttsId: "tts-1" }),
     ]);
   });
 
@@ -385,8 +400,8 @@ describe("analyzeTtsPageWithLlm", () => {
           usageA,
           [
             {
-              path: "items.0.phrases",
-              reason: "changed=true requires at least one phrase",
+              path: "items.0.kana",
+              reason: "changed=true requires kana",
               ttsId: "tts-1",
             },
           ],
