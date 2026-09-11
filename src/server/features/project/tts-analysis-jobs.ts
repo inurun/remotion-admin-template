@@ -18,6 +18,7 @@ import {
   runAutomaticG2pBatch,
   type AutomaticAnalyzeTarget,
 } from "@/server/features/tts/automatic-llm-analysis";
+import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
 import { getOptionalVoiceVersion } from "@/server/features/tts/providers/comparison";
 import {
   createPreviousTtsComparisonInput,
@@ -42,11 +43,18 @@ export function hasInFlightAnalysisJob(projectPath: string, analysisKey: string)
   return inFlightJobs.has(jobKey(projectPath, analysisKey));
 }
 
-function planTtsWav(serverEnv: ServerEnv, projectPath: string, item: SavedTts, g2p: G2pItem) {
+function planTtsWav(
+  serverEnv: ServerEnv,
+  projectPath: string,
+  item: SavedTts,
+  g2p: G2pItem,
+  presets: SavedProject["voicePresets"],
+) {
   const provider = getTtsProvider(item.provider);
-  const voiceVersion = getOptionalVoiceVersion(item.voiceVersion ?? "");
+  const resolved = resolveTtsSynthesisSettings(item, presets);
+  const voiceVersion = getOptionalVoiceVersion(resolved.voiceVersion ?? "");
   return provider.plan(serverEnv, {
-    ...createPreviousTtsComparisonInput(item),
+    ...createPreviousTtsComparisonInput(resolved),
     g2p,
     projectPath,
     ...(voiceVersion ? { voiceVersion } : {}),
@@ -127,7 +135,7 @@ async function applyAnalysisResults(
         continue;
       }
 
-      const planned = planTtsWav(serverEnv, projectPath, item, g2p);
+      const planned = planTtsWav(serverEnv, projectPath, item, g2p, project.voicePresets);
       const cached = await readCachedWav(planned.wav);
       changed = true;
       affectedPageIds.add(page.id);

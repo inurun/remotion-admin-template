@@ -2153,6 +2153,74 @@ describe("project use-case", () => {
     });
   });
 
+  it("applies the project voice preset when synthesizing after automatic G2P", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
+    requestOpenRouterCorrectionsMock.mockResolvedValueOnce({
+      requestId: "generation-1",
+      model: "google/gemma-4-31b-it",
+      actualProvider: "coreweave",
+      reasoningEffort: "none",
+      structuredOutput: [{ id: "tts-1", changed: false, kana: "", reason: "維持" }],
+      renderedKana: [helloG2p.kana],
+      corrections: [{ id: "tts-1", changed: false, kana: helloG2p.kana, reason: "維持" }],
+      usage: {
+        promptTokens: 1,
+        completionTokens: 1,
+        reasoningTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 2,
+        costUsd: 0,
+      },
+    });
+    synthesizeVoicevoxMock.mockResolvedValueOnce(audio("/tts/project/voicevox-1.wav", 1));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      voicePresets: getDefaultVoicePresets(),
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>Hello</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voicevox",
+              text: "Hello",
+              voiceName: "3",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              synthesisSettings: null,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("analyzing");
+    expect(contentPage(saved.pages).tts[0]?.synthesisSettings).toBeUndefined();
+    await flushJobs();
+    expect(synthesizeVoicevoxMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        voiceName: "3",
+        synthesisSettings: expect.objectContaining({
+          speedScale: 1.4,
+          pitchScale: -0.01,
+          intonationScale: 0.9,
+          pauseLengthScale: 0.5,
+        }),
+      }),
+    );
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.synthesisSettings).toBeUndefined();
+  });
+
   it("reuses analyzing after baseline G2P is reconciled onto the form", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     analyzeTextsMock.mockResolvedValueOnce([helloG2p]);
