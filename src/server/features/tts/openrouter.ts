@@ -410,7 +410,8 @@ export async function requestOpenRouterCorrections(
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
       "Content-Type": "application/json",
-      "X-OpenRouter-Title": "Remotion Admin G2P Lab",
+      "HTTP-Referer": "https://github.com/inurun/remotion-admin-template",
+      "X-OpenRouter-Title": "Remotion Admin",
     },
     body: JSON.stringify({
       model: profile.model,

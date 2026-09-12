@@ -2126,7 +2126,7 @@ describe("project use-case", () => {
     expect(synthesizeVoisonaMock).not.toHaveBeenCalled();
     expect(requestOpenRouterCorrectionsMock).toHaveBeenCalledTimes(1);
     expect(requestOpenRouterCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({
-      profile: expect.objectContaining({ id: "gemma-4-31b-coreweave-fp4-v1" }),
+      profile: expect.objectContaining({ id: "gemini-3.8-flash" }),
     });
 
     resolveLlm?.({

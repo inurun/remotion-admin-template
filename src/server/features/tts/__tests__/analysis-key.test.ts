@@ -24,6 +24,6 @@ describe("createTtsAnalysisKey", () => {
     expect(createTtsAnalysisKey({ ...base, baselineKana: "ヒトケ'" })).not.toBe(original);
     expect(createTtsAnalysisKey({ ...base, provider: "voicevox" })).not.toBe(original);
     expect(original).toMatch(/^[a-f0-9]{32}$/);
-    expect(AUTOMATIC_LLM_G2P_PROFILE.id).toBe("gemma-4-31b-coreweave-fp4-v1");
+    expect(AUTOMATIC_LLM_G2P_PROFILE.id).toBe("gemini-3.8-flash");
   });
 });

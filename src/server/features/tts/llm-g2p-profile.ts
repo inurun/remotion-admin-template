@@ -15,27 +15,26 @@ export type LlmG2pProfile = {
 };
 
 export const AUTOMATIC_LLM_G2P_PROFILE = {
-  id: "gemma-4-31b-coreweave-fp4-v1",
+  id: "gemini-3.8-flash",
   mode: "automatic",
-  model: "google/gemma-4-31b-it",
+  model: "google/gemini-3.8-flash",
   provider: {
-    only: ["coreweave"],
-    quantizations: ["fp4"],
+    only: ["google-ai-studio/flex"],
     allowFallbacks: false,
     requireParameters: true,
   },
-  reasoningEffort: "none",
+  reasoningEffort: "low",
   timeoutMs: 60_000,
   maxAttempts: 2,
   chunkSize: 5,
 } as const satisfies LlmG2pProfile;
 
 export const MANUAL_LLM_G2P_PROFILE = {
-  id: "gpt-5.6-luna-openai-low-v1",
+  id: "gemini-3.8-flash",
   mode: "manual",
-  model: "openai/gpt-5.6-luna",
+  model: "google/gemini-3.8-flash",
   provider: {
-    only: ["openai"],
+    only: ["google-ai-studio/flex"],
     allowFallbacks: false,
     requireParameters: true,
   },

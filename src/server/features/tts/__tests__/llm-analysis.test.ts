@@ -111,7 +111,7 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(requestCorrectionsMock).toHaveBeenCalledTimes(1);
     expect(requestCorrectionsMock.mock.calls[0]?.[2]).toMatchObject({
       profile: expect.objectContaining({
-        id: "gpt-5.6-luna-openai-low-v1",
+        id: "gemini-3.8-flash",
         reasoningEffort: "low",
       }),
       reasoningEffort: "low",

@@ -99,12 +99,16 @@ describe("requestOpenRouterCorrections", () => {
 
     const request = fetchMock.mock.calls[0]![1] as RequestInit;
     const body = JSON.parse(String(request.body));
-    expect(request.headers).toMatchObject({ Authorization: "Bearer secret" });
+    expect(request.headers).toMatchObject({
+      Authorization: "Bearer secret",
+      "HTTP-Referer": "https://github.com/inurun/remotion-admin-template",
+      "X-OpenRouter-Title": "Remotion Admin",
+    });
     expect(body).toMatchObject({
-      model: "openai/gpt-5.6-luna",
+      model: "google/gemini-3.8-flash",
       reasoning: { effort: "low" },
       provider: {
-        only: ["openai"],
+        only: ["google-ai-studio/flex"],
         allow_fallbacks: false,
         require_parameters: true,
       },
@@ -143,7 +147,7 @@ describe("requestOpenRouterCorrections", () => {
     });
   });
 
-  it("sends the automatic Gemma profile, temperature 0, and page context", async () => {
+  it("sends the automatic Gemini profile, temperature 0, and page context", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       successResponse([
         {
@@ -165,12 +169,11 @@ describe("requestOpenRouterCorrections", () => {
 
     const body = JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body));
     expect(body).toMatchObject({
-      model: "google/gemma-4-31b-it",
+      model: "google/gemini-3.8-flash",
       temperature: 0,
-      reasoning: { effort: "none" },
+      reasoning: { effort: "low" },
       provider: {
-        only: ["coreweave"],
-        quantizations: ["fp4"],
+        only: ["google-ai-studio/flex"],
         allow_fallbacks: false,
         require_parameters: true,
       },
