@@ -11,6 +11,7 @@ import { nowIso, toIso } from "@/_shared/lib/date";
 import { extractNiconicoVideoId } from "@/_shared/project/project-meta";
 import { PROJECT_ROOT } from "@/server/_shared/storage";
 import { toNiconicoDescriptionHtml } from "./niconico-description-html";
+import { niconicoGarageFormFields } from "./niconico-form-defaults";
 import {
   normalizeLogMessage,
   type VerifiedPublishPrepResult,
@@ -575,7 +576,7 @@ export async function consumeCodexEvents(
   return finalResponse;
 }
 
-function createPrompt(
+export function createPublishPrompt(
   procedure: string,
   videoPath: string,
   thumbnailPath: string,
@@ -609,6 +610,7 @@ ${procedure}
 - 確認前に登録する親作品: ${JSON.stringify(parentWorks)}
 - 確認する親作品ID: ${JSON.stringify(parentWorkIds)}
 - 登録するタグ（この配列で置き換える）: ${JSON.stringify(tags)}
+- 固定フォーム設定: ${JSON.stringify(niconicoGarageFormFields)}
 
 ## 最終応答
 
@@ -672,7 +674,7 @@ async function runCodexPublishPrep(
     const thread = codex.startThread(createPublishThreadOptions(codexRuntime.workspaceDir));
     const tags = videoMeta.tags;
     pushLog(job, `Niconico tags: ${JSON.stringify(tags)}`);
-    let prompt = createPrompt(
+    let prompt = createPublishPrompt(
       procedure,
       videoPath,
       thumbnailPath,

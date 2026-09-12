@@ -1,11 +1,16 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import type { ThreadEvent } from "@openai/codex-sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { PROJECT_ROOT } from "@/server/_shared/storage";
+import { niconicoGarageFormFields } from "../niconico-form-defaults";
 import { validatePublishPrepResult } from "../niconico-publish";
 import {
   consumeCodexEvents,
   createPublishAbortGuard,
   createPublishCodexOptions,
   createPublishCodexRuntime,
+  createPublishPrompt,
   createPublishThreadOptions,
   parsePublishResult,
   PUBLISH_RESULT_SCHEMA,
@@ -37,6 +42,36 @@ const usage = {
 };
 
 describe("publish Codex configuration", () => {
+  it("embeds structured garage form defaults and does not inherit a previous video", async () => {
+    const procedure = await fs.readFile(
+      path.resolve(
+        PROJECT_ROOT,
+        "src/server/features/publish/prompts/niconico-upload-procedure.md",
+      ),
+      "utf-8",
+    );
+    expect(procedure).not.toContain("直近に投稿した動画を選んで情報を引き継ぐ");
+    expect(procedure).toContain("固定フォーム設定");
+    expect(procedure).toContain("は使わない");
+
+    const prompt = createPublishPrompt(
+      procedure,
+      "/repo/out/latest.mp4",
+      "/repo/out/thumbnail.png",
+      {
+        title: "title",
+        description: "desc",
+        thumbnailTime: "00:00.000",
+        tags: ["日記"],
+      },
+      [],
+      [],
+      ["日記"],
+    );
+    expect(prompt).toContain(`固定フォーム設定: ${JSON.stringify(niconicoGarageFormFields)}`);
+    expect(prompt).not.toContain("直近に投稿した動画を選んで情報を引き継ぐ");
+  });
+
   it("pins the model, reasoning, sandbox, and agent-browser MCP", () => {
     const runtime = createPublishCodexRuntime("/real-home");
     expect(runtime).toEqual({
