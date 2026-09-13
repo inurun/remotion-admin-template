@@ -5,6 +5,9 @@ export const nicoadRequestSchema = z.object({
 });
 
 export const nicoadAdvertiserSchema = z.object({
+  userId: z.number().int().optional(),
+  identityKey: z.string().min(1),
+  introductionCount: z.number().int().nonnegative(),
   name: z.string(),
   message: z.string(),
 });
@@ -30,3 +33,4 @@ export const nicoadThanksResponseSchema = z.object({
 });
 
 export type NicoadHistoryItem = z.infer<typeof nicoadHistoryItemSchema>;
+export type NicoadAdvertiser = z.infer<typeof nicoadAdvertiserSchema>;

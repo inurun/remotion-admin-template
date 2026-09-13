@@ -276,7 +276,16 @@ hello
         tags: ["old"],
         nicoadSource: "sm9",
         credits: [{ id: "c1", title: "BGM", url: "https://example.com" }],
-        advertisers: [{ id: "a1", name: "Ada", message: "hi" }],
+        advertisers: [
+          {
+            id: "a1",
+            identityKey: "user:1",
+            introductionCount: 1,
+            userId: 1,
+            name: "Ada",
+            message: "hi",
+          },
+        ],
         messages: [{ id: "m1", text: "Thanks" }],
       },
       padBeforeSec: 0,

@@ -6,6 +6,7 @@ import {
   parseNicoadVideoId,
   uniqueNicoadAdvertisers,
 } from "./parse-nicoad-source";
+import { persistIntroductions } from "./introduction-store";
 
 const NICOAD_CONTENTS_URL = "https://api.nicoad.nicovideo.jp/v1/contents/video";
 const NICOAD_ADVERTISER_LIMIT = 1000;
@@ -33,10 +34,15 @@ export const nicoadApp = new Hono().post("/nicoad", async (c) => {
       return c.json({ error: `Failed to fetch nicoad (${parsed.meta.status})` }, 400);
     }
 
+    const advertisers = await persistIntroductions(
+      videoId,
+      uniqueNicoadAdvertisers(parsed.data.sponsors),
+    );
+
     return c.json(
       nicoadResponseSchema.parse({
         videoId,
-        advertisers: uniqueNicoadAdvertisers(parsed.data.sponsors),
+        advertisers,
       }),
     );
   } catch (error) {

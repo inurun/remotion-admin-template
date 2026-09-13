@@ -1,4 +1,4 @@
-import type { NicoadHistoryItem } from "./contract";
+import type { NicoadAdvertiser, NicoadHistoryItem } from "./contract";
 
 const VIDEO_ID_PATTERN = /(?:sm|nm|so|ss)\d+/i;
 
@@ -16,19 +16,22 @@ export function parseNicoadVideoId(source: string): string {
 
 export function uniqueNicoadAdvertisers(
   sponsors: readonly NicoadHistoryItem[],
-): Array<{ name: string; message: string }> {
+): Array<Omit<NicoadAdvertiser, "introductionCount">> {
   const seen = new Set<string>();
-  const advertisers: Array<{ name: string; message: string }> = [];
+  const advertisers: Array<Omit<NicoadAdvertiser, "introductionCount">> = [];
 
   for (const item of sponsors) {
-    const key = item.userId == null ? `name:${item.advertiserName}` : `id:${item.userId}`;
-    if (seen.has(key)) {
+    const name = item.advertiserName.trim();
+    const identityKey = item.userId == null ? `name:${name}` : `user:${item.userId}`;
+    if (seen.has(identityKey)) {
       continue;
     }
 
-    seen.add(key);
+    seen.add(identityKey);
     advertisers.push({
-      name: item.advertiserName,
+      userId: item.userId,
+      identityKey,
+      name,
       message: item.message ?? "",
     });
   }

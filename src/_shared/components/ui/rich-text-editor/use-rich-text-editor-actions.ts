@@ -38,6 +38,7 @@ export function useRichTextEditorActions({
     error: imageUpload.uploadError ?? videoUpload.uploadError ?? ogpError,
     uploadingImage: imageUpload.uploading,
     uploadingVideo: videoUpload.uploading,
+    uploadImageFile: imageUpload.uploadFile,
     videoInputRef: videoUpload.inputRef,
   };
 }

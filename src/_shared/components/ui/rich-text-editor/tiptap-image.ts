@@ -21,7 +21,7 @@ export const TiptapImage = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: "img[src]" }];
+    return [{ tag: 'img[src]:not([src^="data:"])' }];
   },
 
   renderHTML({ HTMLAttributes }) {

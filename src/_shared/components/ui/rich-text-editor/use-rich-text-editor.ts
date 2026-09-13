@@ -1,3 +1,4 @@
+import FileHandler from "@tiptap/extension-file-handler";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef } from "react";
@@ -16,16 +17,22 @@ const EDITOR_EXTENSIONS = [StarterKit, TiptapImage, TiptapVideo, TiptapOgCard, T
 
 const FORM_SYNC_DEBOUNCE_MS = 250;
 
+const PASTE_IMAGE_MIME_TYPES = ["image/gif", "image/jpeg", "image/png", "image/webp"];
+
 export function useRichTextEditor({
   value,
   onChange,
+  onPasteImages,
 }: {
   value: string;
   onChange: (value: string) => void;
+  onPasteImages: (files: File[]) => void;
 }) {
   const lastEmittedHtmlRef = useRef(value);
   const onChangeRef = useRef(onChange);
+  const onPasteImagesRef = useRef(onPasteImages);
   onChangeRef.current = onChange;
+  onPasteImagesRef.current = onPasteImages;
 
   const { run, runImmediate } = useDebouncedCallback((html: string) => {
     if (html === lastEmittedHtmlRef.current) {
@@ -37,7 +44,16 @@ export function useRichTextEditor({
   }, FORM_SYNC_DEBOUNCE_MS);
 
   const editor = useEditor({
-    extensions: EDITOR_EXTENSIONS,
+    extensions: [
+      ...EDITOR_EXTENSIONS,
+      FileHandler.configure({
+        allowedMimeTypes: PASTE_IMAGE_MIME_TYPES,
+        consumePasteEvent: true,
+        onPaste: (_currentEditor, files) => {
+          onPasteImagesRef.current(files);
+        },
+      }),
+    ],
     content: value,
     immediatelyRender: false,
     // TipTap v3 default: avoid re-rendering React on every transaction.

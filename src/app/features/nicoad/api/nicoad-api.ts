@@ -4,7 +4,9 @@ import { parseApiJson } from "@/_shared/lib/fetch-json";
 
 export type NicoadResult = {
   videoId: string;
-  advertisers: Array<Pick<EndcardAdvertiser, "name" | "message">>;
+  advertisers: Array<
+    Pick<EndcardAdvertiser, "userId" | "identityKey" | "introductionCount" | "name" | "message">
+  >;
 };
 
 export async function fetchNicoad(source: string) {

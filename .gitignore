@@ -26,3 +26,5 @@ src/_shared/lib/assets/types.ts
 .agent-browser/
 .logs/
 data/publish-state.json
+data/advertisers.json
+data/advertisers.json.*.tmp

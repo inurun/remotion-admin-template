@@ -9,6 +9,7 @@ type UploadMediaState = {
   uploading: boolean;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   openFileDialog: () => void;
+  uploadFile: (file: File) => Promise<void>;
 };
 
 function insertUploadedMedia(
@@ -64,26 +65,32 @@ export function useRichTextMediaUpload({
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !editor) {
+  const uploadFile = async (file: File) => {
+    if (!editor) {
       return;
     }
 
     setUploading(true);
     setUploadError(null);
 
-    void upload(file)
-      .then((src) => {
-        insertUploadedMedia(editor, type, src, file.name);
-      })
-      .catch((error: unknown) => {
-        setUploadError(error instanceof Error ? error.message : errorLabel);
-      })
-      .finally(() => {
-        setUploading(false);
-        resetInput();
-      });
+    try {
+      const src = await upload(file);
+      insertUploadedMedia(editor, type, src, file.name);
+    } catch (error: unknown) {
+      setUploadError(error instanceof Error ? error.message : errorLabel);
+    } finally {
+      setUploading(false);
+      resetInput();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    void uploadFile(file);
   };
 
   return {
@@ -92,5 +99,6 @@ export function useRichTextMediaUpload({
     uploading,
     handleFileChange,
     openFileDialog: () => inputRef.current?.click(),
+    uploadFile,
   };
 }

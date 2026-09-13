@@ -1,4 +1,5 @@
 import { EditorContent } from "@tiptap/react";
+import { useRef } from "react";
 
 import { cn } from "@/_shared/lib/utils";
 import { RichTextEditorToolbar } from "./rich-text-editor-toolbar";
@@ -24,13 +25,25 @@ export function RichTextEditor({
   fetchOgp: FetchOgp;
 }) {
   const imageOnly = isSingleImageRichText(value);
-  const editor = useRichTextEditor({ value, onChange });
+  const uploadImageFileRef = useRef<(file: File) => Promise<void>>(async () => {});
+  const editor = useRichTextEditor({
+    value,
+    onChange,
+    onPasteImages: (files) => {
+      void (async () => {
+        for (const file of files) {
+          await uploadImageFileRef.current(file);
+        }
+      })();
+    },
+  });
   const actions = useRichTextEditorActions({
     editor,
     uploadImage,
     uploadVideo,
     fetchOgp,
   });
+  uploadImageFileRef.current = actions.uploadImageFile;
 
   if (!editor) {
     return null;

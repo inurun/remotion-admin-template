@@ -149,6 +149,9 @@ export const endcardCreditSchema = z.object({
 
 export const endcardAdvertiserSchema = z.object({
   id: z.string().min(1),
+  userId: z.number().int().optional(),
+  identityKey: z.string().min(1),
+  introductionCount: z.number().int().nonnegative().default(0),
   name: z.string().default(""),
   message: z.string().default(""),
 });

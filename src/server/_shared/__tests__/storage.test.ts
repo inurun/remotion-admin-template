@@ -230,12 +230,17 @@ describe("storage", () => {
     expect(getProjectOutputVideoPath("nested/example")).toBe(path.join(OUT_DIR, "example.mp4"));
   });
 
-  it("excludes schedules.json from the project list", async () => {
+  it("excludes non-project data files from the project list", async () => {
     readdirMock.mockResolvedValueOnce([
       {
         isDirectory: () => false,
         isFile: () => true,
         name: "schedules.json",
+      },
+      {
+        isDirectory: () => false,
+        isFile: () => true,
+        name: "advertisers.json",
       },
       {
         isDirectory: () => false,

@@ -36,9 +36,9 @@ describe("uniqueNicoadAdvertisers", () => {
         { advertiserName: "Anon", message: "two" },
       ]),
     ).toEqual([
-      { name: "Ada", message: "new" },
-      { name: "Bob", message: "hi" },
-      { name: "Anon", message: "one" },
+      { userId: 1, identityKey: "user:1", name: "Ada", message: "new" },
+      { userId: 2, identityKey: "user:2", name: "Bob", message: "hi" },
+      { userId: undefined, identityKey: "name:Anon", name: "Anon", message: "one" },
     ]);
   });
 });

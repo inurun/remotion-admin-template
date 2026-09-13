@@ -1,12 +1,29 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+const persistIntroductionsMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../introduction-store", () => ({
+  persistIntroductions: persistIntroductionsMock,
+}));
+
 import { nicoadApp } from "../route";
 
 describe("nicoad routes", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    persistIntroductionsMock.mockReset();
   });
 
   it("returns unique advertisers from thanks", async () => {
+    persistIntroductionsMock.mockResolvedValue([
+      {
+        userId: 1,
+        identityKey: "user:1",
+        introductionCount: 2,
+        name: "Ada",
+        message: "hello",
+      },
+    ]);
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -30,8 +47,19 @@ describe("nicoad routes", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       videoId: "sm46665240",
-      advertisers: [{ name: "Ada", message: "hello" }],
+      advertisers: [
+        {
+          userId: 1,
+          identityKey: "user:1",
+          introductionCount: 2,
+          name: "Ada",
+          message: "hello",
+        },
+      ],
     });
+    expect(persistIntroductionsMock).toHaveBeenCalledWith("sm46665240", [
+      { userId: 1, identityKey: "user:1", name: "Ada", message: "hello" },
+    ]);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.nicoad.nicovideo.jp/v1/contents/video/sm46665240/thanks?limit=1000",
       expect.objectContaining({ redirect: "follow" }),

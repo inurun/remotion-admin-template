@@ -4,6 +4,7 @@ import path from "node:path";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { imageUploadResponseSchema, videoUploadResponseSchema } from "./contract";
+import { processUploadedImage } from "./process-image";
 import {
   ensureProjectDirs,
   getProjectUploadsDir,
@@ -39,6 +40,7 @@ async function storeUpload(
   file: File,
   mimeToExtension: Record<string, string>,
   unsupportedMessage: string,
+  processBuffer?: (buffer: Buffer) => Promise<{ buffer: Buffer; extension: string }>,
 ) {
   const extension = mimeToExtension[file.type];
   if (!extension) {
@@ -47,13 +49,16 @@ async function storeUpload(
 
   await ensureProjectDirs();
 
-  const fileName = `${crypto.randomUUID()}.${extension}`;
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const processed = processBuffer
+    ? await processBuffer(inputBuffer)
+    : { buffer: inputBuffer, extension };
+  const fileName = `${crypto.randomUUID()}.${processed.extension}`;
   const outputDir = getProjectUploadsDir(projectPath);
   const outputPath = path.join(outputDir, fileName);
-  const buffer = Buffer.from(await file.arrayBuffer());
 
   await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(outputPath, buffer);
+  await fs.writeFile(outputPath, processed.buffer);
 
   return { error: null, src: toProjectUploadsSrc(projectPath, fileName) };
 }
@@ -64,6 +69,7 @@ async function handleUpload(
   unsupportedMessage: string,
   responseSchema: typeof imageUploadResponseSchema | typeof videoUploadResponseSchema,
   failureMessage: string,
+  processBuffer?: (buffer: Buffer) => Promise<{ buffer: Buffer; extension: string }>,
 ) {
   try {
     const formData = await c.req.formData();
@@ -77,7 +83,13 @@ async function handleUpload(
       return c.json({ error: "file is required" }, 400);
     }
 
-    const result = await storeUpload(projectPath, file, mimeToExtension, unsupportedMessage);
+    const result = await storeUpload(
+      projectPath,
+      file,
+      mimeToExtension,
+      unsupportedMessage,
+      processBuffer,
+    );
     if (result.error || !result.src) {
       return c.json({ error: result.error }, 400);
     }
@@ -96,6 +108,10 @@ export const uploadsApp = new Hono()
       "unsupported image type",
       imageUploadResponseSchema,
       "Failed to upload image",
+      async (buffer) => ({
+        buffer: await processUploadedImage(buffer),
+        extension: "webp",
+      }),
     ),
   )
   .post("/uploads/video", (c) =>

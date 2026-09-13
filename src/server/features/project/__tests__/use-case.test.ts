@@ -1667,7 +1667,16 @@ describe("project use-case", () => {
             tags: [],
             nicoadSource: "sm46665240",
             credits: [{ id: "credit-1", title: "BGM", url: "https://example.com" }],
-            advertisers: [{ id: "ad-1", name: "Ada", message: "hello" }],
+            advertisers: [
+              {
+                id: "ad-1",
+                identityKey: "user:1",
+                introductionCount: 1,
+                userId: 1,
+                name: "Ada",
+                message: "hello",
+              },
+            ],
             messages: [{ id: "msg-1", text: "Thank you for watching!" }],
           },
           padBeforeSec: 0.5,

@@ -15,6 +15,8 @@ export function createBlankEndcardAdvertiser(
 ): EndcardAdvertiser {
   return {
     id: createUuid(),
+    identityKey: `manual:${createUuid()}`,
+    introductionCount: 0,
     name: "",
     message: "",
     ...partial,
