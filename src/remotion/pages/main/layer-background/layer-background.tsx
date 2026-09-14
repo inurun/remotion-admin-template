@@ -4,7 +4,7 @@ import { Telop } from "@/remotion/components/telop/telop";
 const BRAND = "NIKKI DOGA";
 const CREAM = "#f3ead3";
 const RED = "#c43b3b";
-const OUTLINE = "#DBD7D5";
+const OUTLINE = "#d1d1d1";
 
 export function BackgroundLayer() {
   return (
