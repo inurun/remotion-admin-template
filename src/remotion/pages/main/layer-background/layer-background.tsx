@@ -4,7 +4,7 @@ import { Telop } from "@/remotion/components/telop/telop";
 const BRAND = "NIKKI DOGA";
 const CREAM = "#f3ead3";
 const RED = "#c43b3b";
-const OUTLINE = "#c9b8a3";
+const OUTLINE = "#DBD7D5";
 
 export function BackgroundLayer() {
   return (
@@ -33,14 +33,16 @@ export function BackgroundLayer() {
         </p>
       </div>
 
-      <div className="absolute top-[2%] right-[-6%] opacity-45 -rotate-[28deg]">
-        <Telop text={BRAND} fontSize={210} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
-      </div>
-      <div className="absolute top-[18%] right-[-2%] opacity-35 -rotate-[28deg]">
-        <Telop text={BRAND} fontSize={210} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
-      </div>
-      <div className="absolute top-[34%] right-[8%] opacity-25 -rotate-[28deg]">
-        <Telop text={BRAND} fontSize={210} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
+      <div className="-rotate-45 absolute top-0 right-50">
+        <div className="absolute top-0 right-[5%]" style={{ backgroundColor: CREAM }}>
+          <Telop text={BRAND} fontSize={230} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
+        </div>
+        <div className="absolute top-40 right-[5%]" style={{ backgroundColor: CREAM }}>
+          <Telop text={BRAND} fontSize={230} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
+        </div>
+        <div className="absolute top-80 right-[5%]" style={{ backgroundColor: CREAM }}>
+          <Telop text={BRAND} fontSize={230} fill={CREAM} stroke={OUTLINE} strokeWidth={10} />
+        </div>
       </div>
 
       <div className="absolute top-14 right-20 h-1.5 w-[420px]" style={{ backgroundColor: RED }} />
