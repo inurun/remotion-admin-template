@@ -216,12 +216,25 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Analyze-only G2P result. Validate / Synthesis keep [`G2pItem`]. */
+        AnalyzeItem: {
+            /**
+             * @description Spoken-word indexes actually taken from a user dictionary.
+             *
+             *     `[]` means tracking succeeded and no dictionary word was used.
+             *     `null` means tracking was incomplete. The field is required.
+             */
+            dictionary_words: components["schemas"]["DictionaryWord"][] | null;
+            kana: string;
+            text: string;
+            warnings?: components["schemas"]["Warning"][];
+        };
         AnalyzeRequest: {
             texts: string[];
         };
         AnalyzeResponse: {
             haqumei_version: string;
-            items: components["schemas"]["G2pItem"][];
+            items: components["schemas"]["AnalyzeItem"][];
             schema_version: string;
         };
         ContextCandidate: {
@@ -277,10 +290,16 @@ export interface components {
             /** Format: int64 */
             revision: number;
         };
+        DictionaryWord: {
+            kind: components["schemas"]["DictionaryWordKind"];
+            word_index: number;
+        };
+        /** @enum {string} */
+        DictionaryWordKind: "fixed" | "contextual";
         FieldError: {
+            message: string;
             path: string;
             reason: string;
-            message?: string;
         };
         FixedEntry: {
             accent_nucleus: number;
@@ -576,6 +595,7 @@ export interface operations {
                      *       "detail": "texts[37] \"対象テキスト\": mora mismatch: split=8 pitch_nuclei=7",
                      *       "errors": [
                      *         {
+                     *           "message": "mora mismatch: split=8 pitch_nuclei=7",
                      *           "path": "texts[37]",
                      *           "reason": "mora_mismatch"
                      *         }

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
+  analyzeItemSchema,
   g2pItemSchema,
+  storedG2pItemSchema,
   voiceOptionSchema,
   voiceProviderSchema,
   voicepeakSynthesisSettingsSchema,
@@ -17,7 +19,7 @@ export const ttsAnalyzeRequestSchema = z.object({
 });
 
 export const ttsAnalyzeResponseSchema = z.object({
-  g2p: g2pItemSchema,
+  g2p: analyzeItemSchema,
 });
 
 export const ttsValidateRequestSchema = z.object({
@@ -64,7 +66,7 @@ const ttsLlmAnalysisResultSchema = z.object({
   baselineKana: z.string().optional(),
   correctedKana: z.string().optional(),
   reason: z.string().optional(),
-  g2p: g2pItemSchema.optional(),
+  g2p: storedG2pItemSchema.optional(),
 });
 
 const ttsLlmUsageSchema = z.object({
@@ -103,7 +105,7 @@ export const ttsSynthesizeRequestSchema = z.discriminatedUnion("provider", [
     provider: z.literal("voisona"),
     projectPath: z.string().min(1),
     text: z.string().min(1),
-    g2p: g2pItemSchema.optional(),
+    g2p: storedG2pItemSchema.optional(),
     voiceName: z.string().min(1),
     voiceVersion: z.string().optional(),
     synthesisSettings: voisonaSynthesisSettingsSchema.nullish(),
@@ -112,7 +114,7 @@ export const ttsSynthesizeRequestSchema = z.discriminatedUnion("provider", [
     provider: z.literal("voicevox"),
     projectPath: z.string().min(1),
     text: z.string().min(1),
-    g2p: g2pItemSchema.optional(),
+    g2p: storedG2pItemSchema.optional(),
     voiceName: z.string().min(1),
     voiceVersion: z.string().optional(),
     synthesisSettings: voicevoxSynthesisSettingsSchema.nullish(),
@@ -121,7 +123,7 @@ export const ttsSynthesizeRequestSchema = z.discriminatedUnion("provider", [
     provider: z.literal("voicepeak"),
     projectPath: z.string().min(1),
     text: z.string().min(1),
-    g2p: g2pItemSchema.optional(),
+    g2p: storedG2pItemSchema.optional(),
     voiceName: z.string().min(1),
     voiceVersion: z.string().optional(),
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),

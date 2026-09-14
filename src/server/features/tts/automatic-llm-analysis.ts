@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { G2pItem } from "@/_schemas";
+import { dictionaryWordsForLlm, withLlmDictionaryWords, type StoredG2pItem } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 import {
@@ -31,13 +31,13 @@ export type AutomaticAnalyzeTarget = {
   analysisKey: string;
   text: string;
   readText: string;
-  baseline: G2pItem;
+  baseline: StoredG2pItem;
 };
 
 export type AutomaticG2pBatchResult = {
   fallback: boolean;
   reason?: string;
-  g2pByTtsId: Map<string, G2pItem>;
+  g2pByTtsId: Map<string, StoredG2pItem>;
   log: Record<string, unknown>;
 };
 
@@ -114,12 +114,15 @@ type TargetPrompt = {
 };
 
 function promptForTarget(target: AutomaticAnalyzeTarget): OpenRouterPromptItem {
-  return {
-    id: target.ttsId,
-    text: target.text,
-    readText: target.readText,
-    kana: target.baseline.kana,
-  };
+  return withLlmDictionaryWords(
+    {
+      id: target.ttsId,
+      text: target.text,
+      readText: target.readText,
+      kana: target.baseline.kana,
+    },
+    target.baseline.dictionary_words,
+  );
 }
 
 async function applyCorrections(input: {
@@ -127,7 +130,7 @@ async function applyCorrections(input: {
   targets: TargetPrompt[];
   corrections: OpenRouterCorrection[];
   settled: Map<string, ItemOutcome>;
-  g2pByTtsId: Map<string, G2pItem>;
+  g2pByTtsId: Map<string, StoredG2pItem>;
 }) {
   const correctionById = new Map(input.corrections.map((item) => [item.id, item]));
   const ready: Array<{
@@ -237,7 +240,7 @@ async function applyCorrections(input: {
 function fallbackRemaining(
   remaining: TargetPrompt[],
   settled: Map<string, ItemOutcome>,
-  g2pByTtsId: Map<string, G2pItem>,
+  g2pByTtsId: Map<string, StoredG2pItem>,
   reason: string,
 ) {
   for (const item of remaining) {
@@ -260,7 +263,7 @@ function fallbackRepairs(
     errors: CorrectionError[];
   }>,
   settled: Map<string, ItemOutcome>,
-  g2pByTtsId: Map<string, G2pItem>,
+  g2pByTtsId: Map<string, StoredG2pItem>,
 ) {
   for (const item of remaining) {
     fallbackRemaining(
@@ -318,6 +321,15 @@ export async function runAutomaticG2pBatch(
     baseline: input.targets.map((target) => ({
       id: target.ttsId,
       kana: target.baseline.kana,
+      ...("dictionary_words" in target.baseline
+        ? { dictionary_words: target.baseline.dictionary_words }
+        : {}),
+    })),
+    dictionaryProvenance: input.targets.map((target) => ({
+      id: target.ttsId,
+      dictionary_words:
+        "dictionary_words" in target.baseline ? target.baseline.dictionary_words : undefined,
+      sent: dictionaryWordsForLlm(target.baseline.dictionary_words) ?? null,
     })),
     profile: {
       model: profile.model,
@@ -358,7 +370,7 @@ export async function runAutomaticG2pBatch(
     return { ...result, log };
   };
 
-  const g2pByTtsId = new Map<string, G2pItem>();
+  const g2pByTtsId = new Map<string, StoredG2pItem>();
   const settled = new Map<string, ItemOutcome>();
   const openRouterAttempts: Array<Record<string, unknown>> = [];
   let openRouterMs = 0;

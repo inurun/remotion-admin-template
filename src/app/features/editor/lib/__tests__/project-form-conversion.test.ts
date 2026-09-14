@@ -9,7 +9,7 @@ import {
   createSavedMainPage,
   createSavedTts,
 } from "@/app/features/editor/store/__tests__/fixtures";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { ameKoroAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 
 describe("page form values", () => {
   it("converts only the selected saved page into page form values", () => {
@@ -31,6 +31,13 @@ describe("page form values", () => {
     });
     expect(toPageFormValues(page)).not.toHaveProperty("durationSec");
     expect(toPageFormValues(page).tts[0]).not.toHaveProperty("audio");
+  });
+
+  it("keeps dictionary_words when converting saved speech into form values", () => {
+    const page = createSavedMainPage({
+      tts: [createSavedTts({ speech: { g2p: ameKoroAnalyzeItem } })],
+    });
+    expect(toTtsFormValues(page.tts[0]!).speech?.g2p).toEqual(ameKoroAnalyzeItem);
   });
 
   it("merges saved speech onto matching TTS ids without using index or persistence fields", () => {

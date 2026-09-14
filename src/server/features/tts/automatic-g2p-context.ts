@@ -1,4 +1,9 @@
-import { isSavedContentPage, type SavedSequenceItem, type SavedTts } from "@/_schemas";
+import {
+  isSavedContentPage,
+  type DictionaryWord,
+  type SavedSequenceItem,
+  type SavedTts,
+} from "@/_schemas";
 import { getEffectiveReadText } from "@/server/features/tts/providers/comparison";
 
 export type AutomaticG2pUtterance = {
@@ -6,6 +11,7 @@ export type AutomaticG2pUtterance = {
   text: string;
   readText: string;
   baselineKana?: string;
+  dictionaryWords?: DictionaryWord[];
   target: boolean;
 };
 
@@ -19,6 +25,7 @@ export type AutomaticG2pTarget = {
   pageId: string;
   ttsId: string;
   baselineKana: string;
+  dictionaryWords?: DictionaryWord[];
 };
 
 function toUtterance(
@@ -33,6 +40,9 @@ function toUtterance(
   };
   if (target) {
     utterance.baselineKana = target.baselineKana;
+    if (target.dictionaryWords) {
+      utterance.dictionaryWords = target.dictionaryWords;
+    }
   }
   return utterance;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ttsApp } from "../route";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { createAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const {
@@ -52,7 +52,7 @@ describe("tts routes", () => {
   });
 
   it("analyzes text through haqumei-api", async () => {
-    const g2p = createG2pItem("hello");
+    const g2p = createAnalyzeItem("hello");
     analyzeTtsMock.mockResolvedValueOnce({ g2p });
 
     const response = await ttsApp.request("/tts/analyze", {
@@ -173,7 +173,7 @@ describe("tts routes", () => {
         status: 500,
         code: "analysis_failed",
         detail: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
-        errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+        errors: [{ path: "texts[0]", reason: "mora_mismatch", message: "" }],
       }),
     );
 
@@ -188,7 +188,7 @@ describe("tts routes", () => {
       error: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
       code: "analysis_failed",
       detail: 'texts[0] "hello": mora mismatch: split=8 pitch_nuclei=7',
-      errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+      errors: [{ path: "texts[0]", reason: "mora_mismatch", message: "" }],
     });
 
     errorSpy.mockRestore();

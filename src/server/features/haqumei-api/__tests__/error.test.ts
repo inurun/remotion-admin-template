@@ -12,7 +12,7 @@ const analysisFailed = {
   status: 500,
   code: "analysis_failed",
   detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
-  errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+  errors: [{ path: "texts[37]", reason: "mora_mismatch", message: "" }],
 };
 
 describe("HaqumeiApiError", () => {
@@ -24,7 +24,7 @@ describe("HaqumeiApiError", () => {
       code: "analysis_failed",
       detail: analysisFailed.detail,
     });
-    expect(error.errors).toEqual([{ path: "texts[37]", reason: "mora_mismatch" }]);
+    expect(error.errors).toEqual([{ path: "texts[37]", reason: "mora_mismatch", message: "" }]);
   });
 
   it("keeps the human-readable field message for repair", () => {
@@ -113,6 +113,7 @@ describe("formatHaqumeiApiLog", () => {
         {
           path: "item.kana",
           reason: "invalid_kana_syntax",
+          message: "",
         },
       ],
     });
@@ -126,7 +127,7 @@ describe("formatHaqumeiApiLog", () => {
     const error = new HaqumeiApiError({
       ...analysisFailed,
       detail: 'texts[1] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
-      errors: [{ path: "texts[1]", reason: "mora_mismatch" }],
+      errors: [{ path: "texts[1]", reason: "mora_mismatch", message: "" }],
     }).withChunkOffset(256);
 
     expect(formatHaqumeiApiLog(error)).toBe(

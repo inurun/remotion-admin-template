@@ -87,4 +87,74 @@ describe("automatic G2P context", () => {
       },
     ]);
   });
+
+  it("adds dictionaryWords only to target utterances", () => {
+    const dictionaryWords = [{ word_index: 0, kind: "fixed" as const }];
+    const pages = [
+      createSavedMainPage({
+        id: "page-1",
+        title: "Main",
+        tts: [
+          createSavedTts({ id: "tts-1", text: "雨衣", readText: "雨衣" }),
+          createSavedTts({ id: "tts-2", text: "peak", readText: "peak" }),
+        ],
+      }),
+    ];
+
+    expect(
+      buildAutomaticG2pContext(pages, [
+        {
+          pageId: "page-1",
+          ttsId: "tts-1",
+          baselineKana: "アメコロ'",
+          dictionaryWords,
+        },
+      ]),
+    ).toEqual([
+      {
+        id: "page-1",
+        title: "Main",
+        utterances: [
+          {
+            id: "tts-1",
+            text: "雨衣",
+            readText: "雨衣",
+            baselineKana: "アメコロ'",
+            dictionaryWords,
+            target: true,
+          },
+          {
+            id: "tts-2",
+            text: "peak",
+            readText: "peak",
+            target: false,
+          },
+        ],
+      },
+    ]);
+
+    expect(
+      contextForChunk(
+        buildAutomaticG2pContext(pages, [
+          {
+            pageId: "page-1",
+            ttsId: "tts-1",
+            baselineKana: "アメコロ'",
+            dictionaryWords,
+          },
+          { pageId: "page-1", ttsId: "tts-2", baselineKana: "ピーク'" },
+        ]),
+        new Set(["tts-2"]),
+      )[0]?.utterances,
+    ).toEqual([
+      { id: "tts-1", text: "雨衣", readText: "雨衣", target: false },
+      {
+        id: "tts-2",
+        text: "peak",
+        readText: "peak",
+        baselineKana: "ピーク'",
+        target: true,
+      },
+    ]);
+  });
 });

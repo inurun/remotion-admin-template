@@ -164,7 +164,7 @@ describe("project routes", () => {
         status: 500,
         code: "analysis_failed",
         detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
-        errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+        errors: [{ path: "texts[37]", reason: "mora_mismatch", message: "" }],
       }),
     );
 
@@ -181,7 +181,7 @@ describe("project routes", () => {
       error: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
       code: "analysis_failed",
       detail: 'texts[37] "対象テキスト": mora mismatch: split=8 pitch_nuclei=7',
-      errors: [{ path: "texts[37]", reason: "mora_mismatch" }],
+      errors: [{ path: "texts[37]", reason: "mora_mismatch", message: "" }],
     });
 
     errorSpy.mockRestore();

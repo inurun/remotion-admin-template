@@ -3,7 +3,7 @@ import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets"
 import { EYECATCH_TEXT_MIN_DURATION_SEC } from "@/_shared/lib/page/page-timing";
 import { isSavedContentPage, type SavedPage, type SavedSequenceItem } from "@/_schemas";
 import type { SaveSequenceItem } from "@/server/features/project/contract";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { ameKoroAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 
 const accessMock = vi.fn();
@@ -624,7 +624,7 @@ describe("project use-case", () => {
         status: 500,
         code: "analysis_failed",
         detail: 'texts[0] "Hello": mora mismatch: split=8 pitch_nuclei=7',
-        errors: [{ path: "texts[0]", reason: "mora_mismatch" }],
+        errors: [{ path: "texts[0]", reason: "mora_mismatch", message: "" }],
       }),
     );
 
@@ -887,6 +887,184 @@ describe("project use-case", () => {
 
     expect(analyzeTextsMock).not.toHaveBeenCalled();
     expect(synthesizeVoicevoxMock).toHaveBeenCalledWith(expect.objectContaining({ g2p: edited }));
+  });
+
+  it("keeps Analyze dictionary_words on saved baseline and drops them after a kana edit", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([ameKoroAnalyzeItem]);
+    synthesizeVoisonaMock
+      .mockResolvedValueOnce(audio("/tts/project/voisona-1.wav", 1))
+      .mockResolvedValueOnce(audio("/tts/project/edited.wav", 1));
+
+    const first = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "雨衣",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "雨衣",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+    await flushJobs();
+
+    expect(contentPage(first.pages).tts[0]?.speech.g2p).toEqual(ameKoroAnalyzeItem);
+
+    const edited = { ...ameKoroAnalyzeItem, kana: "ウイ'" };
+    readSavedProjectMock.mockResolvedValueOnce(lastWrittenProject());
+
+    const second = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "雨衣",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "雨衣",
+              readText: "雨衣",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: edited },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).toHaveBeenCalledTimes(1);
+    expect(contentPage(second.pages).tts[0]?.speech.g2p).toEqual({
+      text: "雨衣",
+      kana: "ウイ'",
+      warnings: [],
+    });
+  });
+
+  it("keeps a newly analyzed dictionary_words snapshot on first save", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav", 1));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "雨衣",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "雨衣",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: ameKoroAnalyzeItem },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(ameKoroAnalyzeItem);
+  });
+
+  it("keeps a re-analyzed dictionary_words snapshot when previous text/kana differ", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 1,
+          richText: "雨衣",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "雨衣",
+              readText: "雨衣",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              audio: { status: "ready", src: "/tts/project/old.wav", durationSec: 1 },
+              speech: { g2p: { text: "雨衣", kana: "ウイ'", warnings: [] } },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav", 1));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "雨衣",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "雨衣",
+              readText: "雨衣",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: ameKoroAnalyzeItem },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(ameKoroAnalyzeItem);
   });
 
   it("resynthesizes null tts when the project preset changes", async () => {

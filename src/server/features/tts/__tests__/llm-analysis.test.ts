@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import {
+  ameKoroAnalyzeItem,
+  createAnalyzeItem,
+  createG2pItem,
+} from "@/_schemas/__tests__/g2p-fixture";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 import { getUsableG2p } from "../providers/comparison";
 import { OpenRouterError, OpenRouterValidationError } from "../openrouter";
@@ -150,6 +154,74 @@ describe("analyzeTtsPageWithLlm", () => {
     expect(result.items[0]?.status).toBe("unchanged");
   });
 
+  it("sends dictionaryWords for tracked baseline words and omits empty or unknown provenance", async () => {
+    analyzeTextsMock.mockResolvedValueOnce([
+      ameKoroAnalyzeItem,
+      createAnalyzeItem("こんにちは", "コンニチワ'", []),
+      createAnalyzeItem("対象", "タイショウ'", null),
+    ]);
+    requestCorrectionsMock.mockResolvedValueOnce({
+      requestId: "generation-1",
+      model: "openai/gpt-5.6-luna",
+      actualProvider: "openai",
+      reasoningEffort: "none",
+      structuredOutput: [
+        { id: "tts-1", changed: false, kana: "", reason: "維持" },
+        { id: "tts-2", changed: false, kana: "", reason: "維持" },
+        { id: "tts-3", changed: false, kana: "", reason: "維持" },
+      ],
+      renderedKana: ["", "", ""],
+      corrections: [
+        { id: "tts-1", changed: false, kana: "アメコロ'", reason: "維持" },
+        { id: "tts-2", changed: false, kana: "コンニチワ'", reason: "維持" },
+        { id: "tts-3", changed: false, kana: "タイショウ'", reason: "維持" },
+      ],
+      usage: usageA,
+      rawResponse: { id: "generation-1" },
+    });
+
+    const result = await analyzeTtsPageWithLlm(
+      { OPENROUTER_API_KEY: "secret" },
+      {
+        pageId: "page-1",
+        items: [
+          { id: "tts-1", provider: "voisona", text: "雨衣" },
+          { id: "tts-2", provider: "voisona", text: "こんにちは" },
+          { id: "tts-3", provider: "voisona", text: "対象" },
+        ],
+      },
+    );
+
+    expect(requestCorrectionsMock.mock.calls[0]?.[1]).toEqual([
+      expect.objectContaining({
+        id: "tts-1",
+        kana: "アメコロ'",
+        dictionaryWords: [{ word_index: 0, kind: "fixed" }],
+      }),
+      expect.objectContaining({
+        id: "tts-2",
+        kana: "コンニチワ'",
+      }),
+      expect.objectContaining({
+        id: "tts-3",
+        kana: "タイショウ'",
+      }),
+    ]);
+    expect(requestCorrectionsMock.mock.calls[0]?.[1][1]).not.toHaveProperty("dictionaryWords");
+    expect(requestCorrectionsMock.mock.calls[0]?.[1][2]).not.toHaveProperty("dictionaryWords");
+    expect(result.items[0]?.g2p).toEqual(ameKoroAnalyzeItem);
+    const log = JSON.parse(String(writeFileMock.mock.calls[0]?.[1]));
+    expect(log.dictionaryProvenance).toEqual([
+      {
+        id: "tts-1",
+        dictionary_words: [{ word_index: 0, kind: "fixed" }],
+        sent: [{ word_index: 0, kind: "fixed" }],
+      },
+      { id: "tts-2", dictionary_words: [], sent: null },
+      { id: "tts-3", dictionary_words: null, sent: null },
+    ]);
+  });
+
   it("forwards neighboring TTS to OpenRouter without analyzing them", async () => {
     analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
     validateG2pItemsMock.mockResolvedValueOnce([createG2pItem("人気", "ヒトケ'")]);
@@ -187,7 +259,8 @@ describe("analyzeTtsPageWithLlm", () => {
   });
 
   it("retries once after a 422 and then succeeds", async () => {
-    analyzeTextsMock.mockResolvedValueOnce([createG2pItem("人気", "ニンキ'")]);
+    const baseline = createAnalyzeItem("人気", "ニンキ'", [{ word_index: 0, kind: "contextual" }]);
+    analyzeTextsMock.mockResolvedValueOnce([baseline]);
     requestCorrectionsMock
       .mockResolvedValueOnce(openRouterResult("tts-1", "ヒトケ'"))
       .mockResolvedValueOnce({
@@ -228,6 +301,7 @@ describe("analyzeTtsPageWithLlm", () => {
         readText: "人気",
         baselineKana: "ニンキ'",
         previousKana: "ヒトケ'",
+        dictionaryWords: [{ word_index: 0, kind: "contextual" }],
         errors: [
           expect.objectContaining({
             kind: "validate",

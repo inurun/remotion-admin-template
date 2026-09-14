@@ -5,7 +5,7 @@ import {
   projectFileSummarySchema,
   savedProjectSchema,
 } from "@/_schemas";
-import { g2pItemSchema } from "@/_schemas/g2p";
+import { storedG2pItemSchema } from "@/_schemas/g2p";
 import {
   avatarSettingsSchema,
   bgmTrackSchema,
@@ -23,7 +23,7 @@ import {
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 
 const saveTtsSpeechSchema = z.object({
-  g2p: g2pItemSchema.optional(),
+  g2p: storedG2pItemSchema.optional(),
 });
 
 const saveTtsBaseFields = {

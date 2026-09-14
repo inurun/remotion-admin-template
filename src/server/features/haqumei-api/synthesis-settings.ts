@@ -1,4 +1,8 @@
-import type { VoicevoxSynthesisSettings, VoisonaSynthesisSettings } from "@/_schemas";
+import {
+  toG2pItem,
+  type VoicevoxSynthesisSettings,
+  type VoisonaSynthesisSettings,
+} from "@/_schemas";
 import type { components } from "@/server/generated/haqumei-api/schema";
 
 export const VOICEVOX_SYNTHESIS_DEFAULTS = {
@@ -38,7 +42,7 @@ export function buildVoicevoxSynthesisRequest(input: {
 }): components["schemas"]["VoicevoxSynthesisRequest"] {
   return {
     schema_version: SYNTHESIS_SCHEMA_VERSION,
-    item: input.item,
+    item: toG2pItem(input.item),
     speaker: input.speaker,
     synthesis_settings: buildVoicevoxSynthesisSettings(input.synthesisSettings),
   };
@@ -64,7 +68,7 @@ export function buildVoisonaSynthesisRequest(input: {
 
   return {
     schema_version: SYNTHESIS_SCHEMA_VERSION,
-    item: input.item,
+    item: toG2pItem(input.item),
     voice_name: input.voiceName,
     ...(input.voiceVersion ? { voice_version: input.voiceVersion } : {}),
     ...(synthesisSettings

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { createAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { buildVoicevoxSynthesisRequest, buildVoisonaSynthesisRequest } from "../synthesis-settings";
 
 const item = createG2pItem("hello");
@@ -68,5 +68,19 @@ describe("synthesis request builders", () => {
       },
     });
     expect(JSON.stringify(request)).not.toContain("null");
+  });
+
+  it("omits dictionary_words from synthesis items", () => {
+    const item = createAnalyzeItem("雨衣", "アメコロ'", [{ word_index: 0, kind: "fixed" }]);
+    expect(buildVoicevoxSynthesisRequest({ item, speaker: 3 }).item).toEqual({
+      text: "雨衣",
+      kana: "アメコロ'",
+      warnings: [],
+    });
+    expect(buildVoisonaSynthesisRequest({ item, voiceName: "voice" }).item).toEqual({
+      text: "雨衣",
+      kana: "アメコロ'",
+      warnings: [],
+    });
   });
 });

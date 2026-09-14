@@ -23,7 +23,7 @@ function parseFieldErrors(value: unknown): HaqumeiFieldError[] {
       {
         path: item.path,
         reason: item.reason,
-        ...(typeof item.message === "string" && item.message ? { message: item.message } : {}),
+        message: typeof item.message === "string" ? item.message : "",
       },
     ];
   });

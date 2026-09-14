@@ -108,9 +108,10 @@
                 },
                 "example": {
                   "code": "analysis_failed",
-                  "detail": "texts[37] \"対象テキスト\": mora mismatch: split=8 pitch_nuclei=7",
+                  "detail": "texts[37] \"\u5bfe\u8c61\u30c6\u30ad\u30b9\u30c8\": mora mismatch: split=8 pitch_nuclei=7",
                   "errors": [
                     {
+                      "message": "mora mismatch: split=8 pitch_nuclei=7",
                       "path": "texts[37]",
                       "reason": "mora_mismatch"
                     }
@@ -839,6 +840,33 @@
   },
   "components": {
     "schemas": {
+      "AnalyzeItem": {
+        "type": "object",
+        "description": "Analyze-only G2P result. Validate / Synthesis keep [`G2pItem`].",
+        "required": ["text", "kana", "dictionary_words"],
+        "properties": {
+          "dictionary_words": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/DictionaryWord"
+            },
+            "description": "Spoken-word indexes actually taken from a user dictionary.\n\n`[]` means tracking succeeded and no dictionary word was used.\n`null` means tracking was incomplete. The field is required."
+          },
+          "kana": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Warning"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "AnalyzeRequest": {
         "type": "object",
         "required": ["texts"],
@@ -862,7 +890,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/G2pItem"
+              "$ref": "#/components/schemas/AnalyzeItem"
             }
           },
           "schema_version": {
@@ -1070,17 +1098,35 @@
           }
         }
       },
+      "DictionaryWord": {
+        "type": "object",
+        "required": ["word_index", "kind"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/DictionaryWordKind"
+          },
+          "word_index": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "DictionaryWordKind": {
+        "type": "string",
+        "enum": ["fixed", "contextual"]
+      },
       "FieldError": {
         "type": "object",
-        "required": ["path", "reason"],
+        "required": ["path", "reason", "message"],
         "properties": {
+          "message": {
+            "type": "string"
+          },
           "path": {
             "type": "string"
           },
           "reason": {
-            "type": "string"
-          },
-          "message": {
             "type": "string"
           }
         }

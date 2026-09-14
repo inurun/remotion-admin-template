@@ -1,3 +1,11 @@
+const OPENROUTER_G2P_DICTIONARY_PROMPT = [
+  "dictionaryWords, when present, lists pronunciation words in the baseline kana that came from the user's dictionary.",
+  "word_index is the 0-based index of pronunciation words in the baseline kana DSL, counting across phrases. Do not count accent marks or punctuation as words.",
+  "kind=fixed is a user-specified reading. Keep that reading.",
+  "kind=contextual is the selected candidate from the user's contextual dictionary. Do not replace it with a generic reading as if it were an unknown proper noun.",
+  "Evaluate fixed and contextual separately. Do not treat contextual as an absolute lock.",
+].join(" ");
+
 const OPENROUTER_G2P_DSL_PROMPT = [
   "Return kana as editor DSL. Example: ニンキ|ノ'/ナ'イ.",
   "Do not add, delete, or paraphrase the source text.",
@@ -16,6 +24,7 @@ export const OPENROUTER_G2P_MANUAL_SYSTEM_PROMPT = [
   "Use every item on the page as context.",
   "previous and next are neighboring utterances on the page. Use them as context only. Return corrections only for the input items, never for previous or next.",
   OPENROUTER_G2P_DSL_PROMPT,
+  OPENROUTER_G2P_DICTIONARY_PROMPT,
   "Output may contain the same or fewer word slots than the baseline.",
   "You may change readings and merge adjacent baseline word slots.",
   "Never add a word boundary that splits one baseline word slot into multiple output slots.",
@@ -42,6 +51,7 @@ export const OPENROUTER_G2P_AUTOMATIC_SYSTEM_PROMPT = [
   "The pages JSON lists utterances in page order. Use non-target utterances as context only.",
   "Return corrections only for utterances with target=true. Never return ids for target=false.",
   "Each target includes baselineKana. Copy that DSL and change readings only.",
+  OPENROUTER_G2P_DICTIONARY_PROMPT,
   "Keep the same phrase count, | word slots, ' nucleus slot, and every / 、 ？ ！ boundary.",
   "Do not merge, split, drop, or reorder words. Do not move the nucleus to another word slot.",
   "The baseline reading is usually correct. Do not assume there is an error.",
@@ -60,6 +70,7 @@ export const OPENROUTER_G2P_REPAIR_PROMPT = [
   "Keep the intended reading correction. Fix only the cited syntax, topology, or Validate errors.",
   "Do not change items that were not listed.",
   "If it cannot be repaired safely, return changed=false.",
+  "dictionaryWords indexes refer to baselineKana, never previousKana. If a previous attempt merged words, keep using the baseline indexes.",
 ].join(" ");
 
 export function getOpenRouterG2pSystemPrompt(input: {

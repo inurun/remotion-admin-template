@@ -1,7 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import type { G2pItem } from "@/_schemas";
+import {
+  withLlmDictionaryWords,
+  type AnalyzeItem,
+  type G2pItem,
+  type StoredG2pItem,
+} from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { analyzeTexts } from "@/server/features/haqumei-api/analyze";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
@@ -181,7 +186,7 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
   const request = ttsLlmAnalysisRequestSchema.parse(input);
   let stage: RunStage = "prepare";
   let stageStartedAt = runStartedAt;
-  let baselineItems: G2pItem[] = [];
+  let baselineItems: AnalyzeItem[] = [];
   let promptItems: OpenRouterPromptItem[] = [];
   let openRouterAttempts: AttemptLog[] = [];
   let validateRequest: Array<{ text: string; kana: string }> = [];
@@ -211,19 +216,24 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       );
       timings.haqumeiBaselineMs = elapsedMs(stageStartedAt);
 
-      promptItems = eligible.map((item, index) => ({
-        id: item.id,
-        text: item.text,
-        readText: item.effectiveText,
-        kana: baselineItems[index]!.kana,
-        ...(item.previous ? { previous: item.previous } : {}),
-        ...(item.next ? { next: item.next } : {}),
-      }));
+      promptItems = eligible.map((item, index) =>
+        withLlmDictionaryWords(
+          {
+            id: item.id,
+            text: item.text,
+            readText: item.effectiveText,
+            kana: baselineItems[index]!.kana,
+            ...(item.previous ? { previous: item.previous } : {}),
+            ...(item.next ? { next: item.next } : {}),
+          },
+          baselineItems[index]?.dictionary_words,
+        ),
+      );
 
       const baselineById = new Map(
         eligible.map((item, index) => [item.id, baselineItems[index]!] as const),
       );
-      const g2pById = new Map<string, G2pItem>();
+      const g2pById = new Map<string, StoredG2pItem>();
       const settledIds = new Set<string>();
       let pendingItems = promptItems;
       let repairItems: OpenRouterRepairItem[] | undefined;
@@ -458,6 +468,11 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       timings,
       baselineItems,
       promptItems,
+      dictionaryProvenance: promptItems.map((item, index) => ({
+        id: item.id,
+        dictionary_words: baselineItems[index]?.dictionary_words,
+        sent: item.dictionaryWords ?? null,
+      })),
       openRouter: openRouterAttempts,
       validateRequest,
       validatedItems,
@@ -490,6 +505,11 @@ export async function analyzeTtsPageWithLlm(serverEnv: ServerEnv, input: unknown
       timings,
       baselineItems,
       promptItems,
+      dictionaryProvenance: promptItems.map((item, index) => ({
+        id: item.id,
+        dictionary_words: baselineItems[index]?.dictionary_words,
+        sent: item.dictionaryWords ?? null,
+      })),
       openRouter: openRouterAttempts,
       validateRequest,
       validatedItems,

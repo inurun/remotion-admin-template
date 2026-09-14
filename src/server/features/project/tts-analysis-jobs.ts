@@ -1,10 +1,11 @@
 import {
+  dictionaryWordsForLlm,
   isSavedContentPage,
   savedProjectSchema,
   type SavedProject,
   type SavedTts,
+  type StoredG2pItem,
 } from "@/_schemas";
-import type { G2pItem } from "@/_schemas";
 import { readSavedProject, writeSavedProject } from "@/server/_shared/storage";
 import type { ServerEnv } from "@/server/core/env";
 import { AUDIO_PADDING_SECONDS, withSettledPageDurations } from "./page-duration";
@@ -47,7 +48,7 @@ function planTtsWav(
   serverEnv: ServerEnv,
   projectPath: string,
   item: SavedTts,
-  g2p: G2pItem,
+  g2p: StoredG2pItem,
   presets: SavedProject["voicePresets"],
 ) {
   const provider = getTtsProvider(item.provider);
@@ -105,7 +106,7 @@ async function applyAnalysisResults(
   serverEnv: ServerEnv,
   projectPath: string,
   requested: AnalysisJobTarget[],
-  g2pByTtsId: Map<string, G2pItem>,
+  g2pByTtsId: Map<string, StoredG2pItem>,
 ) {
   const project = await readSavedProject(projectPath);
   const requestedByTtsId = new Map(requested.map((target) => [target.ttsId, target]));
@@ -195,11 +196,15 @@ async function runAnalysisBatch(
     return;
   }
 
-  const contextTargets: AutomaticG2pTarget[] = targets.map((target) => ({
-    pageId: target.pageId,
-    ttsId: target.ttsId,
-    baselineKana: target.baseline.kana,
-  }));
+  const contextTargets: AutomaticG2pTarget[] = targets.map((target) => {
+    const dictionaryWords = dictionaryWordsForLlm(target.baseline.dictionary_words);
+    return {
+      pageId: target.pageId,
+      ttsId: target.ttsId,
+      baselineKana: target.baseline.kana,
+      ...(dictionaryWords ? { dictionaryWords } : {}),
+    };
+  });
   const result = await runAutomaticG2pBatch(serverEnv, {
     pages: buildAutomaticG2pContext(project.pages, contextTargets),
     targets,

@@ -1,4 +1,4 @@
-import type { G2pItem } from "@/_schemas";
+import { withLlmDictionaryWords, type G2pItem } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { HaqumeiApiError, haqumeiReadableError } from "@/server/features/haqumei-api/error";
 import { validateG2pItem, validateG2pItems } from "@/server/features/haqumei-api/validate";
@@ -50,14 +50,17 @@ export function toRepairItem(
   previousKana: string,
   errors: CorrectionError[],
 ): OpenRouterRepairItem {
-  return {
-    id: promptItem.id,
-    text: promptItem.text,
-    readText: promptItem.readText,
-    baselineKana: promptItem.kana,
-    previousKana,
-    errors,
-  };
+  return withLlmDictionaryWords(
+    {
+      id: promptItem.id,
+      text: promptItem.text,
+      readText: promptItem.readText,
+      baselineKana: promptItem.kana,
+      previousKana,
+      errors,
+    },
+    promptItem.dictionaryWords,
+  );
 }
 
 function validateMessage(error: unknown) {

@@ -135,6 +135,8 @@ describe("requestOpenRouterCorrections", () => {
     expect(body.messages[0].content).toContain("Valid word merge");
     expect(body.messages[0].content).toContain("カラ'/イ'シ becomes カラ'イ|シ");
     expect(body.messages[0].content).toContain("previous and next are neighboring utterances");
+    expect(body.messages[0].content).toContain("kind=fixed is a user-specified reading");
+    expect(body.messages[0].content).toContain("Do not treat contextual as an absolute lock");
     expect(JSON.parse(body.messages[1].content).items[0].kana).toBe("ニンキ'");
     expect(result.corrections[0]?.kana).toBe("ヒトケ'");
     expect(result.usage).toEqual({
@@ -183,6 +185,7 @@ describe("requestOpenRouterCorrections", () => {
     expect(body.messages[0].content).not.toContain("baselinePhrases");
     expect(body.messages[0].content).toContain("Never return only the corrected fragment");
     expect(body.messages[0].content).toContain("アソコ|ヲ'/ダ|ヨ'ー|ネ");
+    expect(body.messages[0].content).toContain("kind=fixed is a user-specified reading");
     expect(body.messages[0].content).not.toContain(
       "at least one contextual reading is likely wrong",
     );
@@ -279,6 +282,7 @@ describe("requestOpenRouterCorrections", () => {
     expect(body.messages[0].content).toContain(
       "The previous correction failed syntax, topology, or Validate.",
     );
+    expect(body.messages[0].content).toContain("indexes refer to baselineKana, never previousKana");
     const userInput = JSON.parse(body.messages[1].content);
     expect(userInput.items[0]).toEqual({
       id: "tts-1",

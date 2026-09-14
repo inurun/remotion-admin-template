@@ -1,5 +1,10 @@
 import fs from "node:fs/promises";
-import type { G2pItem, VoicevoxSynthesisSettings, VoisonaSynthesisSettings } from "@/_schemas";
+import {
+  toG2pItem,
+  type StoredG2pItem,
+  type VoicevoxSynthesisSettings,
+  type VoisonaSynthesisSettings,
+} from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { planWav, synthesizeWithWavCache } from "@/server/features/tts/wav-cache";
 import type { PlannedSynthesis } from "@/server/features/tts/providers/types";
@@ -22,14 +27,15 @@ async function writeWavFromBlob(outputPath: string, audio: Blob) {
 export function planVoicevoxSynthesis(input: {
   serverEnv: ServerEnv;
   projectPath: string;
-  g2p: G2pItem;
+  g2p: StoredG2pItem;
   voiceName: string;
   voiceVersion?: string;
   synthesisSettings?: VoicevoxSynthesisSettings;
 }): PlannedSynthesis {
   const speaker = parseSpeakerId(input.voiceName);
+  const g2p = toG2pItem(input.g2p);
   const body = buildVoicevoxSynthesisRequest({
-    item: input.g2p,
+    item: g2p,
     speaker,
     synthesisSettings: input.synthesisSettings,
   });
@@ -37,7 +43,7 @@ export function planVoicevoxSynthesis(input: {
     projectPath: input.projectPath,
     cacheKey: {
       provider: "voicevox",
-      g2p: input.g2p,
+      g2p,
       voiceName: input.voiceName,
       voiceVersion: input.voiceVersion,
       synthesisSettings: body.synthesis_settings,
@@ -66,7 +72,7 @@ export function planVoicevoxSynthesis(input: {
 export function synthesizeVoicevox(input: {
   serverEnv: ServerEnv;
   projectPath: string;
-  g2p: G2pItem;
+  g2p: StoredG2pItem;
   voiceName: string;
   voiceVersion?: string;
   synthesisSettings?: VoicevoxSynthesisSettings;
@@ -77,13 +83,14 @@ export function synthesizeVoicevox(input: {
 export function planVoisonaSynthesis(input: {
   serverEnv: ServerEnv;
   projectPath: string;
-  g2p: G2pItem;
+  g2p: StoredG2pItem;
   voiceName: string;
   voiceVersion?: string;
   synthesisSettings?: VoisonaSynthesisSettings;
 }): PlannedSynthesis {
+  const g2p = toG2pItem(input.g2p);
   const body = buildVoisonaSynthesisRequest({
-    item: input.g2p,
+    item: g2p,
     voiceName: input.voiceName,
     voiceVersion: input.voiceVersion,
     synthesisSettings: input.synthesisSettings,
@@ -92,7 +99,7 @@ export function planVoisonaSynthesis(input: {
     projectPath: input.projectPath,
     cacheKey: {
       provider: "voisona",
-      g2p: input.g2p,
+      g2p,
       voiceName: input.voiceName,
       voiceVersion: input.voiceVersion,
       synthesisSettings: body.synthesis_settings,
@@ -121,7 +128,7 @@ export function planVoisonaSynthesis(input: {
 export function synthesizeVoisona(input: {
   serverEnv: ServerEnv;
   projectPath: string;
-  g2p: G2pItem;
+  g2p: StoredG2pItem;
   voiceName: string;
   voiceVersion?: string;
   synthesisSettings?: VoisonaSynthesisSettings;

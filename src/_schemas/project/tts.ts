@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { g2pItemSchema } from "@/_schemas/g2p";
+import { storedG2pItemSchema } from "@/_schemas/g2p";
 import {
   avatarSettingsSchema,
   voicepeakSynthesisSettingsSchema,
@@ -8,7 +8,7 @@ import {
 } from "@/_schemas/project/primitives";
 
 const ttsSpeechSchema = z.object({
-  g2p: g2pItemSchema.optional(),
+  g2p: storedG2pItemSchema.optional(),
 });
 
 const ttsBaseSchema = z.object({

@@ -11,6 +11,7 @@ import {
   isTransition,
   pageTypeRequiresTts,
   savedProjectSchema,
+  withoutStaleDictionaryWords,
 } from "@/_schemas";
 import { nowIso } from "@/_shared/lib/date";
 import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
@@ -41,7 +42,11 @@ import {
   createTtsComparisonInput,
   getTtsProvider,
 } from "@/server/features/tts/providers/registry";
-import { getUsableG2p, getEffectiveReadText } from "@/server/features/tts/providers/comparison";
+import {
+  getUsableG2p,
+  getEffectiveReadText,
+  g2pAudioIdentity,
+} from "@/server/features/tts/providers/comparison";
 import { stableStringify } from "@/server/_shared/stable-stringify";
 import type { PlannedSynthesis, TtsComparisonInput } from "@/server/features/tts/providers/types";
 import { readCachedWav } from "@/server/features/tts/wav-cache";
@@ -155,6 +160,13 @@ function withEffectiveSynthesisSettings<
   };
 }
 
+function comparisonSnapshot(input: TtsComparisonInput<SaveTtsItem["provider"]>) {
+  return {
+    ...input,
+    g2p: g2pAudioIdentity(input.g2p),
+  };
+}
+
 function comparisonInputMatches(
   item: SaveTtsItem,
   previous: SavedTts,
@@ -163,9 +175,15 @@ function comparisonInputMatches(
 ) {
   return (
     stableStringify(
-      createPreviousTtsComparisonInput(withEffectiveSynthesisSettings(previous, previousPresets)),
+      comparisonSnapshot(
+        createPreviousTtsComparisonInput(withEffectiveSynthesisSettings(previous, previousPresets)),
+      ),
     ) ===
-    stableStringify(createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets)))
+    stableStringify(
+      comparisonSnapshot(
+        createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets)),
+      ),
+    )
   );
 }
 
@@ -398,7 +416,11 @@ async function planSavedTts(
   forceResynthesis = false,
 ): Promise<PlannedTts> {
   validateTts(item);
-  const nextInput = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
+  const previousG2p = previous?.speech.g2p;
+  const drafted = createTtsComparisonInput(withEffectiveSynthesisSettings(item, nextPresets));
+  const nextInput = drafted.g2p
+    ? { ...drafted, g2p: withoutStaleDictionaryWords(drafted.g2p, previousG2p) }
+    : drafted;
   const reuse = await classifyTtsReuse(
     item,
     projectPath,

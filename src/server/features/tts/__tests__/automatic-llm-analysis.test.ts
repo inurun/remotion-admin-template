@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import {
+  ameKoroAnalyzeItem,
+  createAnalyzeItem,
+  createG2pItem,
+} from "@/_schemas/__tests__/g2p-fixture";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 import { OpenRouterValidationError } from "../openrouter";
 
@@ -360,5 +364,103 @@ describe("automatic G2P batch", () => {
     expect(firstPages[0]?.utterances).toHaveLength(6);
     expect(result.log.profile).toMatchObject({ chunkSize: 5, timeoutMs: 60_000 });
     expect(result.g2pByTtsId.get("tts-6")?.kana).toBe("ア'");
+  });
+
+  it("sends dictionaryWords only when the baseline tracked a non-empty list", async () => {
+    requestCorrectionsMock.mockResolvedValueOnce(
+      openRouterResult([{ id: "tts-1", changed: false, kana: "", reason: "維持" }]),
+    );
+
+    const result = await runAutomaticG2pBatch(
+      {},
+      {
+        pages: [
+          {
+            id: "page-1",
+            title: "Main",
+            utterances: [
+              {
+                id: "tts-1",
+                text: "雨衣",
+                readText: "雨衣",
+                baselineKana: ameKoroAnalyzeItem.kana,
+                dictionaryWords: ameKoroAnalyzeItem.dictionary_words ?? undefined,
+                target: true,
+              },
+              {
+                id: "tts-empty",
+                text: "こんにちは",
+                readText: "こんにちは",
+                baselineKana: "コンニチワ'",
+                target: true,
+              },
+              {
+                id: "tts-null",
+                text: "対象",
+                readText: "対象",
+                baselineKana: "タイショウ'",
+                target: true,
+              },
+              { id: "tts-ctx", text: "peak", readText: "peak", target: false },
+            ],
+          },
+        ],
+        targets: [
+          {
+            pageId: "page-1",
+            ttsId: "tts-1",
+            analysisKey: "key-1",
+            text: "雨衣",
+            readText: "雨衣",
+            baseline: ameKoroAnalyzeItem,
+          },
+          {
+            pageId: "page-1",
+            ttsId: "tts-empty",
+            analysisKey: "key-empty",
+            text: "こんにちは",
+            readText: "こんにちは",
+            baseline: createAnalyzeItem("こんにちは", "コンニチワ'", []),
+          },
+          {
+            pageId: "page-1",
+            ttsId: "tts-null",
+            analysisKey: "key-null",
+            text: "対象",
+            readText: "対象",
+            baseline: createAnalyzeItem("対象", "タイショウ'", null),
+          },
+        ],
+      },
+    );
+
+    const pages = requestCorrectionsMock.mock.calls[0]?.[2]?.userContent.pages as Array<{
+      utterances: Array<{ id: string; dictionaryWords?: unknown }>;
+    }>;
+    expect(pages[0]?.utterances.find((item) => item.id === "tts-1")?.dictionaryWords).toEqual([
+      { word_index: 0, kind: "fixed" },
+    ]);
+    expect(
+      pages[0]?.utterances.find((item) => item.id === "tts-empty")?.dictionaryWords,
+    ).toBeUndefined();
+    expect(
+      pages[0]?.utterances.find((item) => item.id === "tts-null")?.dictionaryWords,
+    ).toBeUndefined();
+    expect(
+      pages[0]?.utterances.find((item) => item.id === "tts-ctx")?.dictionaryWords,
+    ).toBeUndefined();
+    expect(requestCorrectionsMock.mock.calls[0]?.[1][0].dictionaryWords).toEqual([
+      { word_index: 0, kind: "fixed" },
+    ]);
+    expect(result.log.dictionaryProvenance).toEqual([
+      {
+        id: "tts-1",
+        dictionary_words: [{ word_index: 0, kind: "fixed" }],
+        sent: [{ word_index: 0, kind: "fixed" }],
+      },
+      { id: "tts-empty", dictionary_words: [], sent: null },
+      { id: "tts-null", dictionary_words: null, sent: null },
+    ]);
+    expect(result.g2pByTtsId.get("tts-1")).toEqual(ameKoroAnalyzeItem);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { analyzeTexts } from "../analyze";
 import { HaqumeiApiError } from "../error";
-import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
+import { createAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 
 const { getHaqumeiApiClientMock } = vi.hoisted(() => ({
   getHaqumeiApiClientMock: vi.fn(),
@@ -56,7 +56,7 @@ describe("analyzeTexts", () => {
           data: {
             schema_version: "2",
             haqumei_version: "0.8.5",
-            items: firstChunk.map((text) => createG2pItem(text)),
+            items: firstChunk.map((text) => createAnalyzeItem(text)),
           },
         }),
       })
@@ -71,5 +71,46 @@ describe("analyzeTexts", () => {
       chunkOffset: 256,
       errors: [{ path: "texts[1]", reason: "mora_mismatch" }],
     });
+  });
+
+  it("keeps dictionary_words and rejects a missing field", async () => {
+    getHaqumeiApiClientMock
+      .mockReturnValueOnce({
+        POST: async () => ({
+          response: new Response(null, { status: 200 }),
+          data: {
+            schema_version: "2",
+            haqumei_version: "0.12.0",
+            items: [
+              {
+                text: "雨衣",
+                kana: "アメコロ'",
+                warnings: [],
+                dictionary_words: [{ word_index: 0, kind: "fixed" }],
+              },
+            ],
+          },
+        }),
+      })
+      .mockReturnValueOnce({
+        POST: async () => ({
+          response: new Response(null, { status: 200 }),
+          data: {
+            schema_version: "2",
+            haqumei_version: "0.12.0",
+            items: [createG2pItem("雨衣", "アメコロ'")],
+          },
+        }),
+      });
+
+    await expect(analyzeTexts({}, ["雨衣"])).resolves.toEqual([
+      {
+        text: "雨衣",
+        kana: "アメコロ'",
+        warnings: [],
+        dictionary_words: [{ word_index: 0, kind: "fixed" }],
+      },
+    ]);
+    await expect(analyzeTexts({}, ["雨衣"])).rejects.toThrow();
   });
 });

@@ -1,3 +1,4 @@
+import type { DictionaryWord } from "@/_schemas";
 import { z } from "zod";
 import type { ServerEnv } from "@/server/core/env";
 import type { CorrectionError } from "@/server/features/tts/g2p-topology";
@@ -114,6 +115,7 @@ export type OpenRouterPromptItem = {
   kana: string;
   previous?: OpenRouterNeighborItem;
   next?: OpenRouterNeighborItem;
+  dictionaryWords?: DictionaryWord[];
 };
 
 export type StructuredCorrection = z.infer<typeof structuredCorrectionSchema>;
@@ -149,6 +151,7 @@ export type OpenRouterRepairItem = {
   baselineKana: string;
   previousKana: string;
   errors: CorrectionError[];
+  dictionaryWords?: DictionaryWord[];
 };
 
 export class OpenRouterError extends Error {
