@@ -2650,6 +2650,102 @@ describe("project use-case", () => {
     await flushJobs();
   });
 
+  it("skips automatic LLM when readText is kana or symbols only", async () => {
+    const unG2p = createG2pItem("うん？");
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([unG2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav"));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>うん？</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "うん？",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("pending");
+    expect(contentPage(saved.pages).tts[0]?.speech.g2p).toEqual(unG2p);
+    expect(analyzeTextsMock).toHaveBeenCalledWith(expect.anything(), ["うん？"]);
+    expect(requestOpenRouterCorrectionsMock).not.toHaveBeenCalled();
+    await flushJobs();
+  });
+
+  it("queues automatic LLM when readText contains kanji", async () => {
+    const g2p = createG2pItem("うん大丈夫？");
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    analyzeTextsMock.mockResolvedValueOnce([g2p]);
+    requestOpenRouterCorrectionsMock.mockResolvedValueOnce({
+      requestId: "generation-1",
+      model: "google/gemma-4-31b-it",
+      actualProvider: "coreweave",
+      reasoningEffort: "none",
+      structuredOutput: [{ id: "tts-1", changed: false, kana: "", reason: "維持" }],
+      renderedKana: [g2p.kana],
+      corrections: [{ id: "tts-1", changed: false, kana: g2p.kana, reason: "維持" }],
+      usage: {
+        promptTokens: 1,
+        completionTokens: 1,
+        reasoningTokens: 0,
+        cachedTokens: 0,
+        totalTokens: 2,
+        costUsd: 0,
+      },
+    });
+    validateG2pItemsMock.mockResolvedValueOnce([g2p]);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/voisona-1.wav"));
+
+    const saved = await saveProject({ OPENROUTER_API_KEY: "secret" }, "project", {
+      meta: defaultMeta,
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: "<p>うん大丈夫？</p>",
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "うん大丈夫？",
+              voiceName: "voice",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: {},
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.pages).tts[0]?.audio.status).toBe("analyzing");
+    expect(requestOpenRouterCorrectionsMock).toHaveBeenCalledTimes(1);
+    await flushJobs();
+  });
+
   it("does not create analyzing when the OpenRouter API key is missing", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });

@@ -67,6 +67,7 @@ import {
   type AnalysisJobTarget,
 } from "@/server/features/project/tts-analysis-jobs";
 import { createTtsAnalysisKey } from "@/server/features/tts/analysis-key";
+import { needsAutomaticLlmAnalyze } from "@/server/features/tts/automatic-llm-eligibility";
 import {
   hasOpenRouterApiKey,
   warnMissingOpenRouterApiKeyOnce,
@@ -494,7 +495,11 @@ async function buildSavedTts(
     return { tts: createReusedSavedTts(plan.item, plan.previous) as SavedTts };
   }
 
-  if (plan.needsG2pAnalyze && hasOpenRouterApiKey(serverEnv)) {
+  if (
+    plan.needsG2pAnalyze &&
+    hasOpenRouterApiKey(serverEnv) &&
+    needsAutomaticLlmAnalyze(plan.nextInput.readText)
+  ) {
     const baseline = plan.nextInput.g2p;
     if (!baseline) {
       throw new Error(`haqumei-api analyze returned no item for tts ${plan.item.id}`);
