@@ -19,6 +19,10 @@ vi.mock("@/server/_shared/storage", async () => {
   return {
     ...actual,
     readSavedProject: (...args: unknown[]) => readSavedProjectMock(...args),
+    readSavedProjectDocument: async (...args: unknown[]) => ({
+      project: await readSavedProjectMock(...args),
+      timeline: { durationSec: 0, tracks: [{ id: "sequence", clips: [] }] },
+    }),
   };
 });
 

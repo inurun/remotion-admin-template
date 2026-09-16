@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { analyzeItemSchema, storedG2pItemSchema } from "@/_schemas";
 import {
-  analyzeItemSchema,
   dictionaryWordsForLlm,
-  storedG2pItemSchema,
   withLlmDictionaryWords,
   withoutStaleDictionaryWords,
-} from "@/_schemas";
+} from "@/server/features/tts/g2p-item";
 import {
   createSavedMainPage,
   createSavedTts,

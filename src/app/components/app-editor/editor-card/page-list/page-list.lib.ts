@@ -1,6 +1,7 @@
-import type { PageType, SavedProject, TransitionVariant } from "@/_schemas";
-import { getProjectSequenceTimings } from "@/_shared/project/project-timing";
+import type { PageType, SavedTimeline, TransitionVariant } from "@/_schemas";
+import { SEQUENCE_TRACK_ID } from "@/_schemas";
 import { moveItem } from "@/app/features/ui/lib/reorder";
+import { clamp } from "remeda";
 
 export type PageListItemPresentation =
   | {
@@ -48,24 +49,32 @@ type PageTiming = {
   endSec: number;
 };
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
 export function getPageThumbnailFrame(page: PageTiming, fps: number, durationInFrames: number) {
   const lastProjectFrame = Math.max(0, durationInFrames - 1);
-  const pageStartFrame = clamp(Math.round(page.startSec * fps), 0, lastProjectFrame);
+  const pageStartFrame = clamp(Math.round(page.startSec * fps), {
+    min: 0,
+    max: lastProjectFrame,
+  });
   const pageEndFrame = Math.max(
     pageStartFrame,
-    clamp(Math.ceil(page.endSec * fps) - 1, pageStartFrame, lastProjectFrame),
+    clamp(Math.ceil(page.endSec * fps) - 1, {
+      min: pageStartFrame,
+      max: lastProjectFrame,
+    }),
   );
   const preferredFrame = Math.round((page.startSec + 1) * fps);
 
-  return clamp(preferredFrame, pageStartFrame, pageEndFrame);
+  return clamp(preferredFrame, { min: pageStartFrame, max: pageEndFrame });
 }
 
-export function getProjectPageTimings(project: SavedProject): PageTiming[] {
-  return getProjectSequenceTimings(project);
+export function getProjectPageTimings(timeline: SavedTimeline): PageTiming[] {
+  return (timeline.tracks.find((track) => track.id === SEQUENCE_TRACK_ID)?.clips ?? []).map(
+    (clip) => ({
+      id: clip.id,
+      startSec: clip.startSec,
+      endSec: clip.startSec + clip.durationSec,
+    }),
+  );
 }
 
 function resolveSelectedPageIndexAfterMove(

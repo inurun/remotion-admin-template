@@ -1,6 +1,6 @@
 import { Controller } from "react-hook-form";
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
+import { Field, FieldError } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
 import { useReadTextField } from "@/app/components/app-editor/config-card/read-text-field/use-read-text-field";
 
 export function ReadTextField() {

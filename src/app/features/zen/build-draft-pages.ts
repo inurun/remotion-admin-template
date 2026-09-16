@@ -1,7 +1,6 @@
 import type { VoiceOption } from "@/_schemas";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { createUuid } from "@/_shared/lib/utils";
 import { createBlankPageInput } from "@/app/features/page";
 import { createZenTts } from "@/app/features/zen/create-zen-tts";
 import type { ZenAliasTarget, ZenDraftPage, ZenSpeakerBlock } from "@/app/features/zen/types";
@@ -35,7 +34,7 @@ export function buildPageInputs(
 
   return pages.map((page) => {
     const draft = createBlankPageInput({
-      id: createUuid(),
+      id: crypto.randomUUID(),
       title: page.title,
       type: "main",
     });

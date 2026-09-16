@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
-import { AccentEditor } from "@/_shared/components/accent-editor/accent-editor";
-import { Button } from "@/_shared/components/ui/button";
+import { AccentEditor } from "@/app/components/accent-editor/accent-editor";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/_shared/components/ui/dialog";
-import { Input } from "@/_shared/components/ui/input";
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
 import { useDictionarySelectionPopover } from "./use-dictionary-selection-popover";
 
 export function DictionarySelectionPopover({ children }: { children: ReactNode }) {

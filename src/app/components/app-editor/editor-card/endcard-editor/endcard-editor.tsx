@@ -1,10 +1,10 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext } from "react-hook-form";
 import { Link2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
-import { Textarea } from "@/_shared/components/ui/textarea";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldGroup } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { EndcardList } from "./endcard-list/endcard-list";
 import { useEndcardEditor } from "./use-endcard-editor";
 

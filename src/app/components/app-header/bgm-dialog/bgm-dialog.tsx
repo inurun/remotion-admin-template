@@ -1,6 +1,6 @@
 import { Music2, Plus, Trash2 } from "lucide-react";
 import { Controller } from "react-hook-form";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -10,16 +10,16 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Input } from "@/_shared/components/ui/input";
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/_shared/components/ui/select";
-import { Slider } from "@/_shared/components/ui/slider";
+} from "@/app/components/ui/select";
+import { Slider } from "@/app/components/ui/slider";
 import { useBgmDialog } from "./use-bgm-dialog";
 
 export function BgmDialog() {

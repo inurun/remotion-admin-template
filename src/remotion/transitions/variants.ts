@@ -5,7 +5,6 @@ import type { TransitionVariant } from "@/_schemas";
 type TransitionEasingName = "linear" | "easeIn" | "easeOut" | "easeInOut";
 
 export type TransitionVariantDef = {
-  durationSec: number;
   direction: SlideDirection;
   easing: TransitionEasingName;
 };
@@ -19,7 +18,6 @@ const EASINGS: Record<TransitionEasingName, (input: number) => number> = {
 
 const TRANSITION_VARIANTS = {
   slide: {
-    durationSec: 0.8,
     direction: "from-top",
     easing: "easeInOut",
   },
@@ -27,10 +25,6 @@ const TRANSITION_VARIANTS = {
 
 export function getTransitionVariantDef(variant: TransitionVariant): TransitionVariantDef {
   return TRANSITION_VARIANTS[variant];
-}
-
-export function getTransitionDurationSec(variant: TransitionVariant): number {
-  return getTransitionVariantDef(variant).durationSec;
 }
 
 export function getTransitionEasing(variant: TransitionVariant): (input: number) => number {

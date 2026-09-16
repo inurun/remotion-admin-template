@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/_shared/lib/error-message";
-import { splitKanaMoras } from "@/_shared/lib/kana-mora";
+import { splitKanaMoras } from "@/_schemas/dictionary";
 import { createDictionaryEntry } from "@/app/features/dictionary";
 import type { DictionaryEntryInput } from "@/_schemas";
 

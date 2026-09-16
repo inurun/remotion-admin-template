@@ -1,8 +1,9 @@
-import type { SavedProject } from "@/_schemas";
-import { isSavedContentPage, isSavedTransition } from "@/_schemas";
-import { createTtsTimingSegments } from "@/_shared/lib/tts/tts-timing";
-import { listReadyTtsTimingInputs } from "@/_shared/lib/tts/tts-audio";
-import { getTransitionDurationSec } from "@/remotion/transitions/variants";
+import {
+  SEQUENCE_TRACK_ID,
+  type SavedProject,
+  type SavedTimeline,
+  type SavedTimelineClip,
+} from "@/_schemas";
 import { secondsToFrames } from "@/remotion/utils/timing";
 
 export interface DuckableInterval {
@@ -10,38 +11,45 @@ export interface DuckableInterval {
   to: number;
 }
 
-function collectTtsIntervals(project: SavedProject, fps: number): DuckableInterval[] {
-  const intervals: DuckableInterval[] = [];
-  let pageStartFrame = 0;
-
-  for (const item of project.pages) {
-    if (isSavedTransition(item)) {
-      pageStartFrame -= Math.max(1, secondsToFrames(getTransitionDurationSec(item.variant), fps));
-      continue;
+function collectClipIntervals(
+  clips: SavedTimelineClip[],
+  originSec: number,
+  readyTtsIds: Set<string>,
+  fps: number,
+): DuckableInterval[] {
+  return clips.flatMap((clip) => {
+    const startSec = originSec + clip.startSec;
+    const nested = collectClipIntervals(clip.clips, startSec, readyTtsIds, fps);
+    if (!readyTtsIds.has(clip.id)) {
+      return nested;
     }
-
-    if (!isSavedContentPage(item)) {
-      continue;
+    const duration = secondsToFrames(clip.durationSec, fps);
+    if (duration <= 0) {
+      return nested;
     }
-
-    const pageDurationFrames = Math.max(1, secondsToFrames(item.durationSec, fps));
-
-    for (const segment of createTtsTimingSegments(listReadyTtsTimingInputs(item.tts), {
-      minDurationSec: 1 / fps,
-    })) {
-      const from = pageStartFrame + secondsToFrames(item.padBeforeSec + segment.startSec, fps);
-      const duration = secondsToFrames(segment.durationSec, fps);
-      if (duration > 0) {
-        intervals.push({ from, to: from + duration });
-      }
-    }
-
-    pageStartFrame += pageDurationFrames;
-  }
-
-  return intervals;
+    const from = secondsToFrames(startSec, fps);
+    return [{ from, to: from + duration }, ...nested];
+  });
 }
 
-export function collectDuckableIntervals(project: SavedProject, fps: number): DuckableInterval[] {
-  return [...collectTtsIntervals(project, fps)];
+export function collectDuckableIntervals(
+  project: SavedProject,
+  timeline: SavedTimeline,
+  fps: number,
+): DuckableInterval[] {
+  const readyTtsIds = new Set(
+    project.pages.flatMap((item) => {
+      if (item.type === "transition") {
+        return [];
+      }
+      return item.tts.flatMap((tts) => (tts.audio.status === "ready" ? [tts.id] : []));
+    }),
+  );
+
+  return collectClipIntervals(
+    timeline.tracks.find((track) => track.id === SEQUENCE_TRACK_ID)?.clips ?? [],
+    0,
+    readyTtsIds,
+    fps,
+  );
 }

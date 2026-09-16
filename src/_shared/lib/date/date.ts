@@ -1,6 +1,5 @@
 import { TZDate } from "@date-fns/tz";
 import { format, parseISO } from "date-fns";
-import { ja } from "date-fns/locale";
 
 export const TOKYO_TIME_ZONE = "Asia/Tokyo";
 
@@ -18,18 +17,6 @@ export function toTokyoDate(value: string | number | Date): TZDate {
   return new TZDate(toTimestampMs(value), TOKYO_TIME_ZONE);
 }
 
-export function formatTokyoClock(value: string | number | Date): string {
-  return format(toTokyoDate(value), "HHmm");
-}
-
-export function formatTokyoDate(value: string | number | Date) {
-  const tokyo = toTokyoDate(value);
-  return {
-    date: format(tokyo, "yyyy/MM/dd"),
-    weekday: format(tokyo, "EEEE", { locale: ja }),
-  };
-}
-
 /** e.g. `2026-08-18` */
 export function formatTokyoYmd(value: string | number | Date): string {
   return format(toTokyoDate(value), "yyyy-MM-dd");
@@ -42,11 +29,6 @@ export function formatTokyoYearMonth(value: string | number | Date): string {
 
 export function tokyoDateFromYmd(ymd: string): TZDate {
   return new TZDate(`${ymd}T00:00:00+09:00`, TOKYO_TIME_ZONE);
-}
-
-/** e.g. `2026年8月9日の日記` */
-export function formatTokyoDiaryLabel(value: string | number | Date): string {
-  return format(toTokyoDate(value), "yyyy年M月d日の日記", { locale: ja });
 }
 
 /** UTC ISO-8601 with milliseconds, e.g. `2026-08-09T11:36:16.548Z`. */

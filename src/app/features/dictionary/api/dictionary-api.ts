@@ -4,8 +4,8 @@ import type {
   DictionaryMutationResponse,
   G2pItem,
 } from "@/_schemas";
-import { api } from "@/_shared/lib/api-client";
-import { parseApiJson } from "@/_shared/lib/fetch-json";
+import { api } from "@/app/lib/api-client";
+import { parseApiJson } from "@/app/lib/fetch-json";
 
 export const dictionaryKeys = { all: () => ["dictionary"] as const };
 

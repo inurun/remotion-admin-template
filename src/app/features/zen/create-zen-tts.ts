@@ -3,7 +3,7 @@ import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   getAvatarTypeByVoiceName,
   resolveAvatarSettings,
-} from "@/_shared/lib/avatar/avatar-settings";
+} from "@/app/features/zen/avatar-settings";
 import { createTtsInput } from "@/app/features/tts";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 

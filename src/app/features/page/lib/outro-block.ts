@@ -1,11 +1,10 @@
 import type { OutroBlock } from "@/_schemas";
-import { createUuid } from "@/_shared/lib/utils";
 
 export const OUTRO_BLOCK_URL_PLACEHOLDER = "https://example.com";
 
 export function createBlankOutroBlock(partial?: Partial<OutroBlock>): OutroBlock {
   return {
-    id: createUuid(),
+    id: crypto.randomUUID(),
     url: "",
     title: "",
     description: "",

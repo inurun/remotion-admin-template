@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeItemSchema,
   countG2pPronunciationWords,
-  dictionaryWordsForLlm,
   g2pItemSchema,
   storedG2pItemSchema,
+} from "../g2p";
+import {
+  dictionaryWordsForLlm,
   toG2pItem,
   withoutStaleDictionaryWords,
-} from "../g2p";
+} from "@/server/features/tts/g2p-item";
 import {
   ameKoroAnalyzeItem,
   ameKoroRepeatedAnalyzeItem,

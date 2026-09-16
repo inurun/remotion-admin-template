@@ -2,20 +2,26 @@ import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { ZodError } from "zod";
 
 import {
-  projectFileSummarySchema,
   savedProjectSchema,
   savedSchedulesSchema,
-  type ProjectFileSummary,
+  savedTimelineSchema,
+  SEQUENCE_TRACK_ID,
+  voicePresetId,
+  DEFAULT_PROJECT_META,
   type SavedProject,
   type SavedSchedules,
+  type SavedTimeline,
+  type VoicePreset,
 } from "@/_schemas";
-import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
 import {
-  getProjectFileStem as getProjectFileStemFromPath,
-  getProjectOutputVideoFileName,
-} from "@/_shared/project/project-path";
+  projectFileSummarySchema,
+  type ProjectFileSummary,
+} from "@/server/features/project/contract";
+import { toTimeline } from "@/server/features/project/to-timeline";
+import { normalizeProjectMeta } from "@/server/features/project/normalize-project-meta";
 
 export const PROJECT_ROOT = process.cwd();
 const DATA_DIR = path.join(PROJECT_ROOT, "data");
@@ -32,6 +38,7 @@ export const LATEST_THUMBNAIL_PATH = path.join(OUT_DIR, "thumbnail.png");
 
 const DEFAULT_PROJECT_PATH = "project";
 const PROJECT_FILE_EXTENSION = ".json";
+const TIMELINE_FILE_SUFFIX = ".timeline.json";
 const PROJECT_LIST_EXCLUDE = new Set([
   path.basename(PUBLISH_STATE_PATH),
   path.basename(SCHEDULES_PATH),
@@ -47,7 +54,7 @@ export class ProjectAlreadyExistsError extends Error {}
 
 function createInitialSavedProject() {
   return savedProjectSchema.parse({
-    meta: getDefaultProjectMeta(DEFAULT_PROJECT_PATH),
+    meta: { ...DEFAULT_PROJECT_META, title: DEFAULT_PROJECT_PATH },
     bgm: [],
     pages: [
       {
@@ -56,7 +63,6 @@ function createInitialSavedProject() {
         type: "main",
         padBeforeSec: 0,
         padAfterSec: 0,
-        durationSec: 0,
         richText:
           "<h1>Remotion + VoiSona Template</h1><p>このテンプレをベースに本文と読み上げを編集できる。</p>",
         tts: [
@@ -125,7 +131,11 @@ export function normalizeProjectPath(projectPath: string) {
 }
 
 export function getProjectFileStem(projectPath: string) {
-  return getProjectFileStemFromPath(normalizeProjectPath(projectPath));
+  return normalizeProjectPath(projectPath).split("/").filter(Boolean).at(-1) ?? "project";
+}
+
+export function getProjectOutputVideoFileName(projectPath: string) {
+  return `${getProjectFileStem(projectPath)}.mp4`;
 }
 
 export function getProjectOutputVideoPath(projectPath: string) {
@@ -173,6 +183,107 @@ function createProjectFilePath(projectPath: string) {
   return filePath;
 }
 
+function createTimelineFilePath(projectPath: string) {
+  const projectFilePath = createProjectFilePath(projectPath);
+  return projectFilePath.slice(0, -PROJECT_FILE_EXTENSION.length) + TIMELINE_FILE_SUFFIX;
+}
+
+function coerceVoicePresets(value: unknown) {
+  if (!Array.isArray(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    value.flatMap((preset) => {
+      if (!preset || typeof preset !== "object") {
+        return [];
+      }
+      const record = preset as VoicePreset;
+      if (!record.provider || !record.voiceName) {
+        return [];
+      }
+      return [[voicePresetId(record), record] as const];
+    }),
+  );
+}
+
+function legacyPreviousTimeline(raw: unknown): SavedTimeline | undefined {
+  if (!raw || typeof raw !== "object" || !("pages" in raw) || !Array.isArray(raw.pages)) {
+    return undefined;
+  }
+
+  const clips = raw.pages.flatMap((page) => {
+    if (!page || typeof page !== "object" || !("id" in page)) {
+      return [];
+    }
+    const durationSec =
+      "durationSec" in page && typeof page.durationSec === "number" ? page.durationSec : undefined;
+    if (durationSec === undefined) {
+      return [];
+    }
+    return [
+      {
+        id: String(page.id),
+        startSec: 0,
+        durationSec,
+        clips: [],
+      },
+    ];
+  });
+
+  if (clips.length === 0) {
+    return undefined;
+  }
+
+  return {
+    durationSec: 0,
+    tracks: [{ id: SEQUENCE_TRACK_ID, clips }],
+  };
+}
+
+function parseSavedProject(raw: unknown) {
+  const record = raw && typeof raw === "object" ? { ...raw } : raw;
+  if (record && typeof record === "object" && "voicePresets" in record) {
+    return savedProjectSchema.parse({
+      ...record,
+      voicePresets: coerceVoicePresets(record.voicePresets),
+    });
+  }
+  return savedProjectSchema.parse(record);
+}
+
+async function readTimelineFile(projectPath: string) {
+  try {
+    const content = await fs.readFile(createTimelineFilePath(projectPath), "utf8");
+    return savedTimelineSchema.parse(JSON.parse(content));
+  } catch (error) {
+    if (
+      (error as NodeJS.ErrnoException).code === "ENOENT" ||
+      error instanceof SyntaxError ||
+      error instanceof ZodError
+    ) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function isSameJson(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function didProjectMetaChange(left: SavedProject["meta"], right: SavedProject["meta"]) {
+  return (
+    left.title !== right.title ||
+    left.description !== right.description ||
+    left.width !== right.width ||
+    left.height !== right.height ||
+    left.updatedAt !== right.updatedAt ||
+    !isSameJson(left.weather, right.weather) ||
+    !isSameJson(left.niconico, right.niconico)
+  );
+}
+
 function toProjectSummary(relativePath: string, updatedAt: number): ProjectFileSummary {
   const pathWithoutExtension = relativePath.slice(0, -PROJECT_FILE_EXTENSION.length);
   const segments = pathWithoutExtension.split(path.sep).filter(Boolean);
@@ -188,7 +299,10 @@ function toProjectSummary(relativePath: string, updatedAt: number): ProjectFileS
 
 function shouldIncludeProjectFile(entryName: string, isFile: boolean) {
   return (
-    isFile && entryName.endsWith(PROJECT_FILE_EXTENSION) && !PROJECT_LIST_EXCLUDE.has(entryName)
+    isFile &&
+    entryName.endsWith(PROJECT_FILE_EXTENSION) &&
+    !entryName.endsWith(TIMELINE_FILE_SUFFIX) &&
+    !PROJECT_LIST_EXCLUDE.has(entryName)
   );
 }
 
@@ -287,19 +401,45 @@ export async function listSavedProjects() {
   return collectProjectFiles(DATA_DIR);
 }
 
-export async function readSavedProject(projectPath: string): Promise<SavedProject> {
+export async function readSavedProjectDocument(projectPath: string) {
   await ensureProjectDirs();
   const filePath = createProjectFilePath(projectPath);
 
   try {
     const content = await fs.readFile(filePath, "utf8");
-    return savedProjectSchema.parse(JSON.parse(content));
+    const raw: unknown = JSON.parse(content);
+    const parsed = parseSavedProject(raw);
+    const project = savedProjectSchema.parse({
+      ...parsed,
+      meta: normalizeProjectMeta(parsed.meta, {
+        titleFallback: getProjectFileStem(projectPath),
+      }),
+    });
+    const existing = await readTimelineFile(projectPath);
+    const timeline = toTimeline(project, existing ?? legacyPreviousTimeline(raw));
+    if (didProjectMetaChange(parsed.meta, project.meta)) {
+      await writeJsonAtomic(filePath, project);
+    }
+    if (!existing || !isSameJson(existing, timeline)) {
+      await writeJsonAtomic(createTimelineFilePath(projectPath), timeline);
+    }
+    return { project, timeline };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       throw new ProjectNotFoundError(`Project not found: ${projectPath}`);
     }
     throw error;
   }
+}
+
+export async function readSavedProject(projectPath: string): Promise<SavedProject> {
+  const { project } = await readSavedProjectDocument(projectPath);
+  return project;
+}
+
+export async function readSavedTimeline(projectPath: string): Promise<SavedTimeline> {
+  const { timeline } = await readSavedProjectDocument(projectPath);
+  return timeline;
 }
 
 export function createProjectWriteTempPath(filePath: string) {
@@ -322,9 +462,16 @@ async function writeJsonAtomic(filePath: string, value: unknown) {
   }
 }
 
-export async function writeSavedProject(projectPath: string, project: SavedProject) {
+export async function writeSavedProject(
+  projectPath: string,
+  project: SavedProject,
+  previousTimeline?: SavedTimeline,
+) {
   await ensureProjectDirs();
+  const timeline = toTimeline(project, previousTimeline);
   await writeJsonAtomic(createProjectFilePath(projectPath), project);
+  await writeJsonAtomic(createTimelineFilePath(projectPath), timeline);
+  return { project, timeline };
 }
 
 function createEmptySchedules() {

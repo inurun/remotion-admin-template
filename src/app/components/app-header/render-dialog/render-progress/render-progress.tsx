@@ -1,4 +1,4 @@
-import { Progress, ProgressValue } from "@/_shared/components/ui/progress";
+import { Progress, ProgressValue } from "@/app/components/ui/progress";
 import { useRenderProgress } from "@/app/components/app-header/render-dialog/render-progress/use-render-progress";
 
 export function RenderProgress({ progress }: { progress: number }) {

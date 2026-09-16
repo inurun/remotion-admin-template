@@ -20,7 +20,6 @@ public/tts
 public/bgm
 public/uploads
 public/fonts
-src/_shared/lib/assets/types.ts
 
 # niconico publish
 .agent-browser/

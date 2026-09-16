@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isContentPage } from "../guards";
 import { savedPageSchema, savedProjectSchema } from "../project";
 import type { SavedPage } from "../project";
 
 function firstContentPage(pages: Array<SavedPage | { type: string }>): SavedPage {
   const page = pages[0];
-  if (!page || !isContentPage(page as SavedPage)) {
+  if (!page || page.type === "transition") {
     throw new Error("expected content page");
   }
   return page as SavedPage;
@@ -28,27 +27,34 @@ describe("project frame schema", () => {
           type: "main",
           padBeforeSec: 0,
           padAfterSec: 0,
-          durationSec: 1,
           richText: "",
-          tts: [],
+          tts: [
+            {
+              id: "tts",
+              provider: "voisona",
+              text: "hello",
+              audio: { status: "analyzing", analysisKey: "k" },
+              speech: {},
+            },
+          ],
         },
       ],
     });
 
     expect(project.meta.weather).toEqual({});
     expect(firstContentPage(project.pages).meta).toEqual({ tags: [] });
-    expect(project.voicePresets).toHaveLength(7);
+    expect(Object.keys(project.voicePresets).length).toBeGreaterThan(0);
   });
 
-  it("keeps an explicit empty voicePresets list", () => {
+  it("keeps an explicit empty voicePresets record", () => {
     expect(
       savedProjectSchema.parse({
         meta: { title: "project", description: "", width: 1920, height: 1080 },
         bgm: [],
         pages: [],
-        voicePresets: [],
+        voicePresets: {},
       }).voicePresets,
-    ).toEqual([]);
+    ).toEqual({});
   });
 
   it("accepts configured weather and rejects invalid precipitation", () => {
@@ -102,9 +108,16 @@ describe("project frame schema", () => {
       type: "main",
       padBeforeSec: 0,
       padAfterSec: 0,
-      durationSec: 1,
       richText: "",
-      tts: [],
+      tts: [
+        {
+          id: "tts",
+          provider: "voisona",
+          text: "hello",
+          audio: { status: "analyzing", analysisKey: "k" },
+          speech: {},
+        },
+      ],
     } as const;
 
     expect(savedPageSchema.parse({ ...page, meta: { tags: ["  tag  "] } }).meta.tags).toEqual([

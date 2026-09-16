@@ -1,4 +1,5 @@
-import { storedG2pItemSchema, toG2pItem, type StoredG2pItem } from "@/_schemas";
+import { storedG2pItemSchema, type StoredG2pItem } from "@/_schemas";
+import { toG2pItem } from "@/server/features/tts/g2p-item";
 import type {
   TtsInputForProvider,
   SavedTtsForProvider,

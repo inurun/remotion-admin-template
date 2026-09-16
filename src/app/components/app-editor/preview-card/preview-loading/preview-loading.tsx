@@ -1,4 +1,4 @@
-import { Skeleton } from "@/_shared/components/ui/skeleton";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { usePreviewLoading } from "@/app/components/app-editor/preview-card/preview-loading/use-preview-loading";
 
 export function PreviewLoading() {

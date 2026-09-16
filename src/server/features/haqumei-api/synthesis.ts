@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import {
-  toG2pItem,
   type StoredG2pItem,
   type VoicevoxSynthesisSettings,
   type VoisonaSynthesisSettings,
 } from "@/_schemas";
+import { toG2pItem } from "@/server/features/tts/g2p-item";
 import type { ServerEnv } from "@/server/core/env";
 import { planWav, synthesizeWithWavCache } from "@/server/features/tts/wav-cache";
 import type { PlannedSynthesis } from "@/server/features/tts/providers/types";

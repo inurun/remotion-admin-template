@@ -1,9 +1,9 @@
 import { GripVertical, Trash2 } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import type { VoiceOption } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
-import { HotkeyInput } from "@/_shared/components/ui/hotkey-input";
-import { Input } from "@/_shared/components/ui/input";
+import { Button } from "@/app/components/ui/button";
+import { HotkeyInput } from "@/app/components/ui/hotkey-input";
+import { Input } from "@/app/components/ui/input";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
 import type { useVoicesSection } from "@/app/components/app-sidebar/settings-dialog/voices-section/use-voices-section";
 import { VoicePresetDialog } from "@/app/components/app-sidebar/settings-dialog/voices-section/voice-preset-dialog/voice-preset-dialog";

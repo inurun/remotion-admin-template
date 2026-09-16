@@ -1,6 +1,6 @@
 import { useCallback, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
-import type { ProjectFileSummary } from "@/_schemas";
+import type { ProjectFileSummary } from "@/server/features/project/contract";
 import { copyProject } from "@/app/features/project/api/project-api";
 import { getProjectHref } from "@/app/features/project/lib/project-path";
 import { useProject } from "@/app/features/project";

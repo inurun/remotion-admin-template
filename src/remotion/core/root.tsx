@@ -1,15 +1,20 @@
 import { Composition } from "remotion";
-import { savedProjectSchema, type SavedProject } from "@/_schemas";
-import { calculateProjectDurationSec } from "@/_shared/project/project-timing";
-import { getDefaultProjectMeta } from "@/_shared/project/project-meta";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
+import {
+  DEFAULT_PROJECT_META,
+  DEFAULT_VOICE_PRESETS,
+  EMPTY_TIMELINE,
+  savedProjectSchema,
+  savedTimelineSchema,
+  type SavedTimeline,
+} from "@/_schemas";
 import { COMP_NAME, VIDEO_FPS } from "@/constants";
 import projectJson from "../../../data/project.json";
+import timelineJson from "../../../data/project.timeline.json";
 import { Composition as RemotionVideo } from "./composition";
 import { secondsToFrames } from "../utils/timing";
 
-function calculateDurationInFrames(project: SavedProject) {
-  return Math.max(1, secondsToFrames(calculateProjectDurationSec(project), VIDEO_FPS));
+function calculateDurationInFrames(timeline: SavedTimeline) {
+  return Math.max(1, secondsToFrames(timeline.durationSec, VIDEO_FPS));
 }
 
 export function RemotionRoot() {
@@ -18,24 +23,29 @@ export function RemotionRoot() {
       id={COMP_NAME}
       component={RemotionVideo}
       fps={VIDEO_FPS}
-      width={getDefaultProjectMeta().width}
-      height={getDefaultProjectMeta().height}
+      width={DEFAULT_PROJECT_META.width}
+      height={DEFAULT_PROJECT_META.height}
       defaultProps={{
         project: {
-          meta: getDefaultProjectMeta(),
+          meta: DEFAULT_PROJECT_META,
           pages: [],
           bgm: [],
-          voicePresets: getDefaultVoicePresets(),
+          voicePresets: DEFAULT_VOICE_PRESETS,
         },
+        timeline: EMPTY_TIMELINE,
       }}
       calculateMetadata={({ props }) => {
         const project = savedProjectSchema.parse(
           props.project.pages.length > 0 ? props.project : projectJson,
         );
-        const durationInFrames = calculateDurationInFrames(project);
+        const timeline = savedTimelineSchema.parse(
+          props.timeline.tracks.some((track) => track.clips.length > 0)
+            ? props.timeline
+            : timelineJson,
+        );
         return {
-          props: { project },
-          durationInFrames,
+          props: { project, timeline },
+          durationInFrames: calculateDurationInFrames(timeline),
           width: project.meta.width,
           height: project.meta.height,
         };

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 import {
   bgmTrackSchema,
+  DEFAULT_VOICE_PRESETS,
   projectNiconicoMetaSchema,
   voicePresetSchema,
   weatherForecastsSchema,
@@ -18,7 +18,7 @@ export const projectSettingsFormSchema = z.object({
     niconico: projectNiconicoMetaSchema,
   }),
   bgm: z.array(bgmTrackSchema).default([]),
-  voicePresets: z.array(voicePresetSchema).default(getDefaultVoicePresets),
+  voicePresets: z.record(z.string(), voicePresetSchema).default(DEFAULT_VOICE_PRESETS),
 });
 
 export type ProjectSettingsFormValues = z.infer<typeof projectSettingsFormSchema>;

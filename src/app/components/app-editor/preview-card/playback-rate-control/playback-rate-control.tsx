@@ -1,4 +1,4 @@
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { cn } from "@/_shared/lib/utils";
 import {
   PREVIEW_PLAYBACK_RATES,

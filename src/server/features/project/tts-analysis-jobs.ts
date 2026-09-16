@@ -1,14 +1,17 @@
 import {
-  dictionaryWordsForLlm,
-  isSavedContentPage,
   savedProjectSchema,
   type SavedProject,
   type SavedTts,
   type StoredG2pItem,
 } from "@/_schemas";
-import { readSavedProject, writeSavedProject } from "@/server/_shared/storage";
+import { dictionaryWordsForLlm } from "@/server/features/tts/g2p-item";
+import {
+  readSavedProject,
+  readSavedProjectDocument,
+  writeSavedProject,
+} from "@/server/_shared/storage";
 import type { ServerEnv } from "@/server/core/env";
-import { AUDIO_PADDING_SECONDS, withSettledPageDurations } from "./page-duration";
+import { AUDIO_PADDING_SECONDS } from "@/constants";
 import { enqueueProjectMutation } from "./project-mutation-queue";
 import { startSynthesisBatch, type SynthesisJob } from "./tts-synthesis-jobs";
 import {
@@ -19,7 +22,7 @@ import {
   runAutomaticG2pBatch,
   type AutomaticAnalyzeTarget,
 } from "@/server/features/tts/automatic-llm-analysis";
-import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
+import { resolveTtsSynthesisSettings } from "@/server/features/tts/synthesis-settings";
 import { getOptionalVoiceVersion } from "@/server/features/tts/providers/comparison";
 import {
   createPreviousTtsComparisonInput,
@@ -84,7 +87,7 @@ function toAnalyzeTarget(
 
 function collectAnalyzeTargets(project: SavedProject, requested: AnalysisJobTarget[]) {
   const pagesById = new Map(
-    project.pages.filter(isSavedContentPage).map((page) => [page.id, page]),
+    project.pages.filter((page) => page.type !== "transition").map((page) => [page.id, page]),
   );
 
   return requested.flatMap((request) => {
@@ -115,7 +118,7 @@ async function applyAnalysisResults(
 
   const pages: SavedProject["pages"] = [];
   for (const page of project.pages) {
-    if (!isSavedContentPage(page)) {
+    if (page.type === "transition") {
       pages.push(page);
       continue;
     }
@@ -179,9 +182,10 @@ async function applyAnalysisResults(
 
   const next = savedProjectSchema.parse({
     ...project,
-    pages: withSettledPageDurations(pages, affectedPageIds),
+    pages,
   });
-  await writeSavedProject(projectPath, next);
+  const { timeline } = await readSavedProjectDocument(projectPath);
+  await writeSavedProject(projectPath, next, timeline);
   startSynthesisBatch(projectPath, jobs);
 }
 

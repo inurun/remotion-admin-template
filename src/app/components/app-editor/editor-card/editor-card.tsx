@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/_shared/components/ui/card";
-import { Collapsible, CollapsibleContent } from "@/_shared/components/ui/collapsible";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Collapsible, CollapsibleContent } from "@/app/components/ui/collapsible";
 import { PageList } from "@/app/components/app-editor/editor-card/page-list/page-list";
 import { PageContent } from "@/app/components/app-editor/editor-card/page-content/page-content";
 import { PageHeader } from "@/app/components/app-editor/editor-card/page-header/page-header";

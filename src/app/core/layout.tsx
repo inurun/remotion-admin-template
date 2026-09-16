@@ -1,5 +1,4 @@
 import { Link, ReactRefresh, Script } from "vite-ssr-components/react";
-import { assetPath } from "@/_shared/lib/assets/path";
 
 export const layoutHtml = (
   <html lang="ja">
@@ -11,7 +10,7 @@ export const layoutHtml = (
         content="Template app for VoiSona-driven video editing and Remotion rendering"
         name="description"
       />
-      <link href={assetPath("favicon.svg")} rel="icon" type="image/svg+xml" />
+      <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       <ReactRefresh />
       <Link href="/src/app/globals.css" rel="stylesheet" />
       <Script src="/src/app/core/client.tsx" />

@@ -1,5 +1,5 @@
 import { Download } from "lucide-react";
-import { buttonVariants } from "@/_shared/components/ui/button";
+import { buttonVariants } from "@/app/components/ui/button";
 
 export function RenderVideoLink({
   videoFileName,

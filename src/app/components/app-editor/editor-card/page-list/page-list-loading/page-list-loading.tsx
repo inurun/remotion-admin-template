@@ -1,4 +1,4 @@
-import { Skeleton } from "@/_shared/components/ui/skeleton";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { usePageListLoading } from "@/app/components/app-editor/editor-card/page-list/page-list-loading/use-page-list-loading";
 
 export function PageListLoading({ count }: { count: number }) {

@@ -148,7 +148,7 @@ describe("schema boundaries", () => {
     });
   });
 
-  it("keeps page duration on saved pages only", () => {
+  it("does not persist page durationSec", () => {
     const formPage = pageFormSchema.parse({
       id: "page",
       title: "Page",
@@ -170,8 +170,17 @@ describe("schema boundaries", () => {
       savedPageSchema.parse({
         ...formPage,
         durationSec: 1.5,
-      }).durationSec,
-    ).toBe(1.5);
+        tts: [
+          {
+            id: "tts",
+            provider: "voisona",
+            text: "hello",
+            audio: { status: "analyzing", analysisKey: "k" },
+            speech: {},
+          },
+        ],
+      }),
+    ).not.toHaveProperty("durationSec");
   });
 
   it("does not re-export input aggregate schemas from _schemas barrels", async () => {
@@ -194,7 +203,13 @@ describe("schema boundaries", () => {
     expect(publicApi).toHaveProperty("savedPageSchema");
     expect(publicApi).toHaveProperty("savedTtsSchema");
     expect(publicApi).toHaveProperty("savedSchedulesSchema");
+    expect(publicApi).toHaveProperty("savedTimelineSchema");
     expect(projectApi).toHaveProperty("savedProjectSchema");
+    expect(publicApi).not.toHaveProperty("toG2pItem");
+    expect(publicApi).not.toHaveProperty("withLlmDictionaryWords");
+    expect(publicApi).not.toHaveProperty("withoutStaleDictionaryWords");
+    expect(publicApi).not.toHaveProperty("isSavedContentPage");
+    expect(publicApi).not.toHaveProperty("createProjectRequestSchema");
   });
 
   it("does not build form values from SavedProject.partial", () => {

@@ -1,5 +1,5 @@
 import { CloudSun } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { WEATHER_LOCATIONS } from "@/features/weather";
+} from "@/app/components/ui/dialog";
+import { WEATHER_LOCATIONS } from "./weather-dialog.lib";
 import { useWeatherDialog } from "./use-weather-dialog";
 import { WeatherDialogFooter, WeatherFetchButton } from "./weather-dialog-actions";
 import { WeatherForecastRow } from "./weather-forecast-row";

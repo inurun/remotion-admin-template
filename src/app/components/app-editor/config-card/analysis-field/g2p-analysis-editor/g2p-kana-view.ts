@@ -1,4 +1,4 @@
-import { splitKanaMoras } from "@/_shared/lib/kana-mora";
+import { splitKanaMoras } from "@/_schemas/dictionary";
 
 export type PhraseCloser = "slash" | "pause" | "question" | "exclamation" | "end";
 

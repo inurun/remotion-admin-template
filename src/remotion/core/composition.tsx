@@ -1,12 +1,16 @@
-import type { SavedPage, SavedProject } from "@/_schemas";
-import { isSavedContentPage, isSavedTransition } from "@/_schemas";
+import {
+  SEQUENCE_TRACK_ID,
+  type SavedPage,
+  type SavedProject,
+  type SavedTimeline,
+} from "@/_schemas";
 import { ProjectProvider } from "./context";
 import { BgmLayer } from "../layers/layer-bgm/layer-bgm";
 import { IntroPage } from "../pages/intro/intro-page";
 import { MainPage } from "../pages/main/main-page";
 import { OutroPage } from "../pages/outro/outro-page";
 import { getTransitionPresentation } from "../transitions/registry";
-import { getTransitionDurationSec, getTransitionEasing } from "../transitions/variants";
+import { getTransitionEasing } from "../transitions/variants";
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
 import { secondsToFrames } from "../utils/timing";
 
@@ -24,17 +28,29 @@ function PageByType({ page }: { page: SavedPage }) {
   }
 }
 
-export function Composition({ project }: { project: SavedProject }) {
+export function Composition({
+  project,
+  timeline,
+}: {
+  project: SavedProject;
+  timeline: SavedTimeline;
+}) {
+  const timings = new Map(
+    (timeline.tracks.find((track) => track.id === SEQUENCE_TRACK_ID)?.clips ?? []).map((clip) => [
+      clip.id,
+      clip,
+    ]),
+  );
+
   return (
-    <ProjectProvider value={project}>
+    <ProjectProvider value={{ project, timeline }}>
       <BgmLayer />
       <TransitionSeries name="project">
         {project.pages.map((item, index) => {
-          if (isSavedTransition(item)) {
-            const durationInFrames = Math.max(
-              1,
-              secondsToFrames(getTransitionDurationSec(item.variant)),
-            );
+          const timing = timings.get(item.id);
+          const durationInFrames = Math.max(1, secondsToFrames(timing?.durationSec ?? 0));
+
+          if (item.type === "transition") {
             return (
               <TransitionSeries.Transition
                 key={item.id}
@@ -47,14 +63,10 @@ export function Composition({ project }: { project: SavedProject }) {
             );
           }
 
-          if (!isSavedContentPage(item)) {
-            return null;
-          }
-
           return (
             <TransitionSeries.Sequence
               key={item.id}
-              durationInFrames={Math.max(1, secondsToFrames(item.durationSec))}
+              durationInFrames={durationInFrames}
               name={`${item.type}-page-${String(index).padStart(2, "0")}`}
             >
               <PageByType page={item} />

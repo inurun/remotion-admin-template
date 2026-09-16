@@ -1,8 +1,8 @@
 import { Plus } from "lucide-react";
 import { Controller } from "react-hook-form";
-import { Button } from "@/_shared/components/ui/button";
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { RichTextEditor } from "@/_shared/components/ui/rich-text-editor/rich-text-editor";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError } from "@/app/components/ui/field";
+import { RichTextEditor } from "@/app/components/ui/rich-text-editor/rich-text-editor";
 import { usePageContent } from "@/app/components/app-editor/editor-card/page-content/use-page-content";
 
 export function PageContent() {

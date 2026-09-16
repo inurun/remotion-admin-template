@@ -1,32 +1,30 @@
 import fs from "node:fs/promises";
 import {
-  type ProjectFileSummary,
   type SavedPage,
   type SavedProject,
   type SavedSequenceItem,
   type SavedTts,
   type VoicePreset,
-  isContentPage,
-  isSavedContentPage,
-  isTransition,
-  pageTypeRequiresTts,
+  DEFAULT_PROJECT_META,
+  DEFAULT_VOICE_PRESETS,
   savedProjectSchema,
-  withoutStaleDictionaryWords,
 } from "@/_schemas";
-import { nowIso } from "@/_shared/lib/date";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
-import { getEffectiveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
-import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
+import { withoutStaleDictionaryWords } from "@/server/features/tts/g2p-item";
+import { nowIso } from "@/_shared/lib/date/date";
+import { getEffectiveTtsSynthesisSettings } from "@/server/features/tts/synthesis-settings";
+import { normalizeProjectMeta } from "@/server/features/project/normalize-project-meta";
 import {
   isProjectTtsSrc,
   listSavedProjects,
   readSavedProject,
+  readSavedProjectDocument,
   createSavedProject,
   getProjectFileStem,
   resolvePublicAssetPath,
   writeSavedProject,
 } from "@/server/_shared/storage";
 import type {
+  ProjectFileSummary,
   SavePageItem,
   SaveProjectChangesRequest,
   SaveSequenceItem,
@@ -51,11 +49,7 @@ import { stableStringify } from "@/server/_shared/stable-stringify";
 import type { PlannedSynthesis, TtsComparisonInput } from "@/server/features/tts/providers/types";
 import { readCachedWav } from "@/server/features/tts/wav-cache";
 import type { SynthesizeResponse } from "@/server/features/tts/contract";
-import {
-  AUDIO_PADDING_SECONDS,
-  finalizeSequenceDurations,
-  withSavedPageDurations,
-} from "@/server/features/project/page-duration";
+import { AUDIO_PADDING_SECONDS } from "@/constants";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
 import {
   hasInFlightSynthesisJob,
@@ -100,26 +94,26 @@ function validateSequenceItems(items: Array<SaveSequenceItem | SavedSequenceItem
     return;
   }
 
-  if (isTransition(first) || isTransition(last)) {
+  if (first.type === "transition" || last.type === "transition") {
     throw new Error("transition must be between content pages");
   }
 
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
-    if (!item || !isTransition(item)) {
+    if (!item || item.type !== "transition") {
       continue;
     }
 
     const prev = items[index - 1];
     const next = items[index + 1];
-    if (!prev || !next || !isContentPage(prev) || !isContentPage(next)) {
+    if (!prev || !next || prev.type === "transition" || next.type === "transition") {
       throw new Error(`transition ${item.id} must be between content pages`);
     }
   }
 }
 
 function validatePage(page: SavePageItem) {
-  if (!pageTypeRequiresTts(page.type)) {
+  if (page.type !== "intro" && page.type !== "main") {
     return;
   }
 
@@ -153,7 +147,7 @@ async function audioFileExists(src: string) {
 
 function withEffectiveSynthesisSettings<
   T extends Pick<SaveTtsItem, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
->(item: T, presets: VoicePreset[]): T {
+>(item: T, presets: Record<string, VoicePreset>): T {
   const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
   return {
     ...item,
@@ -171,8 +165,8 @@ function comparisonSnapshot(input: TtsComparisonInput<SaveTtsItem["provider"]>) 
 function comparisonInputMatches(
   item: SaveTtsItem,
   previous: SavedTts,
-  nextPresets: VoicePreset[],
-  previousPresets: VoicePreset[],
+  nextPresets: Record<string, VoicePreset>,
+  previousPresets: Record<string, VoicePreset>,
 ) {
   return (
     stableStringify(
@@ -223,8 +217,8 @@ async function classifyTtsReuse(
   item: SaveTtsItem,
   projectPath: string,
   previous: SavedTts | undefined,
-  nextPresets: VoicePreset[],
-  previousPresets: VoicePreset[],
+  nextPresets: Record<string, VoicePreset>,
+  previousPresets: Record<string, VoicePreset>,
   forceResynthesis: boolean,
 ): Promise<TtsReuseKind> {
   if (!previous) {
@@ -412,8 +406,8 @@ async function planSavedTts(
   projectPath: string,
   item: SaveTtsItem,
   previous: SavedTts | undefined,
-  nextPresets: VoicePreset[],
-  previousPresets: VoicePreset[],
+  nextPresets: Record<string, VoicePreset>,
+  previousPresets: Record<string, VoicePreset>,
   forceResynthesis = false,
 ): Promise<PlannedTts> {
   validateTts(item);
@@ -562,8 +556,8 @@ async function planSavedPage(
   projectPath: string,
   page: SavePageItem,
   previousTtsById: Map<string, SavedTts>,
-  nextPresets: VoicePreset[],
-  previousPresets: VoicePreset[],
+  nextPresets: Record<string, VoicePreset>,
+  previousPresets: Record<string, VoicePreset>,
   forceResynthesis = false,
 ) {
   validatePage(page);
@@ -609,7 +603,6 @@ async function buildSavedPage(
       meta: page.meta,
       padBeforeSec: page.padBeforeSec,
       padAfterSec: page.padAfterSec,
-      durationSec: 0,
       richText: page.richText,
       tts,
     } as SavedPage,
@@ -627,7 +620,7 @@ function buildSavedTransition(transition: SaveTransitionItem) {
 function buildPreviousTtsMap(previousProject?: SavedProject) {
   return new Map(
     previousProject?.pages
-      .filter(isSavedContentPage)
+      .filter((item) => item.type !== "transition")
       .flatMap((page) => page.tts)
       .map((item) => [item.id, item]) ?? [],
   );
@@ -692,8 +685,8 @@ function toSavePageItemFromSaved(page: SavedPage): SavePageItem {
 
 function pageNeedsResynthesisForPresets(
   page: SavedPage,
-  previousPresets: VoicePreset[],
-  nextPresets: VoicePreset[],
+  previousPresets: Record<string, VoicePreset>,
+  nextPresets: Record<string, VoicePreset>,
 ) {
   return page.tts.some((item) => {
     return (
@@ -731,12 +724,13 @@ export async function createProject(projectPath: string) {
     projectPath,
     savedProjectSchema.parse({
       meta: {
-        ...getDefaultProjectMeta(getProjectFileStem(projectPath)),
+        ...DEFAULT_PROJECT_META,
+        title: getProjectFileStem(projectPath),
         updatedAt: nowIso(),
       },
       bgm: [],
       pages: [],
-      voicePresets: getDefaultVoicePresets(),
+      voicePresets: DEFAULT_VOICE_PRESETS,
     }),
   );
 }
@@ -753,7 +747,7 @@ export async function copyProject(sourceProjectPath: string, targetProjectPath: 
 }
 
 export async function loadProject(projectPath: string) {
-  return readSavedProject(projectPath);
+  return readSavedProjectDocument(projectPath);
 }
 
 async function saveProjectChangesLocked(
@@ -761,7 +755,8 @@ async function saveProjectChangesLocked(
   projectPath: string,
   request: SaveProjectChangesRequest,
 ) {
-  const previousProject = await readSavedProject(projectPath);
+  const previousDocument = await readSavedProjectDocument(projectPath);
+  const previousProject = previousDocument.project;
   const itemsById = new Map(previousProject.pages.map((item) => [item.id, item]));
   const updatedItemIds: string[] = [];
 
@@ -769,8 +764,8 @@ async function saveProjectChangesLocked(
     itemsById.delete(itemId);
   }
 
-  const nextPresets = request.project?.voicePresets ?? previousProject.voicePresets ?? [];
-  const previousPresets = previousProject.voicePresets ?? [];
+  const nextPresets = request.project?.voicePresets ?? previousProject.voicePresets ?? {};
+  const previousPresets = previousProject.voicePresets ?? {};
   const pagesToProcess = new Map<string, SavePageItem>();
   const forceResynthesis = Boolean(request.forceResynthesis);
   const presetsUnchanged = stableStringify(previousPresets) === stableStringify(nextPresets);
@@ -786,14 +781,14 @@ async function saveProjectChangesLocked(
 
   if (forceResynthesis) {
     for (const [itemId, saved] of itemsById) {
-      if (pagesToProcess.has(itemId) || !isSavedContentPage(saved)) {
+      if (pagesToProcess.has(itemId) || saved.type === "transition") {
         continue;
       }
       pagesToProcess.set(itemId, toSavePageItemFromSaved(saved));
     }
   } else if (request.project && !presetsUnchanged) {
     for (const [itemId, saved] of itemsById) {
-      if (pagesToProcess.has(itemId) || !isSavedContentPage(saved)) {
+      if (pagesToProcess.has(itemId) || saved.type === "transition") {
         continue;
       }
       if (pageNeedsResynthesisForPresets(saved, previousPresets, nextPresets)) {
@@ -845,12 +840,7 @@ async function saveProjectChangesLocked(
     return item ? [item] : [];
   });
   validateSequenceItems(assembled);
-  const pages = finalizeSequenceDurations(
-    withSavedPageDurations(
-      assembled,
-      new Map(previousProject.pages.map((item) => [item.id, item])),
-    ),
-  );
+  const pages = assembled;
 
   const meta = {
     ...normalizeProjectMeta(request.project?.meta ?? previousProject.meta, {
@@ -858,16 +848,20 @@ async function saveProjectChangesLocked(
     }),
     updatedAt: nowIso(),
   };
-  const project = savedProjectSchema.parse({
+  const saved = savedProjectSchema.parse({
     meta,
     bgm: request.project?.bgm ?? previousProject.bgm,
     pages,
     voicePresets: nextPresets,
   });
-  await writeSavedProject(projectPath, project);
+  const { project, timeline } = await writeSavedProject(
+    projectPath,
+    saved,
+    previousDocument.timeline,
+  );
   startAnalysisBatch(serverEnv, projectPath, analysisJobs);
   startSynthesisBatch(projectPath, jobs);
-  return { project, updatedItemIds };
+  return { project, timeline, updatedItemIds };
 }
 
 export async function saveProjectChanges(

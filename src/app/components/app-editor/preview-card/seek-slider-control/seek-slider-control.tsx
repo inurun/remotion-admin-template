@@ -1,4 +1,4 @@
-import { Slider } from "@/_shared/components/ui/slider";
+import { Slider } from "@/app/components/ui/slider";
 import { useSeekSliderControl } from "./use-seek-slider-control";
 
 type SeekSliderControlProps = {

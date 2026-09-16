@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
-import { Calendar, CalendarDayButton } from "@/_shared/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/_shared/components/ui/popover";
+import { Calendar, CalendarDayButton } from "@/app/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { cn } from "@/_shared/lib/utils";
 import { ScheduleDayPopover } from "@/app/components/app-schedule/schedule-day-popover/schedule-day-popover";
 import {

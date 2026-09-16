@@ -1,7 +1,10 @@
 import type { ComponentType } from "react";
-import type { SavedProject } from "@/_schemas";
+import type { SavedProject, SavedTimeline } from "@/_schemas";
 
-export type RemotionCompositionComponent = ComponentType<{ project: SavedProject }>;
+export type RemotionCompositionComponent = ComponentType<{
+  project: SavedProject;
+  timeline: SavedTimeline;
+}>;
 
 export function createRemotionCompositionLoader(
   importComposition: () => Promise<{ Composition: RemotionCompositionComponent }>,

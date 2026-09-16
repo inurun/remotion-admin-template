@@ -1,5 +1,14 @@
 export {
+  DEFAULT_KASANE_TETO_EMOTION,
+  DEFAULT_PROJECT_META,
+  DEFAULT_VOICE_PRESETS,
+  DEFAULT_VOICEPEAK_PITCH,
+  DEFAULT_VOICEPEAK_SPEED,
+  KASANE_TETO_NARRATOR,
+  WEATHER_LOCATION_IDS,
+  WEATHER_LOCATION_LABELS,
   avatarOptions,
+  voicePresetId,
   avatarSettingsSchema,
   bgmTrackSchema,
   endcardAdvertiserSchema,
@@ -21,6 +30,7 @@ export {
   voiceProviderSchema,
   voicevoxSynthesisSettingsSchema,
   voisonaSynthesisSettingsSchema,
+  weatherConditionSchema,
   weatherForecastSchema,
   weatherForecastsSchema,
   type AvatarSettings,
@@ -64,13 +74,7 @@ export {
 } from "@/_schemas/project/page";
 
 export {
-  copyProjectRequestSchema,
-  createProjectRequestSchema,
-  projectFileSummarySchema,
   savedProjectSchema,
-  type CopyProjectRequest,
-  type CreateProjectRequest,
-  type ProjectFileSummary,
   type SavedProject,
   type SavedProjectSettings,
 } from "@/_schemas/project/project";

@@ -1,8 +1,21 @@
 import { z } from "zod";
-import { getDefaultProjectMeta, normalizeProjectMeta } from "@/_shared/project/project-meta";
-import { WEATHER_LOCATION_IDS } from "@/features/weather/weather-locations";
 
-export { avatarOptions, type AvatarType } from "@/_shared/lib/avatar/avatar-options";
+export const avatarOptions = {
+  demo: {
+    base: ["normal"],
+    eyes: ["opened", "shaded-opened"],
+    mouth: ["opened", "closed"],
+  },
+} as const;
+
+export type AvatarType = keyof typeof avatarOptions;
+
+export const WEATHER_LOCATION_IDS = ["tokyo", "osaka"] as const;
+
+export const WEATHER_LOCATION_LABELS = {
+  tokyo: "Tokyo",
+  osaka: "Osaka",
+} as const;
 
 export const voiceProviderSchema = z.enum(["voisona", "voicevox", "voicepeak"]);
 
@@ -69,12 +82,20 @@ export const voicePresetSchema = z.discriminatedUnion("provider", [
   }),
 ]);
 
+export function voicePresetId(voice: {
+  provider: string;
+  voiceName: string;
+  voiceVersion?: string;
+}) {
+  return `${voice.provider}::${voice.voiceName}::${voice.voiceVersion ?? ""}`;
+}
+
 export const pageTypeSchema = z.enum(["intro", "eyecatch-text", "main", "outro", "endcard"]);
 export const transitionVariantSchema = z.enum(["slide"]);
 
 const weatherLocationSchema = z.enum(WEATHER_LOCATION_IDS);
 
-const weatherConditionSchema = z.enum(["clear", "cloudy", "rain", "storm", "snow"]);
+export const weatherConditionSchema = z.enum(["clear", "cloudy", "rain", "storm", "snow"]);
 
 export const weatherForecastSchema = z.object({
   temperatureC: z.number(),
@@ -212,9 +233,111 @@ const projectMetaFieldsSchema = z.object({
   niconico: projectNiconicoMetaSchema,
 });
 
-export const projectMetaSchema = projectMetaFieldsSchema
-  .default(getDefaultProjectMeta())
-  .transform((meta) => normalizeProjectMeta(meta));
+export const DEFAULT_PROJECT_META = {
+  title: "project",
+  description: "",
+  width: 1920,
+  height: 1080,
+  weather: {},
+  niconico: {
+    title: "",
+    description: "",
+    thumbnailTime: "00:00.000",
+    parentWorkIds: [] as string[],
+    tags: [] as string[],
+  },
+};
+
+export const projectMetaSchema = projectMetaFieldsSchema.default(DEFAULT_PROJECT_META);
+
+const DEFAULT_VOICEVOX_TIMING = {
+  prePhonemeLength: 0,
+  postPhonemeLength: 0,
+  pauseLengthScale: 0.5,
+} as const;
+
+export const KASANE_TETO_NARRATOR = "Kasane Teto";
+
+export const DEFAULT_KASANE_TETO_EMOTION = {
+  "teto-overactive": 10,
+  "teto-low-key": 20,
+  "teto-whisper": 20,
+  "teto-powerful": 10,
+  "teto-sweet": 30,
+} as const;
+
+export const DEFAULT_VOICEPEAK_SPEED = 90;
+export const DEFAULT_VOICEPEAK_PITCH = 0;
+
+export const DEFAULT_VOICE_PRESETS = {
+  "voicevox::3::": {
+    provider: "voicevox" as const,
+    voiceName: "3",
+    synthesisSettings: {
+      speedScale: 1.4,
+      pitchScale: -0.01,
+      intonationScale: 0.9,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  "voicevox::14::": {
+    provider: "voicevox" as const,
+    voiceName: "14",
+    synthesisSettings: {
+      speedScale: 1.3,
+      intonationScale: 1,
+      pitchScale: -0.02,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  "voicevox::46::": {
+    provider: "voicevox" as const,
+    voiceName: "46",
+    synthesisSettings: {
+      speedScale: 1.3,
+      pitchScale: -0.02,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  "voicevox::43::": {
+    provider: "voicevox" as const,
+    voiceName: "43",
+    synthesisSettings: {
+      speedScale: 1.3,
+      intonationScale: 1.2,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  "voicevox::113::": {
+    provider: "voicevox" as const,
+    voiceName: "113",
+    synthesisSettings: {
+      speedScale: 1.3,
+      pitchScale: 0.01,
+      intonationScale: 0.95,
+      ...DEFAULT_VOICEVOX_TIMING,
+    },
+  },
+  "voicepeak::Kasane Teto::": {
+    provider: "voicepeak" as const,
+    voiceName: KASANE_TETO_NARRATOR,
+    synthesisSettings: {
+      speed: DEFAULT_VOICEPEAK_SPEED,
+      pitch: DEFAULT_VOICEPEAK_PITCH,
+      emotion: { ...DEFAULT_KASANE_TETO_EMOTION },
+    },
+  },
+  "voisona::futaba-minato_ja_JP::2.0.2": {
+    provider: "voisona" as const,
+    voiceName: "futaba-minato_ja_JP",
+    voiceVersion: "2.0.2",
+    synthesisSettings: {
+      speed: 1.4,
+      huskiness: 0.7,
+      style_weights: [0, 1, 0, 0.2, 0, 1],
+    },
+  },
+};
 
 export type BgmTrack = z.infer<typeof bgmTrackSchema>;
 export type VoisonaSynthesisSettings = z.infer<typeof voisonaSynthesisSettingsSchema>;

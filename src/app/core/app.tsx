@@ -1,7 +1,7 @@
 import { useAutoSaveProject } from "@/app/features/editor/lib/use-auto-save-project";
 import { useSyncProjectSynthesis } from "@/app/features/editor/lib/use-sync-project-synthesis";
 import type { ReactNode } from "react";
-import { SidebarInset } from "@/_shared/components/ui/sidebar";
+import { SidebarInset } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar/app-sidebar";
 import { AppEditor } from "@/app/components/app-editor/app-editor";
 import { ProjectContextProvider } from "@/app/features/project";
@@ -26,12 +26,13 @@ function ProjectSync() {
 
 function ProjectStores({ children }: { children: ReactNode }) {
   const { projectPath } = useProjectRoute();
-  const { project, hasData } = useSelectedProjectQuery(projectPath);
+  const { project, timeline, hasData } = useSelectedProjectQuery(projectPath);
 
   return (
     <SavedProjectStoreProvider
       key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}
       initialProject={project}
+      initialTimeline={timeline}
     >
       <EditorSessionStoreProvider
         key={`${projectPath ?? "none"}:${hasData ? "ready" : "empty"}`}

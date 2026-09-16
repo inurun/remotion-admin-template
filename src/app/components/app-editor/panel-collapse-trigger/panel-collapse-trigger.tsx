@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { CollapsibleTrigger } from "@/_shared/components/ui/collapsible";
+import { Button } from "@/app/components/ui/button";
+import { CollapsibleTrigger } from "@/app/components/ui/collapsible";
 
 export function PanelCollapseTrigger() {
   return (

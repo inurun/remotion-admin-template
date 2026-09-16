@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { createUuid } from "@/_shared/lib/utils";
 import {
   pageTypeSchema,
   transitionVariantSchema,
@@ -87,11 +86,11 @@ export function useAddPageDialog() {
     const item =
       parsed.kind === "transition"
         ? createBlankTransitionInput({
-            id: createUuid(),
+            id: crypto.randomUUID(),
             variant: parsed.variant,
           })
         : createBlankPageInput({
-            id: createUuid(),
+            id: crypto.randomUUID(),
             title: values.title,
             type: parsed.type,
           });

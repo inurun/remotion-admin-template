@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { clampSidebarWidth, DEFAULT_SIDEBAR_WIDTH } from "@/_shared/lib/sidebar-width";
+import { clampSidebarWidth, DEFAULT_SIDEBAR_WIDTH } from "@/app/lib/sidebar-width";
 
 export const UI_PREFERENCES_STORAGE_KEY = "remotion-voisona-ui-preferences";
 

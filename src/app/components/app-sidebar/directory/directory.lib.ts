@@ -1,4 +1,4 @@
-import type { ProjectFileSummary } from "@/_schemas";
+import type { ProjectFileSummary } from "@/server/features/project/contract";
 
 export function getDirectoryPath(project: ProjectFileSummary) {
   return project.segments.slice(0, -1).join("/");

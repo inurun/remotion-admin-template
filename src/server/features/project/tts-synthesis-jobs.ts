@@ -1,14 +1,9 @@
-import {
-  isSavedContentPage,
-  savedProjectSchema,
-  type SavedProject,
-  type SavedTts,
-} from "@/_schemas";
+import { savedProjectSchema, type SavedProject, type SavedTts } from "@/_schemas";
 import { getErrorMessage } from "@/_shared/lib/error-message";
-import { readSavedProject, writeSavedProject } from "@/server/_shared/storage";
+import { readSavedProjectDocument, writeSavedProject } from "@/server/_shared/storage";
 import type { SynthesizeResponse } from "@/server/features/tts/contract";
 import type { PlannedWav } from "@/server/features/tts/wav-cache";
-import { AUDIO_PADDING_SECONDS, withSettledPageDurations } from "./page-duration";
+import { AUDIO_PADDING_SECONDS } from "@/constants";
 import { enqueueProjectMutation } from "./project-mutation-queue";
 
 const SYNTHESIS_ERROR_MAX_LENGTH = 500;
@@ -110,7 +105,7 @@ export function patchProjectWithSynthesisResults(
   const affectedPageIds = new Set<string>();
 
   const pages = project.pages.map((page) => {
-    if (!isSavedContentPage(page)) {
+    if (page.type === "transition") {
       return page;
     }
 
@@ -138,7 +133,7 @@ export function patchProjectWithSynthesisResults(
 
   return savedProjectSchema.parse({
     ...project,
-    pages: withSettledPageDurations(pages, affectedPageIds),
+    pages,
   });
 }
 
@@ -147,9 +142,9 @@ async function applySynthesisBatch(projectPath: string, results: SynthesisJobRes
     return;
   }
 
-  const project = await readSavedProject(projectPath);
+  const { project, timeline } = await readSavedProjectDocument(projectPath);
   const next = patchProjectWithSynthesisResults(project, results);
-  await writeSavedProject(projectPath, next);
+  await writeSavedProject(projectPath, next, timeline);
 }
 
 export function startSynthesisBatch(projectPath: string, jobs: SynthesisJob[]) {

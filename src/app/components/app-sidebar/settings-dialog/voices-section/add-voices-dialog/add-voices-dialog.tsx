@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,7 +9,7 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { getVoiceId } from "@/app/features/settings";
 import type { useVoicesSection } from "@/app/components/app-sidebar/settings-dialog/voices-section/use-voices-section";
 

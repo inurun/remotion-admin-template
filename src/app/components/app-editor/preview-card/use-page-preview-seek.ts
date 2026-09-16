@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import type { SavedProject } from "@/_schemas";
+import type { SavedTimeline } from "@/_schemas";
 import { VIDEO_FPS } from "@/constants";
 import { getProjectPageTimings } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import {
@@ -11,13 +11,13 @@ import { useSelectedPageId } from "@/app/features/project/context/project-route-
 
 type UsePagePreviewSeekParams = {
   durationInFrames: number;
-  project: SavedProject;
+  timeline: SavedTimeline;
 };
 
-export function usePagePreviewSeek({ durationInFrames, project }: UsePagePreviewSeekParams) {
+export function usePagePreviewSeek({ durationInFrames, timeline }: UsePagePreviewSeekParams) {
   const selectedPageId = useSelectedPageId();
   const playerControl = useRemotionPlayerControl();
-  const pageTimings = useMemo(() => getProjectPageTimings(project), [project]);
+  const pageTimings = useMemo(() => getProjectPageTimings(timeline), [timeline]);
   const previousPageIdRef = useRef<string | null>(null);
 
   useEffect(() => {

@@ -1,8 +1,5 @@
-import {
-  toG2pItem,
-  type VoicevoxSynthesisSettings,
-  type VoisonaSynthesisSettings,
-} from "@/_schemas";
+import { type VoicevoxSynthesisSettings, type VoisonaSynthesisSettings } from "@/_schemas";
+import { toG2pItem } from "@/server/features/tts/g2p-item";
 import type { components } from "@/server/generated/haqumei-api/schema";
 
 export const VOICEVOX_SYNTHESIS_DEFAULTS = {

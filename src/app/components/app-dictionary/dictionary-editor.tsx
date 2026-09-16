@@ -7,11 +7,11 @@ import type {
   DictionaryPartOfSpeech,
   G2pItem,
 } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
-import { Input } from "@/_shared/components/ui/input";
-import { Textarea } from "@/_shared/components/ui/textarea";
-import { splitKanaMoras } from "@/_shared/lib/kana-mora";
-import { AccentEditor } from "@/_shared/components/accent-editor/accent-editor";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
+import { splitKanaMoras } from "@/_schemas/dictionary";
+import { AccentEditor } from "@/app/components/accent-editor/accent-editor";
 import { createCandidate, createMorpheme } from "@/app/features/dictionary";
 
 const POSITIONS: Array<{ value: DictionaryPartOfSpeech; label: string }> = [

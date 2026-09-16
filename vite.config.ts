@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import build from "@hono/vite-build/node";
 import devServer, { defaultOptions } from "@hono/vite-dev-server";
-import { assetsCodegenPlugin } from "./scripts/assets/codegen-plugin";
 import { serveRuntimePublicAssetsPlugin } from "./scripts/vite/serve-runtime-public-assets-plugin";
 import ssrPlugin from "vite-ssr-components/plugin";
 import { defineConfig, loadEnv } from "vite";
@@ -21,7 +20,6 @@ export default defineConfig(({ mode }) => {
     return {
       resolve,
       plugins: [
-        assetsCodegenPlugin(),
         build({
           entry: "./src/index.tsx",
           staticRoot: "./dist",
@@ -42,7 +40,6 @@ export default defineConfig(({ mode }) => {
     envPrefix: ["VITE_", "REMOTION_"],
     plugins: [
       serveRuntimePublicAssetsPlugin(),
-      assetsCodegenPlugin(),
       devServer({
         entry: "./src/index.tsx",
         exclude: [/^\/src\/.*\.json(?:\?.*)?$/, ...defaultOptions.exclude],

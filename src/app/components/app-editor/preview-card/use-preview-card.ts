@@ -1,6 +1,5 @@
 import { useMemo, useState, type ComponentType } from "react";
-import type { SavedProject } from "@/_schemas";
-import { calculateProjectDurationSec } from "@/_shared/project/project-timing";
+import type { SavedProject, SavedTimeline } from "@/_schemas";
 import { VIDEO_FPS } from "@/constants";
 import { useRemotionComposition } from "@/app/features/remotion/hook/use-remotion-composition";
 import { reconstructSavedProject } from "@/app/features/editor/store/saved-project-state";
@@ -20,18 +19,20 @@ export function usePreviewCard() {
   const sequenceOrder = useSavedProject((state) => state.sequenceOrder);
   const projectSettings = useSavedProject((state) => state.project);
   const itemsById = useSavedProject((state) => state.itemsById);
+  const timeline = useSavedProject((state) => state.timeline);
   const previewProject = useMemo(
     () => reconstructSavedProject(savedStore.getState()),
     [itemsById, projectSettings, renderRevision, savedStore, sequenceOrder],
   );
   const durationInFrames = useMemo(() => {
-    return Math.max(1, Math.ceil(calculateProjectDurationSec(previewProject) * VIDEO_FPS));
-  }, [previewProject]);
+    return Math.max(1, Math.ceil(timeline.durationSec * VIDEO_FPS));
+  }, [timeline]);
 
   return {
     component,
     durationInFrames,
     previewProject,
+    timeline,
   };
 }
 
@@ -47,7 +48,8 @@ export function usePreviewPlayerArea() {
 }
 
 export type PreviewPlayerAreaProps = {
-  component: ComponentType<{ project: SavedProject }>;
+  component: ComponentType<{ project: SavedProject; timeline: SavedTimeline }>;
   durationInFrames: number;
   project: SavedProject;
+  timeline: SavedTimeline;
 };

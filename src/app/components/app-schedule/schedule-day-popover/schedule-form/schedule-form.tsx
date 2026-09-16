@@ -1,9 +1,9 @@
 import type { SavedScheduleItem } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
-import { ColorPicker } from "@/_shared/components/ui/color-picker";
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
-import { Textarea } from "@/_shared/components/ui/textarea";
+import { Button } from "@/app/components/ui/button";
+import { ColorPicker } from "@/app/components/ui/color-picker";
+import { Field, FieldError } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import type { ScheduleFormValues } from "@/app/features/schedule";
 import { useScheduleForm } from "@/app/components/app-schedule/schedule-day-popover/schedule-form/use-schedule-form";
 

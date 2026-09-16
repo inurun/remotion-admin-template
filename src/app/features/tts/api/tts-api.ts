@@ -1,8 +1,8 @@
 import type { G2pItem } from "@/_schemas";
 import type { TtsLlmAnalysisRequest, TtsLlmAnalysisResponse } from "@/server/features/tts/contract";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { api } from "@/_shared/lib/api-client";
-import { parseApiJson } from "@/_shared/lib/fetch-json";
+import { api } from "@/app/lib/api-client";
+import { parseApiJson } from "@/app/lib/fetch-json";
 import { getPreviewPayload } from "@/app/features/tts/lib/tts-preview-payload";
 
 function getTextForAnalysis(item: TtsFormValues) {

@@ -9,9 +9,14 @@ import {
 import { usePagePreviewSeek } from "@/app/components/app-editor/preview-card/use-page-preview-seek";
 import { VolumeControl } from "@/app/components/app-editor/preview-card/volume-control/volume-control";
 
-function PreviewPlayerArea({ component, durationInFrames, project }: PreviewPlayerAreaProps) {
+function PreviewPlayerArea({
+  component,
+  durationInFrames,
+  project,
+  timeline,
+}: PreviewPlayerAreaProps) {
   const { playbackRate, setPlaybackRate } = usePreviewPlayerArea();
-  usePagePreviewSeek({ durationInFrames, project });
+  usePagePreviewSeek({ durationInFrames, timeline });
 
   return (
     <>
@@ -20,6 +25,7 @@ function PreviewPlayerArea({ component, durationInFrames, project }: PreviewPlay
         durationInFrames={durationInFrames}
         playbackRate={playbackRate}
         project={project}
+        timeline={timeline}
       />
       <div className="grid gap-3 pt-3">
         <div className="flex items-center gap-3">

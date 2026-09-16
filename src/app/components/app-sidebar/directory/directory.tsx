@@ -1,11 +1,7 @@
 import { FolderOpen, File } from "lucide-react";
-import type { ProjectFileSummary } from "@/_schemas";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/_shared/components/ui/accordion";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/_shared/components/ui/sidebar";
+import type { ProjectFileSummary } from "@/server/features/project/contract";
+import { AccordionContent, AccordionItem, AccordionTrigger } from "@/app/components/ui/accordion";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/app/components/ui/sidebar";
 import { getProjectHref } from "@/app/features/project/lib/project-path";
 import { cn } from "@/_shared/lib/utils";
 import { DuplicateProjectDialog } from "@/app/components/app-sidebar/duplicate-dialog/duplicate-dialog";

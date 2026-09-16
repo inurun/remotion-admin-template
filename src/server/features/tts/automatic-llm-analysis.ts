@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { dictionaryWordsForLlm, withLlmDictionaryWords, type StoredG2pItem } from "@/_schemas";
+import type { StoredG2pItem } from "@/_schemas";
+import { dictionaryWordsForLlm, withLlmDictionaryWords } from "@/server/features/tts/g2p-item";
 import type { ServerEnv } from "@/server/core/env";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
 import {

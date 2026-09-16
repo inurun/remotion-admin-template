@@ -1,4 +1,5 @@
-import { withLlmDictionaryWords, type G2pItem } from "@/_schemas";
+import type { G2pItem } from "@/_schemas";
+import { withLlmDictionaryWords } from "@/server/features/tts/g2p-item";
 import type { ServerEnv } from "@/server/core/env";
 import { HaqumeiApiError, haqumeiReadableError } from "@/server/features/haqumei-api/error";
 import { validateG2pItem, validateG2pItems } from "@/server/features/haqumei-api/validate";

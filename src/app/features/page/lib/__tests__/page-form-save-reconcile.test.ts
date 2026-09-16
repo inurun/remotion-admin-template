@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_TIMELINE } from "@/_schemas";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import {
@@ -162,6 +163,7 @@ describe("page form save speech reconcile", () => {
         }),
         {},
       ),
+      timeline: EMPTY_TIMELINE,
       updatedItemIds: ["page-a"],
     };
 
@@ -208,6 +210,7 @@ describe("page form save speech reconcile", () => {
         project: savedProjectWithG2p(createSavedProject(), {
           "page-1": { "tts-1": savedG2p },
         }),
+        timeline: EMPTY_TIMELINE,
         updatedItemIds: ["page-1"],
       },
       snapshot,
@@ -244,6 +247,7 @@ describe("page form save speech reconcile", () => {
         project: savedProjectWithG2p(createSavedProject(), {
           "page-1": { "tts-1": g2p },
         }),
+        timeline: EMPTY_TIMELINE,
         updatedItemIds: ["page-1"],
       },
       snapshot,
@@ -317,6 +321,7 @@ describe("page form save speech reconcile", () => {
           }),
           {},
         ),
+        timeline: EMPTY_TIMELINE,
         updatedItemIds: ["page-a"],
       },
       snapshot,

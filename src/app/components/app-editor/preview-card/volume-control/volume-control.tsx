@@ -1,5 +1,5 @@
 import { Volume1, Volume2, VolumeX } from "lucide-react";
-import { Slider } from "@/_shared/components/ui/slider";
+import { Slider } from "@/app/components/ui/slider";
 import { useVolumeControl } from "./use-volume-control";
 
 function VolumeIcon({ volume }: { volume: number }) {

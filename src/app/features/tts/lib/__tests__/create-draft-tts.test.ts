@@ -3,9 +3,9 @@ import type { VoiceOption } from "@/_schemas";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createTtsInput } from "@/app/features/tts/lib/create-draft-tts";
 
-vi.mock("@/_shared/lib/utils", () => ({
-  createUuid: () => "new-tts-id",
-}));
+vi.spyOn(crypto, "randomUUID").mockReturnValue(
+  "new-tts-id" as `${string}-${string}-${string}-${string}-${string}`,
+);
 
 function voice(voiceName: string, voiceVersion = ""): VoiceOption {
   return {

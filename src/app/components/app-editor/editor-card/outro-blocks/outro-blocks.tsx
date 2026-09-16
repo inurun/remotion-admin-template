@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { DragDropProvider } from "@dnd-kit/react";
-import { Button } from "@/_shared/components/ui/button";
-import { FieldGroup } from "@/_shared/components/ui/field";
+import { Button } from "@/app/components/ui/button";
+import { FieldGroup } from "@/app/components/ui/field";
 import { OutroBlockItem } from "./outro-block-item/outro-block-item";
 import { useOutroBlocks } from "./use-outro-blocks";
 

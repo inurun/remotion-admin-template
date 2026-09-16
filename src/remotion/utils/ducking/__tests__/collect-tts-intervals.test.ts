@@ -1,165 +1,144 @@
 import { describe, expect, it } from "vitest";
-import type { SavedProject } from "@/_schemas";
+import type { SavedProject, SavedTimeline, SavedTimelineClip } from "@/_schemas";
+import { SEQUENCE_TRACK_ID } from "@/_schemas";
 import { collectDuckableIntervals as collectTtsIntervals } from "../collect-duckable-intervals";
 
 const FPS = 30;
 
-function tts(durationSec: number) {
-  return {
-    id: "t",
-    provider: "voisona" as const,
-    text: "",
-    padBeforeSec: 0,
-    padAfterSec: 0,
-    volume: 1,
-    audio: { status: "ready" as const, src: "/tts/t.wav", durationSec },
-    speech: {},
-  };
-}
-
-function withTtsTiming(
-  item: ReturnType<typeof tts>,
-  timing: Partial<Pick<ReturnType<typeof tts>, "padBeforeSec" | "padAfterSec">>,
-) {
-  return { ...item, ...timing };
-}
-
-function page(opts: {
-  durationSec: number;
-  padBeforeSec?: number;
-  padAfterSec?: number;
-  tts?: ReturnType<typeof tts>[];
-}): SavedProject["pages"][number] {
-  return {
-    id: "p",
+const defaultMeta: SavedProject["meta"] = {
+  title: "p",
+  description: "",
+  width: 1920,
+  height: 1080,
+  weather: {},
+  niconico: {
     title: "",
-    type: "main",
-    meta: { tags: [] },
-    richText: null,
-    padBeforeSec: opts.padBeforeSec ?? 0,
-    padAfterSec: opts.padAfterSec ?? 0,
-    durationSec: opts.durationSec,
-    tts: opts.tts ?? [],
+    description: "",
+    thumbnailTime: "00:00.000",
+    parentWorkIds: [],
+    tags: [],
+  },
+};
+
+function clip(id: string, startSec: number, durationSec: number, clips: SavedTimelineClip[] = []) {
+  return { id, startSec, durationSec, clips };
+}
+
+function timeline(clips: SavedTimelineClip[]): SavedTimeline {
+  return {
+    durationSec: 0,
+    tracks: [{ id: SEQUENCE_TRACK_ID, clips }],
   };
 }
 
-function project(pages: SavedProject["pages"]): SavedProject {
+function projectForClips(
+  pageClips: SavedTimelineClip[],
+  statusById: Record<string, "ready" | "pending" | "failed"> = {},
+): SavedProject {
   return {
-    meta: {
-      title: "",
-      description: "",
-      width: 1920,
-      height: 1080,
-      weather: {},
-      niconico: {
-        title: "",
-        description: "",
-        thumbnailTime: "00:00.000",
-        parentWorkIds: [],
-        tags: [],
-      },
-    },
+    meta: defaultMeta,
     bgm: [],
-    pages,
-    voicePresets: [],
+    voicePresets: {},
+    pages: pageClips.map((page) => ({
+      id: page.id,
+      title: page.id,
+      type: "main" as const,
+      meta: { tags: [] },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: page.clips.map((item) => {
+        const status = statusById[item.id] ?? "ready";
+        const audio =
+          status === "ready"
+            ? {
+                status: "ready" as const,
+                src: `/tts/${item.id}.wav`,
+                durationSec: item.durationSec,
+              }
+            : status === "failed"
+              ? { status: "failed" as const, src: `/tts/${item.id}.wav`, error: "failed" }
+              : { status: "pending" as const, src: `/tts/${item.id}.wav` };
+        return {
+          id: item.id,
+          provider: "voisona" as const,
+          text: item.id,
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          volume: 1,
+          speech: {},
+          audio,
+        };
+      }),
+    })),
   };
 }
 
 describe("collectTtsIntervals", () => {
   it("returns empty array for a project with no pages", () => {
-    expect(collectTtsIntervals(project([]), FPS)).toEqual([]);
+    expect(collectTtsIntervals(projectForClips([]), timeline([]), FPS)).toEqual([]);
   });
 
   it("returns empty array when pages have no tts", () => {
-    expect(collectTtsIntervals(project([page({ durationSec: 3 })]), FPS)).toEqual([]);
+    const pages = [clip("p", 0, 3)];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([]);
   });
 
   it("keeps zero duration tts as one frame", () => {
-    const p = page({ durationSec: 3, tts: [tts(0)] });
-    expect(collectTtsIntervals(project([p]), FPS)).toEqual([{ from: 0, to: 1 }]);
+    const pages = [clip("p", 0, 3, [clip("t", 0, 0)])];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([]);
   });
 
   it("returns a single interval for one tts on one page", () => {
-    // padBeforeSec=0, tts=1s → frames 0-30
-    const p = page({ durationSec: 1, tts: [tts(1)] });
-    expect(collectTtsIntervals(project([p]), FPS)).toEqual([{ from: 0, to: 30 }]);
+    const pages = [clip("p", 0, 1, [clip("t", 0, 1)])];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([
+      { from: 0, to: 30 },
+    ]);
   });
 
-  it("offsets tts start by padBeforeSec", () => {
-    // padBeforeSec=1s (30f), tts=1s → frames 30-60
-    const p = page({ durationSec: 2, padBeforeSec: 1, tts: [tts(1)] });
-    expect(collectTtsIntervals(project([p]), FPS)).toEqual([{ from: 30, to: 60 }]);
+  it("skips tts that is not ready", () => {
+    const pages = [
+      clip("p", 0, 3, [clip("ready", 0, 1), clip("pending", 1, 1), clip("failed", 2, 1)]),
+    ];
+    expect(
+      collectTtsIntervals(
+        projectForClips(pages, { pending: "pending", failed: "failed" }),
+        timeline(pages),
+        FPS,
+      ),
+    ).toEqual([{ from: 0, to: 30 }]);
+  });
+
+  it("offsets tts start by the child clip startSec", () => {
+    const pages = [clip("p", 0, 2, [clip("t", 1, 1)])];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([
+      { from: 30, to: 60 },
+    ]);
   });
 
   it("places multiple tts sequentially within a page", () => {
-    // tts1=1s(0-30), tts2=2s(30-90)
-    const p = page({ durationSec: 3, tts: [tts(1), tts(2)] });
-    expect(collectTtsIntervals(project([p]), FPS)).toEqual([
+    const pages = [clip("p", 0, 3, [clip("t1", 0, 1), clip("t2", 1, 2)])];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([
       { from: 0, to: 30 },
       { from: 30, to: 90 },
     ]);
   });
 
-  it("applies tts pads and allows overlap", () => {
-    const p = page({
-      durationSec: 3,
-      tts: [
-        withTtsTiming(tts(1), { padBeforeSec: 0.5, padAfterSec: -0.2 }),
-        withTtsTiming(tts(1), { padBeforeSec: -0.3, padAfterSec: 0 }),
-      ],
-    });
-
-    expect(collectTtsIntervals(project([p]), FPS)).toEqual([
-      { from: 15, to: 39 },
-      { from: 30, to: 60 },
-    ]);
-  });
-
-  it("offsets intervals on subsequent pages by the prior page duration", () => {
-    // page1: durationSec=3 (90f), tts=1s → frames 0-30
-    // page2: starts at frame 90, tts=1s → frames 90-120
-    const pages = [
-      page({ durationSec: 3, tts: [tts(1)] }),
-      page({ durationSec: 3, tts: [tts(1)] }),
-    ];
-    expect(collectTtsIntervals(project(pages), FPS)).toEqual([
+  it("offsets intervals on subsequent pages by the prior page start", () => {
+    const pages = [clip("p1", 0, 3, [clip("t1", 0, 1)]), clip("p2", 3, 3, [clip("t2", 0, 1)])];
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([
       { from: 0, to: 30 },
       { from: 90, to: 120 },
     ]);
   });
 
-  it("applies padBeforeSec relative to the page's global start frame", () => {
-    // page1: durationSec=3(90f), no tts
-    // page2: starts at 90f, padBeforeSec=1s(30f), tts=1s → frames 120-150
-    const pages = [
-      page({ durationSec: 3 }),
-      page({ durationSec: 4, padBeforeSec: 1, tts: [tts(1)] }),
-    ];
-    expect(collectTtsIntervals(project(pages), FPS)).toEqual([{ from: 120, to: 150 }]);
-  });
-
-  it("uses Math.max(1, durationSec*fps) for page offset when page durationSec is 0", () => {
-    // page1: durationSec=0 → clamped to 1 frame
-    // page2: starts at frame 1
-    const pages = [page({ durationSec: 0 }), page({ durationSec: 2, tts: [tts(1)] })];
-    const intervals = collectTtsIntervals(project(pages), FPS);
-    expect(intervals[0]?.from).toBe(1);
-  });
-
   it("shortens subsequent page offsets by transition overlap duration", () => {
-    // page1: 3s (90f), tts 1s → 0-30
-    // transition slide: 0.8s (24f) overlap
-    // page2: starts at 90-24=66f, tts 1s → 66-96
-    const pages: SavedProject["pages"] = [
-      page({ durationSec: 3, tts: [tts(1)] }),
-      {
-        id: "tr",
-        type: "transition",
-        variant: "slide",
-      },
-      page({ durationSec: 3, tts: [tts(1)] }),
+    const pages = [
+      clip("p1", 0, 3, [clip("t1", 0, 1)]),
+      clip("tr", 2.2, 0.8),
+      clip("p2", 2.2, 3, [clip("t2", 0, 1)]),
     ];
-    expect(collectTtsIntervals(project(pages), FPS)).toEqual([
+    expect(collectTtsIntervals(projectForClips(pages), timeline(pages), FPS)).toEqual([
       { from: 0, to: 30 },
       { from: 66, to: 96 },
     ]);

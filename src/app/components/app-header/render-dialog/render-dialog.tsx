@@ -1,5 +1,5 @@
 import { Ban, Clapperboard, Upload } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogMain,
   DialogTitle,
-} from "@/_shared/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { cn } from "@/_shared/lib/utils";
 import { JobLogPanel } from "@/app/components/app-header/job-log-panel/job-log-panel";
 import { RenderProgress } from "@/app/components/app-header/render-dialog/render-progress/render-progress";

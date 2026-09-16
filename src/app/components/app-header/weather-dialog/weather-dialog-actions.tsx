@@ -1,6 +1,6 @@
 import { RefreshCw } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { DialogClose, DialogFooter } from "@/_shared/components/ui/dialog";
+import { Button } from "@/app/components/ui/button";
+import { DialogClose, DialogFooter } from "@/app/components/ui/dialog";
 
 export function WeatherFetchButton({
   disabled,

@@ -1,16 +1,17 @@
 import { Player } from "@remotion/player";
 import { memo, useMemo } from "react";
 import type { ComponentType } from "react";
-import type { SavedProject } from "@/_schemas";
+import type { SavedProject, SavedTimeline } from "@/_schemas";
 import { VIDEO_FPS } from "@/constants";
 import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
 import type { PreviewPlaybackRate } from "@/app/components/app-editor/preview-card/preview-card.lib";
 
 type PreviewPlayerProps = {
-  component: ComponentType<{ project: SavedProject }>;
+  component: ComponentType<{ project: SavedProject; timeline: SavedTimeline }>;
   durationInFrames: number;
   playbackRate: PreviewPlaybackRate;
   project: SavedProject;
+  timeline: SavedTimeline;
 };
 
 export const PREVIEW_INITIAL_VOLUME = 1;
@@ -20,9 +21,10 @@ export const PreviewPlayer = memo(function PreviewPlayer({
   durationInFrames,
   playbackRate,
   project,
+  timeline,
 }: PreviewPlayerProps) {
   const { setPlayerRef } = useRemotionPlayerControl();
-  const inputProps = useMemo(() => ({ project }), [project]);
+  const inputProps = useMemo(() => ({ project, timeline }), [project, timeline]);
   const aspectRatio = `${project.meta.width} / ${project.meta.height}`;
 
   return (

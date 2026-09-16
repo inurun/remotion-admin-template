@@ -11,6 +11,13 @@
 - 実装前に周辺実装を確認すること
 - 実装後、lint, format, tscを実行
 
+### データ配置
+
+- 尺は `{stem}.timeline.json`。計算は server の `toTimeline` のみ
+- `project.json` は編集する事実だけ持つ。`page.durationSec` / sequence start は持たない
+- `_schemas` は永続化契約（Zod・infer 型・定数データ）だけ。ヘルパー・DTO・parse 時 transform は置かない
+- `_shared` は app / server / remotion の2層以上が使う、ドメイン知識のないユーティリティだけ
+
 ### src/app
 
 - 管理サイトフロントエンド

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { EMPTY_TIMELINE, SEQUENCE_TRACK_ID } from "@/_schemas";
 
 const {
   accessMock,
@@ -52,6 +53,119 @@ describe("storage", () => {
     await expect(readSavedProject("missing")).rejects.toBeInstanceOf(ProjectNotFoundError);
   });
 
+  it("writes a missing timeline from the project on read", async () => {
+    readFileMock
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          meta: {
+            title: "Demo",
+            description: "",
+            width: 1920,
+            height: 1080,
+            weather: {},
+            niconico: {
+              title: "",
+              description: "",
+              thumbnailTime: "00:00.000",
+              parentWorkIds: [],
+              tags: [],
+            },
+          },
+          pages: [],
+          bgm: [],
+          voicePresets: {},
+        }),
+      )
+      .mockRejectedValueOnce({ code: "ENOENT" });
+
+    const { readSavedProjectDocument } = await import("../storage");
+    const document = await readSavedProjectDocument("project");
+
+    expect(document.timeline).toEqual(EMPTY_TIMELINE);
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(String(writeFileMock.mock.calls[0]?.[0])).toMatch(/project\.timeline\.json\./);
+  });
+
+  it("rewrites a stale timeline on read", async () => {
+    readFileMock
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          meta: {
+            title: "Demo",
+            description: "",
+            width: 1920,
+            height: 1080,
+            weather: {},
+            niconico: {
+              title: "",
+              description: "",
+              thumbnailTime: "00:00.000",
+              parentWorkIds: [],
+              tags: [],
+            },
+          },
+          pages: [],
+          bgm: [],
+          voicePresets: {},
+        }),
+      )
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          durationSec: 9,
+          tracks: [
+            {
+              id: SEQUENCE_TRACK_ID,
+              clips: [{ id: "gone", startSec: 0, durationSec: 9, clips: [] }],
+            },
+          ],
+        }),
+      );
+
+    const { readSavedProjectDocument } = await import("../storage");
+    const document = await readSavedProjectDocument("project");
+
+    expect(document.timeline).toEqual(EMPTY_TIMELINE);
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(String(writeFileMock.mock.calls[0]?.[0])).toMatch(/project\.timeline\.json\./);
+  });
+
+  it("normalizes project meta on read and persists it", async () => {
+    readFileMock
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          meta: {
+            title: "Demo",
+            description: "",
+            width: 999,
+            height: 999,
+            weather: {},
+            niconico: {
+              title: "",
+              description: "",
+              thumbnailTime: "bad",
+              parentWorkIds: [],
+              tags: [],
+            },
+          },
+          pages: [],
+          bgm: [],
+          voicePresets: {},
+        }),
+      )
+      .mockResolvedValueOnce(JSON.stringify(EMPTY_TIMELINE));
+
+    const { readSavedProjectDocument } = await import("../storage");
+    const document = await readSavedProjectDocument("project");
+
+    expect(document.project.meta).toMatchObject({
+      width: 1920,
+      height: 1080,
+      niconico: { thumbnailTime: "00:00.000" },
+    });
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(String(writeFileMock.mock.calls[0]?.[0])).toMatch(/project\.json\./);
+  });
+
   it("creates the default project when no saved projects exist", async () => {
     readdirMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
@@ -74,7 +188,7 @@ describe("storage", () => {
         updatedAt: 42,
       },
     ]);
-    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(writeFileMock).toHaveBeenCalledTimes(2);
   });
 
   it("creates a new project and returns its summary", async () => {
@@ -99,7 +213,7 @@ describe("storage", () => {
       },
       pages: [],
       bgm: [],
-      voicePresets: [],
+      voicePresets: {},
     });
 
     expect(summary).toEqual({
@@ -108,7 +222,7 @@ describe("storage", () => {
       segments: ["nested", "new"],
       updatedAt: 42,
     });
-    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    expect(writeFileMock).toHaveBeenCalledTimes(2);
   });
 
   it("rejects creating a project over an existing file", async () => {
@@ -133,7 +247,7 @@ describe("storage", () => {
         },
         pages: [],
         bgm: [],
-        voicePresets: [],
+        voicePresets: {},
       }),
     ).rejects.toBeInstanceOf(ProjectAlreadyExistsError);
     expect(writeFileMock).not.toHaveBeenCalled();
@@ -164,7 +278,7 @@ describe("storage", () => {
       },
       pages: [],
       bgm: [],
-      voicePresets: [],
+      voicePresets: {},
     });
     await writeSavedProject("project", {
       meta: {
@@ -183,14 +297,14 @@ describe("storage", () => {
       },
       pages: [],
       bgm: [],
-      voicePresets: [],
+      voicePresets: {},
     });
 
-    expect(writeFileMock).toHaveBeenCalledTimes(2);
+    expect(writeFileMock).toHaveBeenCalledTimes(4);
     const tempPaths = writeFileMock.mock.calls.map((call) => String(call[0]));
     expect(tempPaths[0]).not.toBe(tempPaths[1]);
     expect(tempPaths[0]).toMatch(/\.tmp$/);
-    expect(renameMock).toHaveBeenCalledTimes(2);
+    expect(renameMock).toHaveBeenCalledTimes(4);
   });
 
   it("does not replace the original file when the temp write fails", async () => {
@@ -215,7 +329,7 @@ describe("storage", () => {
         },
         pages: [],
         bgm: [],
-        voicePresets: [],
+        voicePresets: {},
       }),
     ).rejects.toThrow("disk full");
     expect(renameMock).not.toHaveBeenCalled();

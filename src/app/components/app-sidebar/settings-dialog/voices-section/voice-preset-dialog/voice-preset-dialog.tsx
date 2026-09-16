@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from "lucide-react";
 import type { VoiceOption } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 
 export function VoicePresetDialog({

@@ -1,6 +1,6 @@
 import type { SavedScheduleItem } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
-import { PopoverHeader, PopoverTitle } from "@/_shared/components/ui/popover";
+import { Button } from "@/app/components/ui/button";
+import { PopoverHeader, PopoverTitle } from "@/app/components/ui/popover";
 import { formatScheduleDateLabel, type ScheduleFormValues } from "@/app/features/schedule";
 import { ScheduleForm } from "@/app/components/app-schedule/schedule-day-popover/schedule-form/schedule-form";
 import { useScheduleDayPopover } from "@/app/components/app-schedule/schedule-day-popover/use-schedule-day-popover";

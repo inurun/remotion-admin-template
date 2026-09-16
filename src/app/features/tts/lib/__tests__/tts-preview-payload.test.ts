@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
 import { getPreviewPayload } from "@/app/features/tts/lib/tts-preview-payload";
-import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
+import { resolveTtsSynthesisSettings } from "@/app/features/tts/lib/synthesis-settings";
 
 type VoisonaTtsInput = Extract<TtsFormValues, { provider: "voisona" }>;
 
@@ -68,9 +68,9 @@ describe("getPreviewPayload", () => {
     });
 
     const payload = getPreviewPayload(
-      resolveTtsSynthesisSettings(item, [
-        { provider: "voisona", voiceName: "a", synthesisSettings: { speed: 1.2 } },
-      ]),
+      resolveTtsSynthesisSettings(item, {
+        "voisona::a::": { provider: "voisona", voiceName: "a", synthesisSettings: { speed: 1.2 } },
+      }),
       "project",
     );
 

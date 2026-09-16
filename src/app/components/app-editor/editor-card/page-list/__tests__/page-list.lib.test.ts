@@ -22,47 +22,17 @@ describe("page list", () => {
     expect(getPageThumbnailFrame({ startSec: 4, endSec: 8 }, 24, 100)).toBe(99);
   });
 
-  it("builds page timings from saved page durations", () => {
+  it("builds page timings from the saved timeline", () => {
     expect(
       getProjectPageTimings({
-        meta: {
-          title: "project",
-          description: "",
-          width: 1920,
-          height: 1080,
-          weather: {},
-          niconico: {
-            title: "",
-            description: "",
-            thumbnailTime: "00:00.000",
-            parentWorkIds: [],
-            tags: [],
-          },
-        },
-        bgm: [],
-        voicePresets: [],
-        pages: [
+        durationSec: 4.75,
+        tracks: [
           {
-            id: "page-1",
-            title: "Intro",
-            type: "intro",
-            meta: { tags: [] },
-            padBeforeSec: 0.5,
-            padAfterSec: 0.25,
-            durationSec: 1.75,
-            richText: "<p>Intro</p>",
-            tts: [],
-          },
-          {
-            id: "page-2",
-            title: "Main",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            durationSec: 3,
-            richText: "<p>Main</p>",
-            tts: [],
+            id: "sequence",
+            clips: [
+              { id: "page-1", startSec: 0, durationSec: 1.75, clips: [] },
+              { id: "page-2", startSec: 1.75, durationSec: 3, clips: [] },
+            ],
           },
         ],
       }),
@@ -75,49 +45,15 @@ describe("page list", () => {
   it("accounts for transition overlap in sequence timings", () => {
     expect(
       getProjectPageTimings({
-        meta: {
-          title: "project",
-          description: "",
-          width: 1920,
-          height: 1080,
-          weather: {},
-          niconico: {
-            title: "",
-            description: "",
-            thumbnailTime: "00:00.000",
-            parentWorkIds: [],
-            tags: [],
-          },
-        },
-        bgm: [],
-        voicePresets: [],
-        pages: [
+        durationSec: 7.2,
+        tracks: [
           {
-            id: "page-1",
-            title: "A",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            durationSec: 5,
-            richText: null,
-            tts: [],
-          },
-          {
-            id: "tr-1",
-            type: "transition",
-            variant: "slide",
-          },
-          {
-            id: "page-2",
-            title: "B",
-            type: "main",
-            meta: { tags: [] },
-            padBeforeSec: 0,
-            padAfterSec: 0,
-            durationSec: 3,
-            richText: null,
-            tts: [],
+            id: "sequence",
+            clips: [
+              { id: "page-1", startSec: 0, durationSec: 5, clips: [] },
+              { id: "tr-1", startSec: 4.2, durationSec: 0.8, clips: [] },
+              { id: "page-2", startSec: 4.2, durationSec: 3, clips: [] },
+            ],
           },
         ],
       }),

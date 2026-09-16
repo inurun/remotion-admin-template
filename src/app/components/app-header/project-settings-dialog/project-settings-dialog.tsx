@@ -1,6 +1,6 @@
 import { Settings } from "lucide-react";
 import { Controller } from "react-hook-form";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -10,16 +10,16 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Field, FieldError } from "@/_shared/components/ui/field";
+} from "@/app/components/ui/dialog";
+import { Field, FieldError } from "@/app/components/ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/_shared/components/ui/select";
-import { Textarea } from "@/_shared/components/ui/textarea";
+} from "@/app/components/ui/select";
+import { Textarea } from "@/app/components/ui/textarea";
 import { VIDEO_SIZE_PRESETS } from "@/constants";
 import { useProjectSettingsDialog } from "@/app/components/app-header/project-settings-dialog/use-project-settings-dialog";
 

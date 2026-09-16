@@ -4,7 +4,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/_shared/components/ui/select";
+} from "@/app/components/ui/select";
 import {
   THEME_OPTIONS,
   useAppearanceSection,

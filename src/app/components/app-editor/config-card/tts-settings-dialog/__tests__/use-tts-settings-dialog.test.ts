@@ -6,13 +6,13 @@ import {
   toStoredTtsSynthesisSettings,
 } from "@/app/components/app-editor/config-card/tts-settings-dialog/use-tts-settings-dialog";
 
-const presets: VoicePreset[] = [
-  {
+const presets: Record<string, VoicePreset> = {
+  "voicevox::3::": {
     provider: "voicevox",
     voiceName: "3",
     synthesisSettings: { speedScale: 1.2 },
   },
-];
+};
 
 function item(
   overrides: Partial<Extract<TtsFormValues, { provider: "voicevox" }>> = {},

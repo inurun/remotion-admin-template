@@ -1,10 +1,11 @@
 import { useSortable } from "@dnd-kit/react/sortable";
 import type { UseFormReturn } from "react-hook-form";
 import { useFormState, useWatch } from "react-hook-form";
-import type { VoiceOption } from "@/_schemas";
+import type { VoiceOption, VoicePreset } from "@/_schemas";
+import { voicePresetId } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
-import { getVoicePresetSettings, upsertVoicePreset } from "@/_shared/project/voice-presets";
+import { getVoicePresetSettings } from "@/app/features/tts/lib/synthesis-settings";
 import { useEditorSession, useEditorSessionStoreApi } from "@/app/features/editor";
 import { useProject } from "@/app/features/project";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
@@ -81,9 +82,21 @@ export function useVoiceRow({
     onRemove: () => voices.removeVoice(voice),
     onSynthesisSettingsChange: ((value) => {
       const state = editorStore.getState();
+      const id = voicePresetId(voice);
+      const nextPresets = { ...state.project.voicePresets };
+      if (!value || Object.keys(value).length === 0) {
+        delete nextPresets[id];
+      } else {
+        nextPresets[id] = {
+          provider: voice.provider,
+          voiceName: voice.voiceName,
+          ...(voice.voiceVersion ? { voiceVersion: voice.voiceVersion } : {}),
+          synthesisSettings: value,
+        } as VoicePreset;
+      }
       state.updateProjectSettings({
         ...state.project,
-        voicePresets: upsertVoicePreset(state.project.voicePresets, voice, value),
+        voicePresets: nextPresets,
       });
     }) as Parameters<typeof SynthesisSettingsFields>[0]["onChange"],
   };

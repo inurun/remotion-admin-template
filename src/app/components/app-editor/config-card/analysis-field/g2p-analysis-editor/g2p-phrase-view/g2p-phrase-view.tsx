@@ -1,4 +1,4 @@
-import { AccentEditor } from "@/_shared/components/accent-editor/accent-editor";
+import { AccentEditor } from "@/app/components/accent-editor/accent-editor";
 import { ChainButton } from "./chain-button/chain-button";
 
 export type G2pPhraseWordView = {

@@ -1,9 +1,9 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { GripVertical, Trash2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { Field } from "@/_shared/components/ui/field";
-import { Textarea } from "@/_shared/components/ui/textarea";
+import { Button } from "@/app/components/ui/button";
+import { Field } from "@/app/components/ui/field";
+import { Textarea } from "@/app/components/ui/textarea";
 import { cn } from "@/_shared/lib/utils";
 import { OUTRO_BLOCK_URL_PLACEHOLDER } from "@/app/features/page/lib/outro-block";
 import { OgpDialog } from "./ogp-dialog/ogp-dialog";

@@ -1,5 +1,5 @@
 import {
-  isSavedContentPage,
+  DEFAULT_VOICE_PRESETS,
   type SavedPage,
   type SavedProject,
   type SavedSequenceItem,
@@ -9,8 +9,7 @@ import type { PageFormValues } from "@/app/features/page/model/page-form-schema"
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
-import { normalizeProjectMeta } from "@/_shared/project/project-meta";
+import { normalizeProjectMeta } from "@/app/features/project/lib/normalize-project-meta";
 
 export function toTtsFormValues(item: SavedTts): TtsFormValues {
   return {
@@ -107,7 +106,7 @@ export function mergeUneditedSavedSpeechIntoPageForm(
   nextSavedPage: SavedPage,
 ): PageFormValues {
   const previousTts =
-    previousSavedPage && isSavedContentPage(previousSavedPage)
+    previousSavedPage && previousSavedPage.type !== "transition"
       ? new Map(previousSavedPage.tts.map((item) => [item.id, item]))
       : new Map();
   const nextById = new Map(nextSavedPage.tts.map((item) => [item.id, item]));
@@ -139,7 +138,7 @@ export function mergeUneditedSavedSpeechIntoPageForm(
 }
 
 export function toSequenceFormItem(item: SavedProject["pages"][number]) {
-  if (!isSavedContentPage(item)) {
+  if (item.type === "transition") {
     return {
       id: item.id,
       type: "transition" as const,
@@ -154,6 +153,6 @@ export function toProjectSettingsFormValues(project: SavedProject): ProjectSetti
   return {
     meta: normalizeProjectMeta(project.meta),
     bgm: project.bgm,
-    voicePresets: project.voicePresets ?? getDefaultVoicePresets(),
+    voicePresets: project.voicePresets ?? DEFAULT_VOICE_PRESETS,
   };
 }

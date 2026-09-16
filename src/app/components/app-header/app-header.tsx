@@ -1,6 +1,6 @@
 import { Clapperboard, Save } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { SidebarTrigger } from "@/_shared/components/ui/sidebar";
+import { Button } from "@/app/components/ui/button";
+import { SidebarTrigger } from "@/app/components/ui/sidebar";
 import { BgmDialog } from "@/app/components/app-header/bgm-dialog/bgm-dialog";
 import { NiconicoDialog } from "@/app/components/app-header/niconico-dialog/niconico-dialog";
 import { RenderDialog } from "@/app/components/app-header/render-dialog/render-dialog";

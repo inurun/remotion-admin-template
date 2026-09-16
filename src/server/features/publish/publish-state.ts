@@ -8,7 +8,7 @@ import {
   getProjectOutputVideoPath,
   readSavedProject,
 } from "@/server/_shared/storage";
-import { normalizeNiconicoMeta } from "@/_shared/project/project-meta";
+import { normalizeNiconicoMeta } from "@/server/features/project/normalize-project-meta";
 import {
   cancelPublishPrepJob,
   createPublishPrepJob,

@@ -1,5 +1,5 @@
 import type { DictionaryEntryInput, G2pItem, VoicevoxSynthesisSettings } from "@/_schemas";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
+import { DEFAULT_VOICE_PRESETS } from "@/_schemas";
 import type { ServerEnv } from "@/server/core/env";
 import { getHaqumeiApiClient, unwrapHaqumeiData } from "@/server/features/haqumei-api/client";
 import { HaqumeiApiError } from "@/server/features/haqumei-api/error";
@@ -46,9 +46,7 @@ export async function deleteDictionaryEntry(serverEnv: ServerEnv, id: number) {
 }
 
 export async function previewDictionaryEntry(serverEnv: ServerEnv, g2p: G2pItem) {
-  const preset = getDefaultVoicePresets().find(
-    (item) => item.provider === "voicevox" && item.voiceName === String(PREVIEW_SPEAKER),
-  );
+  const preset = DEFAULT_VOICE_PRESETS[`voicevox::${PREVIEW_SPEAKER}::`];
   const response = await getHaqumeiApiClient(serverEnv).POST("/v1/synthesis/voicevox", {
     body: buildVoicevoxSynthesisRequest({
       item: g2p,

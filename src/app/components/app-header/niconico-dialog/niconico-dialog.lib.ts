@@ -1,15 +1,43 @@
 import { z } from "zod";
 import {
-  collectNiconicoParentWorkIds,
   formatParentWorkIdsInput,
   normalizeNiconicoMeta,
   parseParentWorkIdsInput,
   type ProjectNiconicoMeta,
-} from "@/_shared/project/project-meta";
+} from "@/app/features/project/lib/normalize-project-meta";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 
 import { createNiconicoTags, getConfiguredNiconicoTags } from "./niconico-tags";
+
+const NICONICO_VIDEO_ID_PATTERN = /^\/(?:watch\/(sm\d+)|shorts\/(ss\d+))(?:[/?#]|$)/;
+
+export function extractNiconicoVideoId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      (parsed.hostname !== "www.nicovideo.jp" && parsed.hostname !== "nicovideo.jp")
+    ) {
+      return undefined;
+    }
+    const match = parsed.pathname.match(NICONICO_VIDEO_ID_PATTERN);
+    return match?.[1] ?? match?.[2];
+  } catch {
+    return undefined;
+  }
+}
+
+function collectNiconicoParentWorkIds(urls: string[]) {
+  return [
+    ...new Set(
+      urls.flatMap((url) => {
+        const id = extractNiconicoVideoId(url);
+        return id ? [id] : [];
+      }),
+    ),
+  ];
+}
 
 function parseTagsInput(value: string): string[] {
   return [

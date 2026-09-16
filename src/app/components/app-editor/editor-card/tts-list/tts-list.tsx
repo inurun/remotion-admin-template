@@ -1,5 +1,5 @@
 import { DragDropProvider } from "@dnd-kit/react";
-import { FieldGroup } from "@/_shared/components/ui/field";
+import { FieldGroup } from "@/app/components/ui/field";
 import { useTtsList } from "@/app/components/app-editor/editor-card/tts-list/use-tts-list";
 import { TtsItem } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-item";
 import { AddTtsButton } from "./add-tts-button/add-tts-button";

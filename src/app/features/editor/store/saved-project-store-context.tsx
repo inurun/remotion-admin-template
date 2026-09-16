@@ -1,6 +1,7 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import { useStore } from "zustand";
-import type { SavedProject } from "@/_schemas";
+import type { SavedProject, SavedTimeline } from "@/_schemas";
+import { EMPTY_TIMELINE } from "@/_schemas";
 import {
   createSavedProjectStore,
   type SavedProjectStore,
@@ -11,14 +12,16 @@ const SavedProjectStoreContext = createContext<SavedProjectStoreApi | null>(null
 
 export function SavedProjectStoreProvider({
   initialProject,
+  initialTimeline = EMPTY_TIMELINE,
   children,
 }: {
   initialProject: SavedProject;
+  initialTimeline?: SavedTimeline;
   children: ReactNode;
 }) {
   const storeRef = useRef<SavedProjectStoreApi | null>(null);
   if (!storeRef.current) {
-    storeRef.current = createSavedProjectStore(initialProject);
+    storeRef.current = createSavedProjectStore(initialProject, initialTimeline);
   }
 
   return (

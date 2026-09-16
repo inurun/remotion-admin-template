@@ -7,12 +7,11 @@ import {
   OUT_DIR,
   PROJECT_ROOT,
   getProjectOutputVideoPath,
-  readSavedProject,
+  readSavedProjectDocument,
 } from "@/server/_shared/storage";
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 import { thumbnailTimeToFrame } from "./render-thumbnail";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
-import { projectHasUnresolvedAudio } from "@/_shared/lib/tts/tts-audio";
 
 type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
 
@@ -201,8 +200,16 @@ export async function startRender(projectPath: string) {
 
     startReserved = true;
     try {
-      const project = await readSavedProject(projectPath);
-      if (projectHasUnresolvedAudio(project)) {
+      const { project, timeline } = await readSavedProjectDocument(projectPath);
+      if (
+        project.pages.some(
+          (page) =>
+            page.type !== "transition" &&
+            page.tts.some(
+              (tts) => tts.audio.status === "analyzing" || tts.audio.status === "pending",
+            ),
+        )
+      ) {
         return {
           started: false as const,
           reason: "tts_pending" as const,
@@ -212,7 +219,7 @@ export async function startRender(projectPath: string) {
       await fs.mkdir(OUT_DIR, { recursive: true });
       await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
       const outputPath = getProjectOutputVideoPath(projectPath);
-      const inputProps = JSON.stringify({ project });
+      const inputProps = JSON.stringify({ project, timeline });
       resetRenderState();
       cancelRequested = false;
       state.status = "running";

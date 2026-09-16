@@ -1,6 +1,5 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
-import { isContentPage } from "@/_schemas";
 
 export function resolveSelectedPageIndexAfterRemove(
   current: number | null,
@@ -60,7 +59,7 @@ export function getLandingPageTtsCount(
 
   const oldPageIndex = nextPageIndex < removedPageIndex ? nextPageIndex : nextPageIndex + 1;
   const landing = pageFields[oldPageIndex];
-  if (!landing || !isContentPage(landing)) {
+  if (!landing || landing.type === "transition") {
     return 0;
   }
 

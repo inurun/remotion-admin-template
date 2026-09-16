@@ -1,4 +1,4 @@
-import type { ProjectFileSummary } from "@/_schemas";
+import type { ProjectFileSummary } from "@/server/features/project/contract";
 import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import { useProjectsQuery } from "@/app/features/project/swr/use-project-queries";
 

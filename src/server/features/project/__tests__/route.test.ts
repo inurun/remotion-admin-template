@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { EMPTY_TIMELINE } from "@/_schemas";
 import { projectApp } from "../route";
 import {
   InvalidProjectPathError,
@@ -43,7 +44,10 @@ describe("project routes", () => {
   });
 
   it("loads a nested project", async () => {
-    loadProjectMock.mockResolvedValueOnce({ pages: [] });
+    loadProjectMock.mockResolvedValueOnce({
+      project: { pages: [] },
+      timeline: EMPTY_TIMELINE,
+    });
 
     const response = await projectApp.request("/project/nested/example");
     expect(response.status).toBe(200);
@@ -139,6 +143,7 @@ describe("project routes", () => {
       void synthesis;
       return {
         project: { pages: [] },
+        timeline: EMPTY_TIMELINE,
         updatedItemIds: [],
       };
     });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_TIMELINE } from "@/_schemas";
 import {
   reconstructSavedProject,
   selectPageThumbnailBinding,
@@ -28,6 +29,7 @@ describe("saved project store and thumbnail spike", () => {
     const pageBKeyBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
     store.getState().applySaveResult({
       project: reconstructSavedProject(store.getState()),
+      timeline: EMPTY_TIMELINE,
       updatedItemIds: ["page-a"],
     });
 
@@ -96,7 +98,9 @@ describe("saved project store and thumbnail spike", () => {
     const before = store.getState().renderRevision;
     const project = reconstructSavedProject(store.getState());
 
-    store.getState().applySaveResult({ project, updatedItemIds: ["page-1"] });
+    store
+      .getState()
+      .applySaveResult({ project, timeline: EMPTY_TIMELINE, updatedItemIds: ["page-1"] });
     expect(store.getState().renderRevision).toBe(before);
 
     store.getState().applySaveResult({
@@ -104,6 +108,7 @@ describe("saved project store and thumbnail spike", () => {
         ...project,
         pages: [...project.pages].reverse(),
       },
+      timeline: EMPTY_TIMELINE,
       updatedItemIds: [],
     });
     expect(store.getState().renderRevision).toBe(before + 1);
@@ -114,29 +119,47 @@ describe("saved project store and thumbnail spike", () => {
         pages: [...project.pages].reverse(),
         meta: { ...project.meta, width: 1080, height: 1920 },
       },
+      timeline: EMPTY_TIMELINE,
       updatedItemIds: [],
     });
     expect(store.getState().renderRevision).toBe(before + 2);
   });
 
   it("invalidates later thumbnails when an earlier saved page duration changes", () => {
+    const initialTimeline = {
+      durationSec: 2,
+      tracks: [
+        {
+          id: "sequence",
+          clips: [
+            { id: "page-a", startSec: 0, durationSec: 1, clips: [] },
+            { id: "page-b", startSec: 1, durationSec: 1, clips: [] },
+          ],
+        },
+      ],
+    };
     const store = createSavedProjectStore(
       createSavedProject({
-        pages: [
-          createSavedMainPage({ id: "page-a", durationSec: 1 }),
-          createSavedMainPage({ id: "page-b", durationSec: 1 }),
-        ],
+        pages: [createSavedMainPage({ id: "page-a" }), createSavedMainPage({ id: "page-b" })],
       }),
+      initialTimeline,
     );
     const pageBBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
     const project = reconstructSavedProject(store.getState());
 
     store.getState().applySaveResult({
-      project: {
-        ...project,
-        pages: project.pages.map((page) =>
-          page.id === "page-a" && page.type !== "transition" ? { ...page, durationSec: 4 } : page,
-        ),
+      project,
+      timeline: {
+        durationSec: 5,
+        tracks: [
+          {
+            id: "sequence",
+            clips: [
+              { id: "page-a", startSec: 0, durationSec: 4, clips: [] },
+              { id: "page-b", startSec: 4, durationSec: 1, clips: [] },
+            ],
+          },
+        ],
       },
       updatedItemIds: ["page-a"],
     });
@@ -149,10 +172,7 @@ describe("saved project store and thumbnail spike", () => {
 
   it("does not invalidate later thumbnails for unrelated non-timing draft edits", () => {
     const saved = createSavedProject({
-      pages: [
-        createSavedMainPage({ id: "page-a", durationSec: 1 }),
-        createSavedMainPage({ id: "page-b", durationSec: 1 }),
-      ],
+      pages: [createSavedMainPage({ id: "page-a" }), createSavedMainPage({ id: "page-b" })],
     });
     const store = createSavedProjectStore(saved);
     const pageBBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
@@ -236,6 +256,7 @@ describe("saved project store and thumbnail spike", () => {
 
     store.getState().applySaveResult({
       project: reconstructSavedProject(store.getState()),
+      timeline: EMPTY_TIMELINE,
       updatedItemIds: [],
     });
     expect(store.getState().syncGeneration).toBe(1);

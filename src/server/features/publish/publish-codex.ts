@@ -7,8 +7,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { Codex, type CodexOptions, type ThreadEvent, type ThreadOptions } from "@openai/codex-sdk";
 import { z } from "zod";
-import { nowIso, toIso } from "@/_shared/lib/date";
-import { extractNiconicoVideoId } from "@/_shared/project/project-meta";
+import { nowIso, toIso } from "@/_shared/lib/date/date";
 import { PROJECT_ROOT } from "@/server/_shared/storage";
 import { toNiconicoDescriptionHtml } from "./niconico-description-html";
 import { niconicoGarageFormFields } from "./niconico-form-defaults";
@@ -17,6 +16,24 @@ import {
   type VerifiedPublishPrepResult,
   validatePublishPrepResult,
 } from "./niconico-publish";
+
+const NICONICO_VIDEO_ID_PATTERN = /^\/(?:watch\/(sm\d+)|shorts\/(ss\d+))(?:[/?#]|$)/;
+
+function extractNiconicoVideoId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      (parsed.hostname !== "www.nicovideo.jp" && parsed.hostname !== "nicovideo.jp")
+    ) {
+      return undefined;
+    }
+    const match = parsed.pathname.match(NICONICO_VIDEO_ID_PATTERN);
+    return match?.[1] ?? match?.[2];
+  } catch {
+    return undefined;
+  }
+}
 
 export type PublishPrepJobStatus = "queued" | "running" | "succeeded" | "failed" | "canceled";
 

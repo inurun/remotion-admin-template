@@ -1,14 +1,11 @@
 import { z } from "zod";
-import {
-  copyProjectRequestSchema,
-  createProjectRequestSchema,
-  projectFileSummarySchema,
-  savedProjectSchema,
-} from "@/_schemas";
+import { savedProjectSchema } from "@/_schemas";
 import { storedG2pItemSchema } from "@/_schemas/g2p";
+import { savedTimelineSchema } from "@/_schemas/timeline";
 import {
   avatarSettingsSchema,
   bgmTrackSchema,
+  DEFAULT_VOICE_PRESETS,
   endcardPageMetaSchema,
   outroPageMetaSchema,
   pageTagsMetaSchema,
@@ -20,7 +17,6 @@ import {
   voisonaSynthesisSettingsSchema,
   weatherForecastsSchema,
 } from "@/_schemas/project/primitives";
-import { getDefaultVoicePresets } from "@/_shared/project/default-voice-presets";
 
 const saveTtsSpeechSchema = z.object({
   g2p: storedG2pItemSchema.optional(),
@@ -113,7 +109,7 @@ export const saveProjectSettingsSchema = z.object({
     niconico: projectNiconicoMetaSchema,
   }),
   bgm: z.array(bgmTrackSchema).default([]),
-  voicePresets: z.array(voicePresetSchema).default(getDefaultVoicePresets),
+  voicePresets: z.record(z.string(), voicePresetSchema).default(DEFAULT_VOICE_PRESETS),
 });
 
 export const saveProjectChangesRequestSchema = z.object({
@@ -124,9 +120,31 @@ export const saveProjectChangesRequestSchema = z.object({
   forceResynthesis: z.boolean().optional(),
 });
 
+export const createProjectRequestSchema = z.object({
+  projectPath: z.string().min(1),
+});
+
+export const copyProjectRequestSchema = z.object({
+  sourceProjectPath: z.string().min(1),
+  targetProjectPath: z.string().min(1),
+});
+
+export const projectFileSummarySchema = z.object({
+  path: z.string().min(1),
+  name: z.string().min(1),
+  segments: z.array(z.string().min(1)),
+  updatedAt: z.number().int().nonnegative(),
+});
+
 export const saveProjectChangesResponseSchema = z.object({
   project: savedProjectSchema,
+  timeline: savedTimelineSchema,
   updatedItemIds: z.array(z.string().min(1)),
+});
+
+export const savedProjectDocumentSchema = z.object({
+  project: savedProjectSchema,
+  timeline: savedTimelineSchema,
 });
 
 export const projectContract = {
@@ -142,13 +160,18 @@ export const projectContract = {
     response: projectFileSummarySchema,
   },
   get: {
-    response: savedProjectSchema,
+    response: savedProjectDocumentSchema,
   },
   save: {
     json: saveProjectChangesRequestSchema,
     response: saveProjectChangesResponseSchema,
   },
 };
+
+export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>;
+export type CopyProjectRequest = z.infer<typeof copyProjectRequestSchema>;
+export type ProjectFileSummary = z.infer<typeof projectFileSummarySchema>;
+export type SavedProjectDocument = z.infer<typeof savedProjectDocumentSchema>;
 
 export type SaveTtsItem = z.infer<typeof saveTtsItemSchema>;
 export type SavePageItem = z.infer<typeof savePageItemSchema>;

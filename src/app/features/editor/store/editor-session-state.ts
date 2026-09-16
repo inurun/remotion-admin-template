@@ -1,10 +1,5 @@
-import {
-  isContentPage,
-  isSavedContentPage,
-  type SavedProject,
-  type SavedSequenceItem,
-} from "@/_schemas";
-import { collectNiconicoParentWorkIds, mergeParentWorkIds } from "@/_shared/project/project-meta";
+import type { SavedProject, SavedSequenceItem } from "@/_schemas";
+import { mergeParentWorkIds } from "@/app/features/project/lib/normalize-project-meta";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TransitionFormValues } from "@/app/features/page/model/transition-form-schema";
 import type { ProjectSettingsFormValues } from "@/app/features/project/model/project-settings-form-schema";
@@ -88,6 +83,35 @@ function markItemDirty(dirty: EditorSessionDirty, itemId: string): EditorSession
 
 function isSameSnapshot(left: unknown, right: unknown) {
   return left === right || JSON.stringify(left) === JSON.stringify(right);
+}
+
+const NICONICO_VIDEO_ID_PATTERN = /^\/(?:watch\/(sm\d+)|shorts\/(ss\d+))(?:[/?#]|$)/;
+
+function extractNiconicoVideoId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      (parsed.hostname !== "www.nicovideo.jp" && parsed.hostname !== "nicovideo.jp")
+    ) {
+      return undefined;
+    }
+    const match = parsed.pathname.match(NICONICO_VIDEO_ID_PATTERN);
+    return match?.[1] ?? match?.[2];
+  } catch {
+    return undefined;
+  }
+}
+
+function collectNiconicoParentWorkIds(urls: string[]) {
+  return [
+    ...new Set(
+      urls.flatMap((url) => {
+        const id = extractNiconicoVideoId(url);
+        return id ? [id] : [];
+      }),
+    ),
+  ];
 }
 
 function collectOutroBlockUrls(itemsById: EditorSessionState["itemsById"]) {
@@ -424,7 +448,7 @@ export function applyReconcileSavedSpeech(
     }
 
     const savedItem = savedById.get(itemId);
-    if (!savedItem || !isSavedContentPage(savedItem)) {
+    if (!savedItem || savedItem.type === "transition") {
       continue;
     }
 
@@ -464,7 +488,7 @@ export function applyExternalSavedSpeech(
   let copied = false;
 
   for (const page of project.pages) {
-    if (!isSavedContentPage(page)) {
+    if (page.type === "transition") {
       continue;
     }
 
@@ -541,7 +565,7 @@ export function buildSaveChangeSet(
 export function isSequencePage(
   item: PageFormValues | TransitionFormValues,
 ): item is PageFormValues {
-  return isContentPage(item);
+  return item.type !== "transition";
 }
 
 export function selectSequenceOrder(state: Pick<EditorSessionState, "sequenceOrder">) {

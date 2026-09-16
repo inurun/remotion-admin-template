@@ -1,6 +1,6 @@
 import { Copy } from "lucide-react";
-import type { ProjectFileSummary } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
+import type { ProjectFileSummary } from "@/server/features/project/contract";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -11,9 +11,9 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Input } from "@/_shared/components/ui/input";
-import { SidebarMenuAction } from "@/_shared/components/ui/sidebar";
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { SidebarMenuAction } from "@/app/components/ui/sidebar";
 import { useDuplicateProjectDialog } from "@/app/components/app-sidebar/duplicate-dialog/use-duplicate-project-dialog";
 
 export function DuplicateProjectDialog({ project }: { project: ProjectFileSummary }) {

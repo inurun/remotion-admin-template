@@ -1,8 +1,11 @@
 import { z } from "zod";
 import type { WeatherForecasts } from "@/_schemas";
-import { WEATHER_LOCATION_IDS, WEATHER_LOCATIONS } from "@/features/weather";
+import { WEATHER_LOCATION_IDS, WEATHER_LOCATION_LABELS, weatherConditionSchema } from "@/_schemas";
 
-const weatherConditionSchema = z.enum(["clear", "cloudy", "rain", "storm", "snow"]);
+export const WEATHER_LOCATIONS = WEATHER_LOCATION_IDS.map((id) => ({
+  id,
+  label: WEATHER_LOCATION_LABELS[id],
+}));
 
 const weatherFormEntrySchema = z
   .object({

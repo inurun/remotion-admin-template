@@ -1,5 +1,4 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import { isSavedContentPage } from "@/_schemas";
 import { useTts } from "@/app/features/tts";
 import { useSelectedPage } from "@/app/features/page";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
@@ -9,7 +8,7 @@ export function useTtsItem(ttsId: string, index: number) {
   const { pageId } = useSelectedPage();
   const audio = useSavedProject((state) => {
     const item = state.itemsById[pageId];
-    if (!item || !isSavedContentPage(item)) {
+    if (!item || item.type === "transition") {
       return undefined;
     }
     return item.tts.find((tts) => tts.id === ttsId)?.audio;

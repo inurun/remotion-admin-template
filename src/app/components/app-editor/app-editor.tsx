@@ -2,7 +2,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/_shared/components/ui/resizable";
+} from "@/app/components/ui/resizable";
 import { ConfigCard } from "@/app/components/app-editor/config-card/config-card";
 import { EditorCard } from "@/app/components/app-editor/editor-card/editor-card";
 import { PreviewCard } from "./preview-card/preview-card";

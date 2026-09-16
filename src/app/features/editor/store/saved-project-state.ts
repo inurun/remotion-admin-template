@@ -1,12 +1,14 @@
 import {
-  isSavedContentPage,
   type SavedProject,
   type SavedProjectSettings,
   type SavedSequenceItem,
+  type SavedTimeline,
 } from "@/_schemas";
+import { EMPTY_TIMELINE, SEQUENCE_TRACK_ID } from "@/_schemas";
 
 export type SavedProjectState = {
   project: SavedProjectSettings;
+  timeline: SavedTimeline;
   sequenceOrder: string[];
   itemsById: Record<string, SavedSequenceItem>;
   itemRevision: Record<string, number>;
@@ -16,6 +18,7 @@ export type SavedProjectState = {
 
 export type SaveProjectResult = {
   project: SavedProject;
+  timeline: SavedTimeline;
   updatedItemIds: string[];
 };
 
@@ -33,11 +36,13 @@ function toItemsById(project: SavedProject) {
 
 export function createSavedProjectState(
   project: SavedProject,
+  timeline: SavedTimeline = EMPTY_TIMELINE,
   syncGeneration = 0,
 ): SavedProjectState {
   const itemsById = toItemsById(project);
   return {
     project: toSettings(project),
+    timeline,
     sequenceOrder: project.pages.map((item) => item.id),
     itemsById,
     itemRevision: Object.fromEntries(Object.keys(itemsById).map((itemId) => [itemId, 0])),
@@ -58,7 +63,11 @@ export function reconstructSavedProject(state: SavedProjectState): SavedProject 
   };
 }
 
-function getItemPreviewSignature(item: SavedSequenceItem | undefined, itemId: string) {
+function getItemPreviewSignature(
+  item: SavedSequenceItem | undefined,
+  itemId: string,
+  timeline: SavedTimeline,
+) {
   if (!item) {
     return itemId;
   }
@@ -76,7 +85,11 @@ function getItemPreviewSignature(item: SavedSequenceItem | undefined, itemId: st
       return `${tts.id}:processing`;
     })
     .join("|");
-  return `${itemId}:${item.durationSec}:${item.padBeforeSec}:${item.padAfterSec}:${ttsSignature}`;
+  const durationSec =
+    timeline.tracks
+      .find((track) => track.id === SEQUENCE_TRACK_ID)
+      ?.clips.find((clip) => clip.id === itemId)?.durationSec ?? 0;
+  return `${itemId}:${durationSec}:${item.padBeforeSec}:${item.padAfterSec}:${ttsSignature}`;
 }
 
 function affectsAllRenders(previous: SavedProjectState, next: SavedProjectState) {
@@ -90,8 +103,8 @@ function affectsAllRenders(previous: SavedProjectState, next: SavedProjectState)
 
   return previous.sequenceOrder.some((itemId) => {
     return (
-      getItemPreviewSignature(previous.itemsById[itemId], itemId) !==
-      getItemPreviewSignature(next.itemsById[itemId], itemId)
+      getItemPreviewSignature(previous.itemsById[itemId], itemId, previous.timeline) !==
+      getItemPreviewSignature(next.itemsById[itemId], itemId, next.timeline)
     );
   });
 }
@@ -99,15 +112,16 @@ function affectsAllRenders(previous: SavedProjectState, next: SavedProjectState)
 export function applySavedProjectHydrate(
   state: SavedProjectState,
   project: SavedProject,
+  timeline: SavedTimeline = EMPTY_TIMELINE,
 ): SavedProjectState {
-  return createSavedProjectState(project, state.syncGeneration + 1);
+  return createSavedProjectState(project, timeline, state.syncGeneration + 1);
 }
 
 export function applySavedProjectSaveResult(
   state: SavedProjectState,
   result: SaveProjectResult,
 ): SavedProjectState {
-  const next = createSavedProjectState(result.project, state.syncGeneration + 1);
+  const next = createSavedProjectState(result.project, result.timeline, state.syncGeneration + 1);
   const nextItemRevision = { ...next.itemRevision };
 
   for (const itemId of Object.keys(nextItemRevision)) {
@@ -129,8 +143,9 @@ export function applySavedProjectSaveResult(
 export function applySavedProjectExternalUpdate(
   state: SavedProjectState,
   project: SavedProject,
+  timeline: SavedTimeline = EMPTY_TIMELINE,
 ): SavedProjectState {
-  const next = createSavedProjectState(project, state.syncGeneration + 1);
+  const next = createSavedProjectState(project, timeline, state.syncGeneration + 1);
   const nextItemRevision = { ...next.itemRevision };
   const itemIds = new Set([...Object.keys(state.itemRevision), ...Object.keys(nextItemRevision)]);
 
@@ -140,8 +155,8 @@ export function applySavedProjectExternalUpdate(
       continue;
     }
     const changed =
-      getItemPreviewSignature(state.itemsById[itemId], itemId) !==
-      getItemPreviewSignature(next.itemsById[itemId], itemId);
+      getItemPreviewSignature(state.itemsById[itemId], itemId, state.timeline) !==
+      getItemPreviewSignature(next.itemsById[itemId], itemId, next.timeline);
     nextItemRevision[itemId] = changed ? previousRevision + 1 : previousRevision;
   }
 
@@ -157,7 +172,7 @@ export function applySavedProjectExternalUpdate(
 export function selectHasUnresolvedAudio(state: SavedProjectState) {
   return Object.values(state.itemsById).some(
     (item) =>
-      isSavedContentPage(item) &&
+      item.type !== "transition" &&
       item.tts.some((tts) => tts.audio.status === "analyzing" || tts.audio.status === "pending"),
   );
 }
@@ -178,7 +193,7 @@ export function selectPageThumbnailBinding(
     pageId,
     itemRevision: state.itemRevision[pageId] ?? 0,
     renderRevision: state.renderRevision,
-    hasSavedContentPage: Boolean(item && isSavedContentPage(item)),
+    hasSavedContentPage: Boolean(item && item.type !== "transition"),
   };
 }
 
@@ -188,7 +203,7 @@ export function selectPageThumbnailBindingKey(state: SavedProjectState, pageId: 
     pageId,
     state.itemRevision[pageId] ?? 0,
     state.renderRevision,
-    item && isSavedContentPage(item) ? 1 : 0,
+    item && item.type !== "transition" ? 1 : 0,
   ].join(":");
 }
 

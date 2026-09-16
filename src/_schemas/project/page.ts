@@ -12,9 +12,7 @@ const savedPageSharedSchema = {
   title: z.string().default(""),
   padBeforeSec: z.number().nonnegative(),
   padAfterSec: z.number().nonnegative(),
-  durationSec: z.number().nonnegative(),
   richText: z.string().nullable(),
-  tts: z.array(savedTtsSchema),
 };
 
 export const savedPageSchema = z.discriminatedUnion("type", [
@@ -22,26 +20,31 @@ export const savedPageSchema = z.discriminatedUnion("type", [
     ...savedPageSharedSchema,
     type: z.literal("intro"),
     meta: pageTagsMetaSchema,
+    tts: z.array(savedTtsSchema).min(1),
   }),
   z.object({
     ...savedPageSharedSchema,
     type: z.literal("eyecatch-text"),
     meta: pageTagsMetaSchema,
+    tts: z.array(savedTtsSchema),
   }),
   z.object({
     ...savedPageSharedSchema,
     type: z.literal("main"),
     meta: pageTagsMetaSchema,
+    tts: z.array(savedTtsSchema).min(1),
   }),
   z.object({
     ...savedPageSharedSchema,
     type: z.literal("outro"),
     meta: outroPageMetaSchema,
+    tts: z.array(savedTtsSchema),
   }),
   z.object({
     ...savedPageSharedSchema,
     type: z.literal("endcard"),
     meta: endcardPageMetaSchema,
+    tts: z.array(savedTtsSchema),
   }),
 ]);
 

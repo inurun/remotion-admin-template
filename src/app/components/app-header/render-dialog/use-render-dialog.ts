@@ -1,4 +1,3 @@
-import { getProjectOutputVideoFileName } from "@/_shared/project/project-path";
 import { useProject } from "@/app/features/project";
 import { useRender } from "@/app/features/render";
 import {
@@ -8,7 +7,11 @@ import {
 } from "@/app/components/app-header/render-dialog/use-render-dialog.lib";
 
 function getVideoFileName(projectPath: string | null) {
-  return projectPath ? getProjectOutputVideoFileName(projectPath) : "latest.mp4";
+  if (!projectPath) {
+    return "latest.mp4";
+  }
+  const stem = projectPath.split("/").filter(Boolean).at(-1) ?? "project";
+  return `${stem}.mp4`;
 }
 
 export function useRenderDialog() {

@@ -1,9 +1,8 @@
 import type { EndcardAdvertiser, EndcardCredit, EndcardMessage } from "@/_schemas";
-import { createUuid } from "@/_shared/lib/utils";
 
 export function createBlankEndcardCredit(partial?: Partial<EndcardCredit>): EndcardCredit {
   return {
-    id: createUuid(),
+    id: crypto.randomUUID(),
     title: "",
     url: "",
     ...partial,
@@ -14,8 +13,8 @@ export function createBlankEndcardAdvertiser(
   partial?: Partial<EndcardAdvertiser>,
 ): EndcardAdvertiser {
   return {
-    id: createUuid(),
-    identityKey: `manual:${createUuid()}`,
+    id: crypto.randomUUID(),
+    identityKey: `manual:${crypto.randomUUID()}`,
     introductionCount: 0,
     name: "",
     message: "",
@@ -25,7 +24,7 @@ export function createBlankEndcardAdvertiser(
 
 export function createBlankEndcardMessage(partial?: Partial<EndcardMessage>): EndcardMessage {
   return {
-    id: createUuid(),
+    id: crypto.randomUUID(),
     text: "",
     ...partial,
   };

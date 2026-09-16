@@ -1,6 +1,6 @@
 import type { VoiceOption, VoicepeakSynthesisSettings } from "@/_schemas";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { Input } from "@/_shared/components/ui/input";
+import { Input } from "@/app/components/ui/input";
 
 type SynthesisSettings = NonNullable<TtsFormValues["synthesisSettings"]>;
 type SynthesisSettingsKey = string;

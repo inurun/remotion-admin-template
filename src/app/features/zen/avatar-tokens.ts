@@ -1,5 +1,5 @@
 import { avatarOptions, type AvatarSettings, type AvatarType } from "@/_schemas";
-import { getOpenedMouthOptions, resolveAvatarSettings } from "@/_shared/lib/avatar/avatar-settings";
+import { getOpenedMouthOptions, resolveAvatarSettings } from "@/app/features/zen/avatar-settings";
 
 export const avatarTokenFields = { b: "base", e: "eyes", m: "mouth" } as const;
 

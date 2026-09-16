@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { DragDropProvider, type DragEndEvent } from "@dnd-kit/react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { EndcardListItem } from "./endcard-list-item/endcard-list-item";
 
 type EndcardListField = {

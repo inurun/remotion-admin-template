@@ -1,4 +1,4 @@
-import { Input } from "@/_shared/components/ui/input";
+import { Input } from "@/app/components/ui/input";
 import { StatusMessage } from "@/app/components/app-editor/config-card/analysis-field/status-message/status-message";
 import { G2pPhraseView } from "@/app/components/app-editor/config-card/analysis-field/g2p-analysis-editor/g2p-phrase-view/g2p-phrase-view";
 import { G2pTextHighlight } from "@/app/components/app-editor/config-card/analysis-field/g2p-analysis-editor/g2p-text-highlight/g2p-text-highlight";

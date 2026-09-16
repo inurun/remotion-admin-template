@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/_shared/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { ScheduleCalendar } from "@/app/components/app-schedule/schedule-calendar/schedule-calendar";
 import { ScheduleMonthList } from "@/app/components/app-schedule/schedule-month-list/schedule-month-list";
 import { useAppSchedule } from "@/app/components/app-schedule/use-app-schedule";

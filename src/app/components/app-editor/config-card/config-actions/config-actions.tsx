@@ -1,5 +1,5 @@
 import { Sparkles, FlaskConical, Volume2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { useConfigTtsActions } from "@/app/components/app-editor/config-card/config-actions/use-config-actions";
 import { TtsSettingsDialog } from "@/app/components/app-editor/config-card/tts-settings-dialog/tts-settings-dialog";
 

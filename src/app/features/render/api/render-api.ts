@@ -1,5 +1,5 @@
-import { api } from "@/_shared/lib/api-client";
-import { parseApiJson } from "@/_shared/lib/fetch-json";
+import { api } from "@/app/lib/api-client";
+import { parseApiJson } from "@/app/lib/fetch-json";
 
 export type RenderState = {
   lastError: string | null;

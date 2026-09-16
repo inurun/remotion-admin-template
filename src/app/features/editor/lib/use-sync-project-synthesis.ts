@@ -29,7 +29,7 @@ export function useSyncProjectSynthesis() {
     const poll = async () => {
       const startedSyncGeneration = savedStore.getState().syncGeneration;
       try {
-        const project = await fetchProject(projectPath);
+        const document = await fetchProject(projectPath);
         if (cancelled) {
           return;
         }
@@ -37,13 +37,13 @@ export function useSyncProjectSynthesis() {
         const update = resolveSynthesisPollUpdate({
           startedSyncGeneration,
           current,
-          project,
+          project: document.project,
         });
         if (!update.apply) {
           return;
         }
-        savedStore.getState().applyExternalProject(project);
-        editorStore.getState().applyExternalSavedSpeech(current.itemsById, project);
+        savedStore.getState().applyExternalProject(document.project, document.timeline);
+        editorStore.getState().applyExternalSavedSpeech(current.itemsById, document.project);
         for (const item of update.failedToasts) {
           toast.error(item.message);
         }

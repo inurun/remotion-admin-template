@@ -1,9 +1,4 @@
-import {
-  isSavedContentPage,
-  type DictionaryWord,
-  type SavedSequenceItem,
-  type SavedTts,
-} from "@/_schemas";
+import { type DictionaryWord, type SavedSequenceItem, type SavedTts } from "@/_schemas";
 import { getEffectiveReadText } from "@/server/features/tts/providers/comparison";
 
 export type AutomaticG2pUtterance = {
@@ -84,7 +79,7 @@ export function buildAutomaticG2pContext(
   const pagesWithTargets = new Set(targets.map((target) => target.pageId));
 
   return pages.flatMap((page) => {
-    if (!isSavedContentPage(page) || !pagesWithTargets.has(page.id)) {
+    if (page.type === "transition" || !pagesWithTargets.has(page.id)) {
       return [];
     }
 

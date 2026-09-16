@@ -1,5 +1,5 @@
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Textarea } from "@/_shared/components/ui/textarea";
+import { Field, FieldError } from "@/app/components/ui/field";
+import { Textarea } from "@/app/components/ui/textarea";
 import { useTtsTextField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-text-field/use-tts-text-field";
 
 export function TtsTextField({

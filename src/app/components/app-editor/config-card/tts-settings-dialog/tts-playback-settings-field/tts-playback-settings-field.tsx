@@ -1,7 +1,7 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Field } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
+import { Field } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
 import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 const TTS_PLAYBACK_FIELDS = [

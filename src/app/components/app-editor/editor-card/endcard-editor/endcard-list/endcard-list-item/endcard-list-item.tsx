@@ -1,5 +1,5 @@
 import { GripVertical, Trash2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { cn } from "@/_shared/lib/utils";
 import { useEndcardListItem } from "./use-endcard-list-item";
 

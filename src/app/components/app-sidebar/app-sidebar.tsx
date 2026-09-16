@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Accordion } from "@/_shared/components/ui/accordion";
+import { Accordion } from "@/app/components/ui/accordion";
 import {
   Sidebar,
   SidebarContent,
@@ -10,7 +10,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-} from "@/_shared/components/ui/sidebar";
+} from "@/app/components/ui/sidebar";
 import { AddProjectDialog } from "@/app/components/app-sidebar/add-dialog/add-dialog";
 import { Directory } from "@/app/components/app-sidebar/directory/directory";
 import { SettingsDialog } from "@/app/components/app-sidebar/settings-dialog/settings-dialog";
@@ -19,7 +19,7 @@ import {
   useAppSidebarShell,
 } from "@/app/components/app-sidebar/use-app-sidebar";
 import { BookOpen, CalendarDays } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 
 function AppSidebarContent() {
   const { projects, projectPath, groups } = useAppSidebarContent();

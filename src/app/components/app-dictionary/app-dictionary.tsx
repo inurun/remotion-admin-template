@@ -1,10 +1,10 @@
 import { Plus, Save, Trash2, Volume2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/_shared/components/ui/card";
-import { Input } from "@/_shared/components/ui/input";
-import { Switch } from "@/_shared/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/_shared/components/ui/tabs";
-import { Textarea } from "@/_shared/components/ui/textarea";
+import { Button } from "@/app/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Textarea } from "@/app/components/ui/textarea";
 import { AnalysisResult, DictionaryEditor } from "./dictionary-editor";
 import { type DictionaryKind, useAppDictionary } from "./use-app-dictionary";
 

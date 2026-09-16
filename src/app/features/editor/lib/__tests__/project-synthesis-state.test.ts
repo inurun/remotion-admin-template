@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_TIMELINE } from "@/_schemas";
 import { createSavedProjectState } from "@/app/features/editor/store/saved-project-state";
 import {
   collectPendingToFailedToasts,
@@ -82,7 +83,7 @@ describe("project synthesis toasts", () => {
         }),
       ],
     });
-    const current = createSavedProjectState(pending, 2);
+    const current = createSavedProjectState(pending, EMPTY_TIMELINE, 2);
 
     expect(
       resolveSynthesisPollUpdate({

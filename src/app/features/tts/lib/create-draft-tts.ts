@@ -1,6 +1,5 @@
 import type { VoiceOption } from "@/_schemas";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { createUuid } from "@/_shared/lib/utils";
 
 const emptyVoice = {
   provider: "voisona" as const,
@@ -28,7 +27,7 @@ export function createTtsInput(
   const voice = getInitialVoice(options, sourceTts);
 
   return {
-    id: createUuid(),
+    id: crypto.randomUUID(),
     provider: voice.provider,
     text: "",
     readText: "",

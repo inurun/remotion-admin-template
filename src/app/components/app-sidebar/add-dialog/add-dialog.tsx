@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,8 +9,8 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Input } from "@/_shared/components/ui/input";
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
 import { useAddProjectDialog } from "@/app/components/app-sidebar/add-dialog/use-add-project-dialog";
 
 export function AddProjectDialog() {

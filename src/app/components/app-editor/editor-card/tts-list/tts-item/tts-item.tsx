@@ -1,5 +1,5 @@
 import { GripVertical, Trash2 } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { cn } from "@/_shared/lib/utils";
 import { TtsTextField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-text-field/tts-text-field";
 import { TtsVoiceField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-voice-field/tts-voice-field";

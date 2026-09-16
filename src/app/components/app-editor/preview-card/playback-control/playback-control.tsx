@@ -1,5 +1,5 @@
 import { Pause, Play } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { usePlaybackControl } from "./use-playback-control";
 
 export function PlaybackControl() {

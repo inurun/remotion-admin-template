@@ -1,5 +1,5 @@
 import { Link, Unlink } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 
 export function ChainButton({
   chained,

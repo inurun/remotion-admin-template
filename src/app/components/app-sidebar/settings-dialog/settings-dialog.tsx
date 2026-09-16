@@ -1,5 +1,5 @@
 import { Settings } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,8 +9,8 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Separator } from "@/_shared/components/ui/separator";
+} from "@/app/components/ui/dialog";
+import { Separator } from "@/app/components/ui/separator";
 import { AppearanceSection } from "@/app/components/app-sidebar/settings-dialog/appearance-section/appearance-section";
 import { HotkeysSection } from "@/app/components/app-sidebar/settings-dialog/hotkeys-section/hotkeys-section";
 import { useSettingsDialog } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";

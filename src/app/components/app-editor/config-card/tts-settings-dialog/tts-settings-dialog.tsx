@@ -1,5 +1,5 @@
 import { SlidersHorizontal } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 import { TtsPlaybackSettingsField } from "@/app/components/app-editor/config-card/tts-settings-dialog/tts-playback-settings-field/tts-playback-settings-field";
 import { useTtsSettingsDialog } from "@/app/components/app-editor/config-card/tts-settings-dialog/use-tts-settings-dialog";

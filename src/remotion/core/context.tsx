@@ -1,12 +1,17 @@
 import { createContext, useContext, type PropsWithChildren } from "react";
-import type { SavedProject } from "@/_schemas";
+import type { SavedProject, SavedTimeline } from "@/_schemas";
 
-const ProjectContext = createContext<SavedProject | null>(null);
+export type RemotionProjectInput = {
+  project: SavedProject;
+  timeline: SavedTimeline;
+};
+
+const ProjectContext = createContext<RemotionProjectInput | null>(null);
 
 export const ProjectProvider = ({
   children,
   value,
-}: PropsWithChildren<{ value: SavedProject }>) => {
+}: PropsWithChildren<{ value: RemotionProjectInput }>) => {
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
 };
 
@@ -17,5 +22,15 @@ export const useProject = () => {
     throw new Error("useProject must be used within ProjectProvider.");
   }
 
-  return context;
+  return context.project;
+};
+
+export const useTimeline = () => {
+  const context = useContext(ProjectContext);
+
+  if (!context) {
+    throw new Error("useTimeline must be used within ProjectProvider.");
+  }
+
+  return context.timeline;
 };

@@ -1,5 +1,5 @@
 import { PocketKnife } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import { ZenEditor } from "@/app/features/zen/components/zen-editor/zen-editor";
 import { useZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/use-zen-dialog";
 

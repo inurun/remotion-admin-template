@@ -1,11 +1,11 @@
-import { Field, FieldError } from "@/_shared/components/ui/field";
+import { Field, FieldError } from "@/app/components/ui/field";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/_shared/components/ui/select";
+} from "@/app/components/ui/select";
 import { getVoiceValue } from "@/app/features/editor";
 import { useTtsVoiceField } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-voice-field/use-tts-voice-field";
 

@@ -1,5 +1,5 @@
 import { RefreshCw, Tv } from "lucide-react";
-import { Button } from "@/_shared/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -9,10 +9,10 @@ import {
   DialogMain,
   DialogTitle,
   DialogTrigger,
-} from "@/_shared/components/ui/dialog";
-import { Field, FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
-import { Textarea } from "@/_shared/components/ui/textarea";
+} from "@/app/components/ui/dialog";
+import { Field, FieldError } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import { useNiconicoDialog } from "./use-niconico-dialog";
 
 export function NiconicoDialog() {

@@ -6,13 +6,13 @@ import { SynthesisSettingsFields } from "@/app/features/settings/components/synt
 import {
   getEffectiveTtsSynthesisSettings,
   getVoicePresetSettings,
-} from "@/_shared/project/voice-presets";
+} from "@/app/features/tts/lib/synthesis-settings";
 import { useEditorSession } from "@/app/features/editor";
 import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 export function getDisplayedTtsSynthesisSettings(
   item: Pick<TtsFormValues, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
-  presets: VoicePreset[],
+  presets: Record<string, VoicePreset>,
 ) {
   return getEffectiveTtsSynthesisSettings(item, presets);
 }

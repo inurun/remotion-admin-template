@@ -20,7 +20,7 @@ import {
   useAnalyzeTextMutation,
   useLlmAnalyzeMutation,
 } from "@/app/features/tts/swr/use-tts-mutations";
-import { resolveTtsSynthesisSettings } from "@/_shared/project/voice-presets";
+import { resolveTtsSynthesisSettings } from "@/app/features/tts/lib/synthesis-settings";
 import { useSettings } from "@/app/features/settings";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import { useSelectedTtsState } from "@/app/features/tts/context/selected-tts-state";

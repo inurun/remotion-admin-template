@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/_shared/components/ui/card";
-import { Collapsible, CollapsibleContent } from "@/_shared/components/ui/collapsible";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Collapsible, CollapsibleContent } from "@/app/components/ui/collapsible";
 import { SelectedTtsContextProvider } from "@/app/features/tts";
 import { ConfigActions } from "@/app/components/app-editor/config-card/config-actions/config-actions";
 import { ReadTextField } from "@/app/components/app-editor/config-card/read-text-field/read-text-field";

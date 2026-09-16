@@ -2,16 +2,15 @@ import { useMemo } from "react";
 import { Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Audio } from "@remotion/media";
 import type { BgmTrack } from "@/_schemas";
-import { assetPath, type AssetFile } from "@/_shared/lib/assets/path";
 import { secondsToFrames } from "@/remotion/utils/timing";
 import { collectDuckableIntervals } from "@/remotion/utils/ducking/collect-duckable-intervals";
 import { computeDuckAmount } from "@/remotion/utils/ducking/compute-duck-amount";
 import { computeFadeFactor } from "@/remotion/utils/ducking/compute-fade-factor";
-import { useProject } from "@/remotion/core/context";
+import { useProject, useTimeline } from "@/remotion/core/context";
 import { BGM_DUCK, BGM_FADE_SEC } from "./layer-bgm.constants";
 
 function getBgmAssetPath(src: string) {
-  return assetPath(`bgm/${src}` as AssetFile);
+  return `/bgm/${src}`;
 }
 
 function BgmTrack({
@@ -72,13 +71,17 @@ function BgmTrack({
 
 export function BgmLayer() {
   const project = useProject();
+  const timeline = useTimeline();
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const holdFrames = Math.round(BGM_DUCK.holdSec * fps);
   const fadeDownFrames = Math.round(BGM_DUCK.downSec * fps);
   const fadeUpFrames = Math.round(BGM_DUCK.releaseSec * fps);
 
-  const duckableIntervals = useMemo(() => collectDuckableIntervals(project, fps), [project, fps]);
+  const duckableIntervals = useMemo(
+    () => collectDuckableIntervals(project, timeline, fps),
+    [project, timeline, fps],
+  );
 
   const duckAmount = useMemo(
     () =>

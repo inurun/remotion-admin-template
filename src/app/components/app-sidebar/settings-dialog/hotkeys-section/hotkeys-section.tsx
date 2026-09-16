@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
-import { Button } from "@/_shared/components/ui/button";
-import { HotkeyInput } from "@/_shared/components/ui/hotkey-input";
+import { Button } from "@/app/components/ui/button";
+import { HotkeyInput } from "@/app/components/ui/hotkey-input";
 import { APP_HOTKEY_LABELS } from "@/app/features/settings";
 import type { SettingsFormValues } from "@/app/components/app-sidebar/settings-dialog/use-settings-dialog";
 import { useHotkeysSection } from "@/app/components/app-sidebar/settings-dialog/hotkeys-section/use-hotkeys-section";

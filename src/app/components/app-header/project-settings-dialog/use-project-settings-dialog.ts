@@ -9,7 +9,7 @@ import {
   getProjectVideoSizePresetId,
   normalizeProjectMeta,
   type VideoSizePresetId,
-} from "@/_shared/project/project-meta";
+} from "@/app/features/project/lib/normalize-project-meta";
 import { useEditor, useEditorSession } from "@/app/features/editor";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
 import { selectHasUnresolvedAudio } from "@/app/features/editor/store/saved-project-state";

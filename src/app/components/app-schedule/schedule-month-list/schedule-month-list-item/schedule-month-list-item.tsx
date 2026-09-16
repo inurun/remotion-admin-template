@@ -1,7 +1,7 @@
 import { Pencil, Trash2 } from "lucide-react";
 import type { SavedScheduleItem } from "@/_schemas";
-import { Button } from "@/_shared/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/_shared/components/ui/popover";
+import { Button } from "@/app/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { formatScheduleDateRangeLabel, type ScheduleFormValues } from "@/app/features/schedule";
 import { ScheduleForm } from "@/app/components/app-schedule/schedule-day-popover/schedule-form/schedule-form";
 import { useScheduleMonthListItem } from "@/app/components/app-schedule/schedule-month-list/schedule-month-list-item/use-schedule-month-list-item";

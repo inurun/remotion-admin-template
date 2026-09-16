@@ -1,4 +1,3 @@
-import { isSavedContentPage } from "@/_schemas";
 import type { SavedProject } from "@/_schemas";
 import type { SavedProjectState } from "@/app/features/editor/store/saved-project-state";
 
@@ -16,7 +15,7 @@ function truncateLabel(value: string, maxLength: number) {
 export function collectPendingToFailedToasts(previous: SavedProjectState, project: SavedProject) {
   const previousTts = new Map(
     Object.values(previous.itemsById).flatMap((item) => {
-      if (!isSavedContentPage(item)) {
+      if (item.type === "transition") {
         return [];
       }
       return item.tts.map((tts) => [tts.id, tts] as const);
@@ -24,7 +23,7 @@ export function collectPendingToFailedToasts(previous: SavedProjectState, projec
   );
 
   return project.pages.flatMap((page) => {
-    if (!isSavedContentPage(page)) {
+    if (page.type === "transition") {
       return [];
     }
 

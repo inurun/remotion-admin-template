@@ -1,15 +1,15 @@
 import { Controller, type Control, type UseFormReturn } from "react-hook-form";
-import { Button } from "@/_shared/components/ui/button";
-import { FieldError } from "@/_shared/components/ui/field";
-import { Input } from "@/_shared/components/ui/input";
+import { Button } from "@/app/components/ui/button";
+import { FieldError } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/_shared/components/ui/select";
-import { WEATHER_LOCATIONS } from "@/features/weather";
+} from "@/app/components/ui/select";
+import { WEATHER_LOCATIONS } from "./weather-dialog.lib";
 import type { WeatherFormValues } from "./weather-dialog.lib";
 
 const WEATHER_CONDITIONS = ["clear", "cloudy", "rain", "storm", "snow"] as const;
