@@ -18,7 +18,7 @@ export function PageThumbnail(props: PageThumbnailProps) {
         <div className="remotion-surface size-full">
           <Thumbnail
             component={remotionInput.component}
-            inputProps={{ project: remotionInput.project, timeline: remotionInput.timeline }}
+            inputProps={remotionInput.inputProps}
             durationInFrames={remotionInput.durationInFrames}
             fps={VIDEO_FPS}
             compositionWidth={remotionInput.project.meta.width}

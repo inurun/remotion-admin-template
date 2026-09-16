@@ -1,7 +1,8 @@
-import { useMemo, useState, type ComponentType } from "react";
-import type { SavedProject, SavedTimeline } from "@/_schemas";
+import { useMemo, useState } from "react";
+import type { SavedProject, SavedSchedules, SavedTimeline } from "@/_schemas";
 import { VIDEO_FPS } from "@/constants";
 import { useRemotionComposition } from "@/app/features/remotion/hook/use-remotion-composition";
+import type { RemotionCompositionComponent } from "@/app/features/remotion/hook/remotion-composition-loader";
 import { reconstructSavedProject } from "@/app/features/editor/store/saved-project-state";
 import {
   useSavedProject,
@@ -11,6 +12,7 @@ import {
   DEFAULT_PREVIEW_PLAYBACK_RATE,
   type PreviewPlaybackRate,
 } from "@/app/components/app-editor/preview-card/preview-card.lib";
+import { useSchedulesQuery } from "@/app/features/schedule/swr/use-schedule-queries";
 
 export function usePreviewCard() {
   const component = useRemotionComposition();
@@ -20,6 +22,7 @@ export function usePreviewCard() {
   const projectSettings = useSavedProject((state) => state.project);
   const itemsById = useSavedProject((state) => state.itemsById);
   const timeline = useSavedProject((state) => state.timeline);
+  const { schedules } = useSchedulesQuery();
   const previewProject = useMemo(
     () => reconstructSavedProject(savedStore.getState()),
     [itemsById, projectSettings, renderRevision, savedStore, sequenceOrder],
@@ -33,6 +36,7 @@ export function usePreviewCard() {
     durationInFrames,
     previewProject,
     timeline,
+    schedules,
   };
 }
 
@@ -48,8 +52,9 @@ export function usePreviewPlayerArea() {
 }
 
 export type PreviewPlayerAreaProps = {
-  component: ComponentType<{ project: SavedProject; timeline: SavedTimeline }>;
+  component: RemotionCompositionComponent;
   durationInFrames: number;
   project: SavedProject;
   timeline: SavedTimeline;
+  schedules: SavedSchedules;
 };

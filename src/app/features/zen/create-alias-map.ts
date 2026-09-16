@@ -1,5 +1,4 @@
-import type { VoiceOption } from "@/_schemas";
-import { getAvatarTypeByVoiceName } from "@/app/features/zen/avatar-settings";
+import { getAvatarTypeByVoiceName, type VoiceOption } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import type { VoiceSettings } from "@/app/features/settings/storage/use-settings-store";
 import type { ZenAliasTarget, ZenParseError } from "@/app/features/zen/types";

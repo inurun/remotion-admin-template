@@ -1,12 +1,13 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { avatarOptions, type AvatarSettings } from "@/_schemas";
-import { Field } from "@/app/components/ui/field";
 import {
+  avatarOptions,
   getAvatarTypeByVoiceName,
   getOpenedMouthOptions,
   resolveAvatarSettings,
-} from "@/app/features/zen/avatar-settings";
+  type AvatarSettings,
+} from "@/_schemas";
+import { Field } from "@/app/components/ui/field";
 import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 function AvatarSelect({

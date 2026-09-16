@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { formatTokyoYmd, formatTokyoYearMonth, toTimestampMs, tokyoDateFromYmd } from "../date";
+import {
+  formatClock,
+  formatTokyoYmd,
+  formatTokyoYearMonth,
+  toTimestampMs,
+  tokyoDateFromYmd,
+} from "../date";
 
 describe("tokyo date helpers", () => {
   it("formats ymd and year-month in Asia/Tokyo", () => {
@@ -16,5 +22,9 @@ describe("tokyo date helpers", () => {
 
   it("builds a Tokyo calendar date from ymd", () => {
     expect(formatTokyoYmd(tokyoDateFromYmd("2026-08-18"))).toBe("2026-08-18");
+  });
+
+  it("formats a clock in the display time zone", () => {
+    expect(formatClock("2026-07-27T18:40:00+09:00")).toBe("18:40:00");
   });
 });

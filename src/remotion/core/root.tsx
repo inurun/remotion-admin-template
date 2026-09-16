@@ -4,6 +4,7 @@ import {
   DEFAULT_VOICE_PRESETS,
   EMPTY_TIMELINE,
   savedProjectSchema,
+  savedSchedulesSchema,
   savedTimelineSchema,
   type SavedTimeline,
 } from "@/_schemas";
@@ -33,6 +34,7 @@ export function RemotionRoot() {
           voicePresets: DEFAULT_VOICE_PRESETS,
         },
         timeline: EMPTY_TIMELINE,
+        schedules: { items: [] },
       }}
       calculateMetadata={({ props }) => {
         const project = savedProjectSchema.parse(
@@ -43,8 +45,9 @@ export function RemotionRoot() {
             ? props.timeline
             : timelineJson,
         );
+        const schedules = savedSchedulesSchema.parse(props.schedules ?? {});
         return {
-          props: { project, timeline },
+          props: { ...props, project, timeline, schedules },
           durationInFrames: calculateDurationInFrames(timeline),
           width: project.meta.width,
           height: project.meta.height,

@@ -17,6 +17,14 @@ export {
   type SavedTimelineTrack,
 } from "./timeline";
 export {
+  DEFAULT_AVATAR_TYPE,
+  getAvatarTypeByVoiceName,
+  getOpenedMouthOptions,
+  resolveAvatarSettings,
+  voiceNameAvatarMap,
+  WEATHER_LOCATIONS,
+} from "./catalog";
+export {
   avatarOptions,
   avatarSettingsSchema,
   bgmTrackSchema,

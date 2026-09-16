@@ -1,10 +1,7 @@
 import type { ComponentType } from "react";
-import type { SavedProject, SavedTimeline } from "@/_schemas";
+import type { RemotionCompositionProps } from "@/remotion/core/context";
 
-export type RemotionCompositionComponent = ComponentType<{
-  project: SavedProject;
-  timeline: SavedTimeline;
-}>;
+export type RemotionCompositionComponent = ComponentType<RemotionCompositionProps>;
 
 export function createRemotionCompositionLoader(
   importComposition: () => Promise<{ Composition: RemotionCompositionComponent }>,

@@ -10,6 +10,7 @@
 pnpm install
 pnpm dev
 pnpm studio
+pnpm migrate:project
 ```
 
 ## 派生プロジェクトの作り方
@@ -50,12 +51,11 @@ data/project.json merge=ours
 AGENTS.md merge=ours
 ```
 
-案件でカタログを上書きするなら足す。diary では次も指定している。
+案件でカタログを上書きするなら足す。
 
 ```gitattributes
 public/avatars/** merge=ours
-src/_shared/lib/avatar/** merge=ours
-src/features/weather/weather-locations.ts merge=ours
+src/_schemas/catalog/** merge=ours
 ```
 
 `merge=ours` は Git の組み込みドライバ名だけで動かない。**派生リポジトリの各 clone で** 次を一度実行する。
@@ -74,19 +74,28 @@ git config merge.ours.driver true
 
 ### 3. 派生側で置き換える場所
 
-| 場所                                        | 役割                                                                |
-| ------------------------------------------- | ------------------------------------------------------------------- |
-| `src/remotion/**`                           | 映像の本体。stub の intro / main / outro を案件パターンに差し替える |
-| `data/project.json`                         | 初期データ。実プロジェクトデータは派生の private に置く             |
-| `src/app/core/layout.tsx`                   | タイトルなどのブランディング                                        |
-| `public/avatars/**`                         | アバター画像（使う場合）                                            |
-| `src/_shared/lib/avatar/**`                 | アバターカタログ                                                    |
-| `src/features/weather/weather-locations.ts` | 天気ロケーション                                                    |
-| `AGENTS.md`                                 | 派生の運用メモ                                                      |
+| 場所                      | 役割                                                                |
+| ------------------------- | ------------------------------------------------------------------- |
+| `src/remotion/**`         | 映像の本体。stub の intro / main / outro を案件パターンに差し替える |
+| `data/project.json`       | 初期データ。実プロジェクトデータは派生の private に置く             |
+| `src/app/core/layout.tsx` | タイトルなどのブランディング                                        |
+| `public/avatars/**`       | アバター画像（使う場合）                                            |
+| `src/_schemas/catalog/**` | アバター・天気地点・voice presets のインスタンス定数                |
+| `AGENTS.md`               | 派生の運用メモ                                                      |
 
-管理画面（`src/app`、`src/server`、汎用の `src/_shared`）はテンプレ更新を受け取る前提で触る。派生だけで足した配線（preview への追加 props など）は取り込み時に残す。
+管理画面（`src/app`、`src/server`、汎用の `src/_shared`）はテンプレ更新を受け取る前提で触る。派生だけで足した配線は取り込み時に残す。preview / render の composition props は `{ project, timeline, schedules }` に加え、未知キーを通せる。
 
-ページ種別を派生だけで増やす場合、スキーマは `src/_schemas` にある。ここは `merge=ours` にしていないので、取り込み時はテンプレの type と派生の type を両方残す。
+ページ種別を派生だけで増やす場合、スキーマは `src/_schemas` にある。`catalog` 以外は `merge=ours` にしていないので、取り込み時はテンプレの type と派生の type を両方残す。
+
+映像専用ユーティリティ（text wrap、stamp レイアウト、asset path、TTS タイミング計算など）は `src/remotion` に置く。消えた `_shared` パスはテンプレに戻さない。日付の表示 TZ / 時計は `_shared/lib/date` に残してある。
+
+テンプレ更新で `project.json` の形が変わったら、派生側で:
+
+```bash
+pnpm migrate:project
+```
+
+`data/` のうち `savedProjectSchema` を満たす json だけを書き換える。`schedules.json` や将来の `render-state.json` は対象外。
 
 ### 4. テンプレ更新を取り込む
 

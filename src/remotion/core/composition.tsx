@@ -1,10 +1,5 @@
-import {
-  SEQUENCE_TRACK_ID,
-  type SavedPage,
-  type SavedProject,
-  type SavedTimeline,
-} from "@/_schemas";
-import { ProjectProvider } from "./context";
+import { SEQUENCE_TRACK_ID, type SavedPage } from "@/_schemas";
+import { ProjectProvider, type RemotionCompositionProps } from "./context";
 import { BgmLayer } from "../layers/layer-bgm/layer-bgm";
 import { IntroPage } from "../pages/intro/intro-page";
 import { MainPage } from "../pages/main/main-page";
@@ -28,13 +23,8 @@ function PageByType({ page }: { page: SavedPage }) {
   }
 }
 
-export function Composition({
-  project,
-  timeline,
-}: {
-  project: SavedProject;
-  timeline: SavedTimeline;
-}) {
+export function Composition(props: RemotionCompositionProps) {
+  const { project, timeline } = props;
   const timings = new Map(
     (timeline.tracks.find((track) => track.id === SEQUENCE_TRACK_ID)?.clips ?? []).map((clip) => [
       clip.id,
@@ -43,7 +33,7 @@ export function Composition({
   );
 
   return (
-    <ProjectProvider value={{ project, timeline }}>
+    <ProjectProvider value={props}>
       <BgmLayer />
       <TransitionSeries name="project">
         {project.pages.map((item, index) => {

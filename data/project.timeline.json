@@ -1,5 +1,5 @@
 {
-  "durationSec": 26.103333333333335,
+  "durationSec": 26.153333333333336,
   "tracks": [
     {
       "id": "sequence",
@@ -100,8 +100,15 @@
         {
           "id": "1b6584d9-cab1-49b8-953c-d833ae2bc3a7",
           "startSec": 20.653333333333336,
-          "durationSec": 5.45,
-          "clips": []
+          "durationSec": 5.5,
+          "clips": [
+            {
+              "id": "outro-page-0",
+              "startSec": 0.5,
+              "durationSec": 5,
+              "clips": []
+            }
+          ]
         }
       ]
     }

@@ -16,6 +16,7 @@
 - 尺は `{stem}.timeline.json`。計算は server の `toTimeline` のみ
 - `project.json` は編集する事実だけ持つ。`page.durationSec` / sequence start は持たない
 - `_schemas` は永続化契約（Zod・infer 型・定数データ）だけ。ヘルパー・DTO・parse 時 transform は置かない
+- `_schemas/catalog` だけ例外: この動画プロダクトのインスタンス定数（アバター・天気地点・voice presets）と自明な lookup。parse transform / DTO は置かない
 - `_shared` は app / server / remotion の2層以上が使う、ドメイン知識のないユーティリティだけ
 
 ### src/app

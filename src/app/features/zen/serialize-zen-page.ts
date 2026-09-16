@@ -1,10 +1,9 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { getAvatarTypeByVoiceName } from "@/app/features/zen/avatar-settings";
+import { getAvatarTypeByVoiceName, resolveAvatarSettings } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
 import { serializeAvatarTokens } from "@/app/features/zen/avatar-tokens";
-import { resolveAvatarSettings } from "@/app/features/zen/avatar-settings";
 import type { ZenAliasTarget, ZenSpeakerBlock } from "@/app/features/zen/types";
 
 function serializeSpeechText(text: string) {

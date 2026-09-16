@@ -1,7 +1,22 @@
-import { avatarOptions, type AvatarSettings, type AvatarType } from "@/_schemas";
+export const avatarOptions = {
+  demo: {
+    base: ["normal"],
+    eyes: ["opened", "shaded-opened"],
+    mouth: ["opened", "closed"],
+  },
+} as const;
 
-const DEFAULT_AVATAR_TYPE: AvatarType = "demo";
-const voiceNameAvatarMap: Record<string, AvatarType> = {};
+export type AvatarType = keyof typeof avatarOptions;
+
+export type AvatarAppearance = {
+  base: string;
+  eyes: string;
+  mouth: string;
+};
+
+export const DEFAULT_AVATAR_TYPE: AvatarType = "demo";
+
+export const voiceNameAvatarMap: Record<string, AvatarType> = {};
 
 function pickOption<T extends string>(
   options: readonly T[],
@@ -19,7 +34,7 @@ export function getOpenedMouthOptions(type: AvatarType) {
   return avatarOptions[type].mouth.filter((mouth) => mouth.endsWith("opened"));
 }
 
-function getDefaultAvatarSettings(type: AvatarType): AvatarSettings {
+function getDefaultAvatarSettings(type: AvatarType): AvatarAppearance {
   const options = avatarOptions[type];
   return {
     base: options.base[0],
@@ -30,8 +45,8 @@ function getDefaultAvatarSettings(type: AvatarType): AvatarSettings {
 
 export function resolveAvatarSettings(
   type: AvatarType,
-  value: AvatarSettings | undefined,
-): AvatarSettings {
+  value: AvatarAppearance | undefined,
+): AvatarAppearance {
   const options = avatarOptions[type];
   const openedMouthOptions = getOpenedMouthOptions(type);
   const defaults = getDefaultAvatarSettings(type);

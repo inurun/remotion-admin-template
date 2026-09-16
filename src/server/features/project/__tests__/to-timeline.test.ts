@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SavedPage, SavedProject } from "@/_schemas";
-import { EMPTY_TIMELINE, SEQUENCE_TRACK_ID } from "@/_schemas";
+import { EMPTY_TIMELINE, SEQUENCE_TRACK_ID, savedPageSchema } from "@/_schemas";
 import { EYECATCH_TEXT_MIN_DURATION_SEC, MIN_TTS_DURATION_SECONDS } from "@/constants";
 import { toTimeline } from "../to-timeline";
 
@@ -178,5 +178,75 @@ describe("toTimeline", () => {
     expect(timeline.tracks[0]?.clips[0]?.durationSec).toBeGreaterThanOrEqual(
       MIN_TTS_DURATION_SECONDS,
     );
+  });
+
+  it("writes outro visual clips and keeps hold/fade in page duration", () => {
+    const page = savedPageSchema.parse({
+      id: "outro",
+      title: "Outro",
+      type: "outro",
+      meta: {
+        tags: [],
+        blocks: [
+          { id: "a", url: "https://a.example", impression: "" },
+          { id: "b", url: "https://b.example", impression: "" },
+          { id: "c", url: "https://c.example", impression: "" },
+        ],
+      },
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    });
+    const clip = toTimeline(project([page])).tracks[0]?.clips[0];
+    expect(
+      clip?.clips.map(({ id, startSec, durationSec }) => ({ id, startSec, durationSec })),
+    ).toEqual([
+      { id: "outro-page-0", startSec: 0.5, durationSec: 5 },
+      { id: "outro-page-1", startSec: 5.5, durationSec: 5 },
+    ]);
+    expect(clip?.durationSec).toBe(10.5);
+  });
+
+  it("sizes endcard from advertiser pages minus slide overlap", () => {
+    const page = savedPageSchema.parse({
+      id: "endcard",
+      title: "Endcard",
+      type: "endcard",
+      meta: {
+        tags: [],
+        nicoadSource: "",
+        credits: [],
+        advertisers: [
+          {
+            id: "ad-1",
+            identityKey: "user:1",
+            introductionCount: 1,
+            name: "Ada",
+            message: "",
+          },
+          {
+            id: "ad-2",
+            identityKey: "user:2",
+            introductionCount: 1,
+            name: "Bob",
+            message: "",
+          },
+        ],
+        messages: [],
+      },
+      padBeforeSec: 0.5,
+      padAfterSec: 0.25,
+      richText: null,
+      tts: [],
+    });
+    const clip = toTimeline(project([page])).tracks[0]?.clips[0];
+    expect(
+      clip?.clips.map(({ id, startSec, durationSec }) => ({ id, startSec, durationSec })),
+    ).toEqual([
+      { id: "endcard-page-0", startSec: 0, durationSec: 8 },
+      { id: "endcard-page-1", startSec: 7.2, durationSec: 8 },
+    ]);
+    expect(clip?.durationSec).toBe(15.95);
   });
 });

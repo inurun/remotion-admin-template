@@ -1,11 +1,8 @@
 import { z } from "zod";
-import type { WeatherForecasts } from "@/_schemas";
-import { WEATHER_LOCATION_IDS, WEATHER_LOCATION_LABELS, weatherConditionSchema } from "@/_schemas";
+import { weatherConditionSchema, type WeatherForecasts } from "@/_schemas";
+import { WEATHER_LOCATION_IDS, WEATHER_LOCATIONS } from "@/_schemas/catalog/weather";
 
-export const WEATHER_LOCATIONS = WEATHER_LOCATION_IDS.map((id) => ({
-  id,
-  label: WEATHER_LOCATION_LABELS[id],
-}));
+export { WEATHER_LOCATIONS };
 
 const weatherFormEntrySchema = z
   .object({

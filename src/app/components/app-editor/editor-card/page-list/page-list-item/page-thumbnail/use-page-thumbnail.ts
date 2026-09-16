@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import type { SavedProject, SavedTimeline } from "@/_schemas";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { VIDEO_FPS } from "@/constants";
 import {
   reconstructSavedProject,
@@ -13,9 +12,12 @@ import {
   getPageThumbnailFrame,
   getProjectPageTimings,
 } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
+import { useSchedulesQuery } from "@/app/features/schedule/swr/use-schedule-queries";
+import { buildRemotionInputProps } from "@/app/features/remotion/lib/composition-input";
+import type { RemotionCompositionComponent } from "@/app/features/remotion/hook/remotion-composition-loader";
 
 export type PageThumbnailProps = {
-  component: ComponentType<{ project: SavedProject; timeline: SavedTimeline }>;
+  component: RemotionCompositionComponent;
   pageId: string;
   dirty: boolean;
 };
@@ -30,6 +32,7 @@ export function usePageThumbnail({ component, pageId, dirty }: PageThumbnailProp
     return Boolean(item && item.type !== "transition");
   });
   const savedStore = useSavedProjectStoreApi();
+  const { schedules } = useSchedulesQuery();
 
   useEffect(() => {
     const node = containerRef.current;
@@ -65,12 +68,16 @@ export function usePageThumbnail({ component, pageId, dirty }: PageThumbnailProp
     }
     return {
       component,
+      inputProps: buildRemotionInputProps({
+        project,
+        timeline: state.timeline,
+        schedules,
+      }),
       project,
-      timeline: state.timeline,
       durationInFrames,
       frameToDisplay: getPageThumbnailFrame(timing, VIDEO_FPS, durationInFrames),
     };
-  }, [component, itemRevision, mountRemotion, pageId, renderRevision, savedStore]);
+  }, [component, itemRevision, mountRemotion, pageId, renderRevision, savedStore, schedules]);
 
   return {
     containerRef,

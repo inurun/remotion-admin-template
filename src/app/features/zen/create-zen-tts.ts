@@ -1,9 +1,10 @@
-import type { AvatarSettings, VoiceOption } from "@/_schemas";
-import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import {
   getAvatarTypeByVoiceName,
   resolveAvatarSettings,
-} from "@/app/features/zen/avatar-settings";
+  type AvatarSettings,
+  type VoiceOption,
+} from "@/_schemas";
+import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createTtsInput } from "@/app/features/tts";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 

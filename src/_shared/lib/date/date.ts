@@ -39,3 +39,35 @@ export function nowIso(): string {
 export function toIso(value: string | number | Date): string {
   return new Date(toTimestampMs(value)).toISOString();
 }
+
+function readTimeZoneEnv() {
+  const processEnv =
+    typeof process !== "undefined" && process.env ? process.env : ({} as Record<string, string>);
+  const metaEnv =
+    typeof import.meta !== "undefined"
+      ? (import.meta.env as Record<string, string | undefined> | undefined)
+      : undefined;
+  return (
+    processEnv["DISPLAY_TIME_ZONE"] ??
+    metaEnv?.["DISPLAY_TIME_ZONE"] ??
+    metaEnv?.["VITE_DISPLAY_TIME_ZONE"]
+  );
+}
+
+export function resolveDisplayTimeZoneId() {
+  const value = readTimeZoneEnv()?.trim();
+  return value || TOKYO_TIME_ZONE;
+}
+
+export function formatInTimeZone(
+  value: string | number | Date,
+  pattern: string,
+  timeZone = resolveDisplayTimeZoneId(),
+) {
+  return format(new TZDate(toTimestampMs(value), timeZone), pattern);
+}
+
+/** e.g. `18:40:00` in the display time zone */
+export function formatClock(value: string | number | Date, timeZone = resolveDisplayTimeZoneId()) {
+  return formatInTimeZone(value, "HH:mm:ss", timeZone);
+}

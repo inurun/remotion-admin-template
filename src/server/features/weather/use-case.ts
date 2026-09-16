@@ -1,5 +1,5 @@
 import type { WeatherCondition, WeatherForecasts } from "@/_schemas";
-import { WEATHER_LOCATIONS } from "@/server/features/weather/weather-locations";
+import { WEATHER_LOCATIONS } from "@/_schemas/catalog/weather";
 import { openMeteoForecastResponseSchema } from "./contract";
 
 const OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast";

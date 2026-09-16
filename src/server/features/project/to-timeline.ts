@@ -40,49 +40,39 @@ function transitionDurationSec(variant: TransitionVariant) {
   return TRANSITION_DURATION_SEC[variant];
 }
 
-function getOutroContentDurationSec(blockCount: number) {
+function nestedEndSec(clips: SavedTimelineClip[]) {
+  return clips.reduce((endSec, clip) => Math.max(endSec, clip.startSec + clip.durationSec), 0);
+}
+
+function createOutroVisualClips(blockCount: number): SavedTimelineClip[] {
   const pageCount = Math.ceil(blockCount / OUTRO_BLOCKS_PER_PAGE);
-  if (pageCount <= 0) {
-    return 0;
-  }
-
-  return (
-    OUTRO_CARDS_DELAY_SEC +
-    pageCount * OUTRO_PAGE_DURATION_SEC +
-    OUTRO_PAPER_HOLD_AFTER_PAGE_SEC +
-    OUTRO_PAPER_FADE_OUT_SEC
-  );
+  return Array.from({ length: pageCount }, (_, index) => ({
+    id: `outro-page-${index}`,
+    startSec: OUTRO_CARDS_DELAY_SEC + index * OUTRO_PAGE_DURATION_SEC,
+    durationSec: OUTRO_PAGE_DURATION_SEC,
+    clips: [],
+  }));
 }
 
-function getAdjacentTransitionSec(pages: SavedSequenceItem[], index: number) {
-  let adjacentSec = 0;
-  const previous = pages[index - 1];
-  const next = pages[index + 1];
-  if (previous && previous.type === "transition") {
-    adjacentSec = Math.max(adjacentSec, transitionDurationSec(previous.variant));
-  }
-  if (next && next.type === "transition") {
-    adjacentSec = Math.max(adjacentSec, transitionDurationSec(next.variant));
-  }
-  return adjacentSec;
+function createEndcardVisualClips(advertiserCount: number): SavedTimelineClip[] {
+  const pageCount = Math.max(1, advertiserCount);
+  const step = ENDCARD_DURATION_SEC - TRANSITION_DURATION_SEC.slide;
+  return Array.from({ length: pageCount }, (_, index) => ({
+    id: `endcard-page-${index}`,
+    startSec: index * step,
+    durationSec: ENDCARD_DURATION_SEC,
+    clips: [],
+  }));
 }
 
-function getFixedPageDurationSec(page: SavedPage) {
+function createVisualClips(page: SavedPage): SavedTimelineClip[] {
   if (page.type === "outro") {
-    return Math.max(
-      MIN_TTS_DURATION_SECONDS,
-      getOutroContentDurationSec(page.meta.blocks.length) + page.padBeforeSec + page.padAfterSec,
-    );
+    return createOutroVisualClips(page.meta.blocks.length);
   }
-
   if (page.type === "endcard") {
-    return Math.max(
-      MIN_TTS_DURATION_SECONDS,
-      ENDCARD_DURATION_SEC + page.padBeforeSec + page.padAfterSec,
-    );
+    return createEndcardVisualClips(page.meta.advertisers.length);
   }
-
-  return null;
+  return [];
 }
 
 function createTtsClips(page: SavedPage, readyOnly: boolean) {
@@ -110,10 +100,33 @@ function createTtsClips(page: SavedPage, readyOnly: boolean) {
   return { clips, ttsEndSec: cursor };
 }
 
+function createPageClips(page: SavedPage) {
+  return [...createTtsClips(page, false).clips, ...createVisualClips(page)];
+}
+
+function getOutroHoldFadeSec() {
+  return OUTRO_PAPER_HOLD_AFTER_PAGE_SEC + OUTRO_PAPER_FADE_OUT_SEC;
+}
+
 function getReadyPageDurationSec(page: SavedPage) {
-  const fixed = getFixedPageDurationSec(page);
-  if (fixed !== null) {
-    return fixed;
+  const visualClips = createVisualClips(page);
+  const visualEndSec = nestedEndSec(visualClips);
+
+  if (page.type === "outro") {
+    const contentSec = visualClips.length === 0 ? 0 : visualEndSec + getOutroHoldFadeSec();
+    return Math.max(
+      MIN_TTS_DURATION_SECONDS,
+      contentSec + page.padBeforeSec + page.padAfterSec,
+      visualEndSec,
+    );
+  }
+
+  if (page.type === "endcard") {
+    return Math.max(
+      MIN_TTS_DURATION_SECONDS,
+      visualEndSec + page.padBeforeSec + page.padAfterSec,
+      visualEndSec,
+    );
   }
 
   const { ttsEndSec } = createTtsClips(page, true);
@@ -126,9 +139,8 @@ function getReadyPageDurationSec(page: SavedPage) {
 }
 
 function getProvisionalPageDurationSec(page: SavedPage, adjacentTransitionSec: number) {
-  const fixed = getFixedPageDurationSec(page);
-  if (fixed !== null) {
-    return Math.max(fixed, adjacentTransitionSec);
+  if (page.type === "outro" || page.type === "endcard") {
+    return Math.max(getReadyPageDurationSec(page), adjacentTransitionSec);
   }
 
   if (page.type === "eyecatch-text") {
@@ -140,6 +152,19 @@ function getProvisionalPageDurationSec(page: SavedPage, adjacentTransitionSec: n
     page.padBeforeSec + page.padAfterSec,
     adjacentTransitionSec,
   );
+}
+
+function getAdjacentTransitionSec(pages: SavedSequenceItem[], index: number) {
+  let adjacentSec = 0;
+  const previous = pages[index - 1];
+  const next = pages[index + 1];
+  if (previous && previous.type === "transition") {
+    adjacentSec = Math.max(adjacentSec, transitionDurationSec(previous.variant));
+  }
+  if (next && next.type === "transition") {
+    adjacentSec = Math.max(adjacentSec, transitionDurationSec(next.variant));
+  }
+  return adjacentSec;
 }
 
 function sequenceClips(timeline: SavedTimeline | undefined) {
@@ -184,7 +209,7 @@ export function toTimeline(project: SavedProject, previous?: SavedTimeline): Sav
         id: item.id,
         startSec,
         durationSec,
-        clips: createTtsClips(item, false).clips,
+        clips: createPageClips(item),
       });
       pageDurSum += durationSec;
       continue;

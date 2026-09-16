@@ -8,6 +8,7 @@ import {
   PROJECT_ROOT,
   getProjectOutputVideoPath,
   readSavedProjectDocument,
+  readSavedSchedules,
 } from "@/server/_shared/storage";
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 import { thumbnailTimeToFrame } from "./render-thumbnail";
@@ -201,6 +202,7 @@ export async function startRender(projectPath: string) {
     startReserved = true;
     try {
       const { project, timeline } = await readSavedProjectDocument(projectPath);
+      const schedules = await readSavedSchedules();
       if (
         project.pages.some(
           (page) =>
@@ -219,7 +221,7 @@ export async function startRender(projectPath: string) {
       await fs.mkdir(OUT_DIR, { recursive: true });
       await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
       const outputPath = getProjectOutputVideoPath(projectPath);
-      const inputProps = JSON.stringify({ project, timeline });
+      const inputProps = JSON.stringify({ project, timeline, schedules });
       resetRenderState();
       cancelRequested = false;
       state.status = "running";

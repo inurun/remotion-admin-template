@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { WEATHER_LOCATIONS } from "@/server/features/weather/weather-locations";
+import { WEATHER_LOCATIONS } from "@/_schemas/catalog/weather";
 import { fetchTomorrowWeather } from "../use-case";
 
 function createLocationResponse({

@@ -14,6 +14,7 @@ function PreviewPlayerArea({
   durationInFrames,
   project,
   timeline,
+  schedules,
 }: PreviewPlayerAreaProps) {
   const { playbackRate, setPlaybackRate } = usePreviewPlayerArea();
   usePagePreviewSeek({ durationInFrames, timeline });
@@ -26,6 +27,7 @@ function PreviewPlayerArea({
         playbackRate={playbackRate}
         project={project}
         timeline={timeline}
+        schedules={schedules}
       />
       <div className="grid gap-3 pt-3">
         <div className="flex items-center gap-3">
