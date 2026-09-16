@@ -14,6 +14,7 @@ import {
 } from "@/server/_shared/storage";
 import { bgmApp } from "@/server/features/bgm";
 import { nicoadApp } from "@/server/features/nicoad";
+import { niconicoCommentsApp } from "@/server/features/niconico-comments";
 import { ogpApp } from "@/server/features/ogp";
 import { projectApp } from "@/server/features/project";
 import { publishApp } from "@/server/features/publish";
@@ -89,6 +90,7 @@ function createApi() {
     .route("/", weatherApp)
     .route("/", ogpApp)
     .route("/", nicoadApp)
+    .route("/", niconicoCommentsApp)
     .route("/", scheduleApp)
     .route("/", dictionaryApp);
 }

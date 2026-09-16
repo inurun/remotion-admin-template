@@ -157,4 +157,85 @@ describe("automatic G2P context", () => {
       },
     ]);
   });
+
+  it("limits comments G2P context to the target group in playback order", () => {
+    const page = {
+      id: "page-comments",
+      title: "Comments",
+      type: "comments" as const,
+      meta: {
+        tags: [],
+        commentReader: { provider: "voisona" as const, voiceName: "zunda" },
+        niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+      },
+      comments: [
+        {
+          id: "sm1:thread:main:1",
+          threadId: "thread",
+          fork: "main" as const,
+          no: 1,
+          body: "うぽつ",
+          vposMs: 0,
+          postedAt: "2026-09-16T00:00:00.000Z",
+        },
+        {
+          id: "sm1:thread:main:2",
+          threadId: "thread",
+          fork: "main" as const,
+          no: 2,
+          body: "質問",
+          vposMs: 1,
+          postedAt: "2026-09-16T00:00:01.000Z",
+        },
+      ],
+      commentGroups: [
+        {
+          id: "g1",
+          commentIds: ["sm1:thread:main:1"],
+          displayText: null,
+          readingTtsId: "r1",
+          ttsIds: ["t1"],
+          minDurationSec: 3,
+        },
+        {
+          id: "g2",
+          commentIds: ["sm1:thread:main:2"],
+          displayText: null,
+          readingTtsId: "r2",
+          ttsIds: [],
+          minDurationSec: 3,
+        },
+      ],
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [
+        createSavedTts({ id: "t1", text: "ありがとう", readText: "ありがとう" }),
+        createSavedTts({ id: "r2", text: "質問", readText: "質問" }),
+        createSavedTts({ id: "r1", text: "うぽつ", readText: "うぽつ" }),
+      ],
+    };
+
+    expect(
+      buildAutomaticG2pContext(
+        [page],
+        [{ pageId: "page-comments", ttsId: "t1", baselineKana: "アリガトウ" }],
+      ),
+    ).toEqual([
+      {
+        id: "page-comments",
+        title: "Comments",
+        utterances: [
+          { id: "r1", text: "うぽつ", readText: "うぽつ", target: false },
+          {
+            id: "t1",
+            text: "ありがとう",
+            readText: "ありがとう",
+            baselineKana: "アリガトウ",
+            target: true,
+          },
+        ],
+      },
+    ]);
+  });
 });

@@ -118,6 +118,24 @@ describe("startRender project queue", () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+  it("blocks comments render when a reading failed", async () => {
+    readSavedProjectMock.mockResolvedValue({
+      pages: [
+        {
+          id: "comments-1",
+          type: "comments",
+          tts: [{ audio: { status: "failed", src: "", error: "boom" } }],
+        },
+      ],
+    });
+
+    await expect(startRender("comments-project")).resolves.toEqual({
+      started: false,
+      reason: "tts_pending",
+    });
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
   it("rejects a second start from a different project while the first is starting", async () => {
     let releaseRead!: () => void;
     const readGate = new Promise<void>((resolve) => {

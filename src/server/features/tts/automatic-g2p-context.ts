@@ -1,4 +1,5 @@
 import { type DictionaryWord, type SavedSequenceItem, type SavedTts } from "@/_schemas";
+import { listSavedPageTtsInPlaybackOrder } from "@/server/features/project/comments-playback";
 import { getEffectiveReadText } from "@/server/features/tts/providers/comparison";
 
 export type AutomaticG2pUtterance = {
@@ -81,6 +82,31 @@ export function buildAutomaticG2pContext(
   return pages.flatMap((page) => {
     if (page.type === "transition" || !pagesWithTargets.has(page.id)) {
       return [];
+    }
+
+    if (page.type === "comments") {
+      return page.commentGroups.flatMap((group) => {
+        const utterances = listSavedPageTtsInPlaybackOrder({
+          ...page,
+          commentGroups: [group],
+        }).map((item) => {
+          const target = targetsByTtsId.get(item.id);
+          if (target && target.pageId !== page.id) {
+            return toUtterance(item, undefined);
+          }
+          return toUtterance(item, target);
+        });
+        if (!utterances.some((utterance) => utterance.target || targetsByTtsId.has(utterance.id))) {
+          return [];
+        }
+        return [
+          {
+            id: page.id,
+            title: page.title,
+            utterances,
+          },
+        ];
+      });
     }
 
     return [

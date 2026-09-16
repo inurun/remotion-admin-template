@@ -207,9 +207,18 @@ export async function startRender(projectPath: string) {
         project.pages.some(
           (page) =>
             page.type !== "transition" &&
-            page.tts.some(
-              (tts) => tts.audio.status === "analyzing" || tts.audio.status === "pending",
-            ),
+            page.tts.some((tts) => {
+              if (tts.audio.status === "analyzing" || tts.audio.status === "pending") {
+                return true;
+              }
+              if (page.type !== "comments") {
+                return false;
+              }
+              return (
+                tts.audio.status === "failed" ||
+                (tts.audio.status === "ready" && tts.audio.src.trim() === "")
+              );
+            }),
         )
       ) {
         return {

@@ -1,4 +1,5 @@
 import type {
+  SavedCommentsPage,
   SavedPage,
   SavedProject,
   SavedSequenceItem,
@@ -100,7 +101,71 @@ function createTtsClips(page: SavedPage, readyOnly: boolean) {
   return { clips, ttsEndSec: cursor };
 }
 
+function pushUniqueClip(clips: SavedTimelineClip[], clip: SavedTimelineClip) {
+  if (clips.some((item) => item.id === clip.id)) {
+    throw new Error(`duplicate clip id ${clip.id}`);
+  }
+  clips.push(clip);
+}
+
+function commentsTtsClip(
+  tts: SavedTts,
+  cursor: number,
+): { clip: SavedTimelineClip; nextCursor: number } {
+  const padBeforeSec = Math.max(0, tts.padBeforeSec);
+  const padAfterSec = Math.max(0, tts.padAfterSec);
+  const audioDurationSec = tts.audio.status === "ready" ? tts.audio.durationSec : 0;
+  const startSec = cursor + padBeforeSec;
+  const durationSec = Math.max(MIN_TTS_DURATION_SECONDS, audioDurationSec + padAfterSec);
+  return {
+    clip: { id: tts.id, startSec, durationSec, clips: [] },
+    nextCursor: startSec + durationSec,
+  };
+}
+
+function createCommentsTimeline(page: SavedCommentsPage) {
+  const ttsById = new Map(page.tts.map((item) => [item.id, item]));
+  const clips: SavedTimelineClip[] = [];
+  let visualEnd = 0;
+
+  for (const [index, group] of page.commentGroups.entries()) {
+    const audioStart = index === 0 ? page.padBeforeSec : visualEnd;
+    const visualStart = index === 0 ? 0 : visualEnd;
+    let audioCursor = audioStart;
+    const ttsIds = [...(group.readingTtsId ? [group.readingTtsId] : []), ...group.ttsIds];
+
+    for (const ttsId of ttsIds) {
+      const tts = ttsById.get(ttsId);
+      if (!tts) {
+        continue;
+      }
+      const { clip, nextCursor } = commentsTtsClip(tts, audioCursor);
+      pushUniqueClip(clips, clip);
+      audioCursor = nextCursor;
+    }
+
+    const contentDuration = Math.max(group.minDurationSec, audioCursor - audioStart);
+    visualEnd = audioStart + contentDuration;
+    pushUniqueClip(clips, {
+      id: group.id,
+      startSec: visualStart,
+      durationSec: visualEnd - visualStart,
+      clips: [],
+    });
+  }
+
+  const durationSec =
+    page.commentGroups.length === 0
+      ? Math.max(MIN_TTS_DURATION_SECONDS, page.padBeforeSec + page.padAfterSec)
+      : visualEnd + page.padAfterSec;
+
+  return { clips, durationSec };
+}
+
 function createPageClips(page: SavedPage) {
+  if (page.type === "comments") {
+    return createCommentsTimeline(page).clips;
+  }
   return [...createTtsClips(page, false).clips, ...createVisualClips(page)];
 }
 
@@ -127,6 +192,10 @@ function getReadyPageDurationSec(page: SavedPage) {
       visualEndSec + page.padBeforeSec + page.padAfterSec,
       visualEndSec,
     );
+  }
+
+  if (page.type === "comments") {
+    return Math.max(MIN_TTS_DURATION_SECONDS, createCommentsTimeline(page).durationSec);
   }
 
   const { ttsEndSec } = createTtsClips(page, true);
@@ -178,6 +247,10 @@ function getPageDurationSec(input: {
   previousById: Map<string, SavedTimelineClip>;
 }) {
   const adjacentTransitionSec = getAdjacentTransitionSec(input.pages, input.index);
+
+  if (input.page.type === "comments") {
+    return Math.max(getReadyPageDurationSec(input.page), adjacentTransitionSec);
+  }
 
   if (pageHasUnresolvedTts(input.page)) {
     const previous = input.previousById.get(input.page.id);
