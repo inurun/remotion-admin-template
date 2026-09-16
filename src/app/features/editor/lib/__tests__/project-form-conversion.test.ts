@@ -33,6 +33,58 @@ describe("page form values", () => {
     expect(toPageFormValues(page).tts[0]).not.toHaveProperty("audio");
   });
 
+  it("keeps comments snapshot and groups when converting a comments page", () => {
+    const page = {
+      id: "comments-1",
+      title: "Comments",
+      type: "comments" as const,
+      meta: {
+        tags: ["niconico"],
+        commentReader: { provider: "voisona" as const, voiceName: "zunda" },
+        niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+      },
+      comments: [
+        {
+          id: "sm1:thread:main:1",
+          threadId: "thread",
+          fork: "main" as const,
+          no: 1,
+          body: "うぽつ",
+          vposMs: 0,
+          postedAt: "2026-09-16T00:00:00.000Z",
+        },
+      ],
+      commentGroups: [
+        {
+          id: "g1",
+          commentIds: ["sm1:thread:main:1"],
+          displayText: null,
+          readingTtsId: "r1",
+          ttsIds: ["t1"],
+          minDurationSec: 3,
+        },
+      ],
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [
+        createSavedTts({ id: "r1", text: "うぽつ" }),
+        createSavedTts({ id: "t1", text: "ありがとう" }),
+      ],
+      durationSec: 9,
+    };
+
+    const form = toPageFormValues(page);
+    expect(form).toMatchObject({
+      type: "comments",
+      comments: page.comments,
+      commentGroups: page.commentGroups,
+      meta: page.meta,
+    });
+    expect(form).not.toHaveProperty("durationSec");
+    expect(form.tts.map((item) => item.id)).toEqual(["r1", "t1"]);
+  });
+
   it("keeps dictionary_words when converting saved speech into form values", () => {
     const page = createSavedMainPage({
       tts: [createSavedTts({ speech: { g2p: ameKoroAnalyzeItem } })],

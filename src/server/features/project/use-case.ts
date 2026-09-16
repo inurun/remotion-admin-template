@@ -31,7 +31,7 @@ import type {
   SaveTransitionItem,
   SaveTtsItem,
 } from "@/server/features/project/contract";
-import { isSaveTransitionItem } from "@/server/features/project/contract";
+import { isSaveTransitionItem, savePageItemSchema } from "@/server/features/project/contract";
 import type { ServerEnv } from "@/server/core/env";
 import { analyzeTexts } from "@/server/features/haqumei-api/analyze";
 import { assertHaqumeiTextLength } from "@/server/features/haqumei-api/limits";
@@ -113,6 +113,11 @@ function validateSequenceItems(items: Array<SaveSequenceItem | SavedSequenceItem
 }
 
 function validatePage(page: SavePageItem) {
+  if (page.type === "comments") {
+    savePageItemSchema.parse(page);
+    return;
+  }
+
   if (page.type !== "intro" && page.type !== "main") {
     return;
   }
@@ -593,6 +598,25 @@ async function buildSavedPage(
   const analysisTargets = built.flatMap((item) => (item.analysis ? [item.analysis] : []));
   const page = planned.page;
 
+  if (page.type === "comments") {
+    return {
+      jobs,
+      analysisTargets,
+      page: {
+        id: page.id,
+        title: page.title,
+        type: "comments",
+        meta: page.meta,
+        comments: page.comments,
+        commentGroups: page.commentGroups,
+        padBeforeSec: page.padBeforeSec,
+        padAfterSec: page.padAfterSec,
+        richText: null,
+        tts,
+      },
+    };
+  }
+
   return {
     jobs,
     analysisTargets,
@@ -667,6 +691,21 @@ function toSavePageItemFromSaved(page: SavedPage): SavePageItem {
       padBeforeSec: page.padBeforeSec,
       padAfterSec: page.padAfterSec,
       richText: page.richText,
+      tts,
+    };
+  }
+
+  if (page.type === "comments") {
+    return {
+      id: page.id,
+      title: page.title,
+      type: "comments",
+      meta: page.meta,
+      comments: page.comments,
+      commentGroups: page.commentGroups,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      richText: null,
       tts,
     };
   }

@@ -42,6 +42,25 @@ export function createBlankPageInput({
     };
   }
 
+  if (type === "comments") {
+    return {
+      id,
+      title,
+      type,
+      meta: {
+        tags: [],
+        commentReader: null,
+        niconico: null,
+      },
+      comments: [],
+      commentGroups: [],
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    };
+  }
+
   return {
     id,
     title,

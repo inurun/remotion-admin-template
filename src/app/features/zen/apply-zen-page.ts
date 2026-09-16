@@ -33,6 +33,18 @@ export function applyZenPage(
     };
   }
 
+  if (existing.type === "comments") {
+    return {
+      ...existing,
+      title: next.title,
+      meta: {
+        ...existing.meta,
+        tags: next.meta.tags,
+      },
+      tts,
+    };
+  }
+
   return {
     ...existing,
     title: next.title,

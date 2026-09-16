@@ -79,6 +79,7 @@ describe("schema boundaries", () => {
     const files = [
       "src/_schemas/project/page.ts",
       "src/_schemas/project/tts.ts",
+      "src/_schemas/project/comments.ts",
       "src/_schemas/project/primitives.ts",
       "src/_schemas/project/project.ts",
       "src/_schemas/schedule/schedule.ts",
@@ -101,6 +102,7 @@ describe("schema boundaries", () => {
     expect(pageForm).toContain("title: z.string()");
     expect(pageForm).toContain("padBeforeSec:");
     expect(pageForm).toContain('type: z.literal("main")');
+    expect(pageForm).toContain('type: z.literal("comments")');
     expect(pageForm).toContain("tts: z.array(ttsFormSchema)");
 
     const ttsForm = source("src/app/features/tts/model/tts-form-schema.ts");

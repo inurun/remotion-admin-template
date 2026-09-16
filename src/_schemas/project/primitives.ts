@@ -84,7 +84,14 @@ export function voicePresetId(voice: {
   return `${voice.provider}::${voice.voiceName}::${voice.voiceVersion ?? ""}`;
 }
 
-export const pageTypeSchema = z.enum(["intro", "eyecatch-text", "main", "outro", "endcard"]);
+export const pageTypeSchema = z.enum([
+  "intro",
+  "eyecatch-text",
+  "main",
+  "comments",
+  "outro",
+  "endcard",
+]);
 export const transitionVariantSchema = z.enum(["slide"]);
 
 const weatherLocationSchema = z.enum(WEATHER_LOCATION_IDS);

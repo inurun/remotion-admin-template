@@ -56,6 +56,21 @@ export function toPageFormValues(page: SavedPage): PageFormValues {
     };
   }
 
+  if (page.type === "comments") {
+    return {
+      id: page.id,
+      title: page.title,
+      type: "comments",
+      meta: page.meta,
+      comments: page.comments,
+      commentGroups: page.commentGroups,
+      padBeforeSec: page.padBeforeSec,
+      padAfterSec: page.padAfterSec,
+      richText: null,
+      tts,
+    };
+  }
+
   return {
     id: page.id,
     title: page.title,

@@ -42,6 +42,10 @@ function SelectedPageEditor({ type }: { type: PageType }) {
     );
   }
 
+  if (type === "comments") {
+    return <PageHeader />;
+  }
+
   return (
     <>
       <PageHeader />

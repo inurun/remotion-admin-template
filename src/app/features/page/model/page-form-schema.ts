@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { ttsFormSchema } from "@/app/features/tts/model/tts-form-schema";
 import {
+  commentGroupSchema,
+  commentsPageMetaSchema,
+  niconicoCommentSchema,
+  refineCommentsPageRelations,
+} from "@/_schemas/project/comments";
+import {
   endcardPageMetaSchema,
   outroPageMetaSchema,
   pageTagsMetaSchema,
@@ -31,6 +37,16 @@ export const pageFormSchema = z.discriminatedUnion("type", [
     type: z.literal("main"),
     meta: pageTagsMetaSchema,
   }),
+  z
+    .object({
+      ...pageFormSharedFields,
+      type: z.literal("comments"),
+      richText: z.null(),
+      meta: commentsPageMetaSchema,
+      comments: z.array(niconicoCommentSchema),
+      commentGroups: z.array(commentGroupSchema),
+    })
+    .superRefine(refineCommentsPageRelations),
   z.object({
     ...pageFormSharedFields,
     type: z.literal("outro"),
@@ -45,5 +61,6 @@ export const pageFormSchema = z.discriminatedUnion("type", [
 
 export type PageFormValues = z.infer<typeof pageFormSchema>;
 export type EyecatchTextPageFormValues = Extract<PageFormValues, { type: "eyecatch-text" }>;
+export type CommentsPageFormValues = Extract<PageFormValues, { type: "comments" }>;
 export type OutroPageFormValues = Extract<PageFormValues, { type: "outro" }>;
 export type EndcardPageFormValues = Extract<PageFormValues, { type: "endcard" }>;

@@ -1,5 +1,11 @@
 import { z } from "zod";
 import {
+  commentGroupSchema,
+  commentsPageMetaSchema,
+  niconicoCommentSchema,
+  refineCommentsPageRelations,
+} from "@/_schemas/project/comments";
+import {
   endcardPageMetaSchema,
   outroPageMetaSchema,
   pageTagsMetaSchema,
@@ -34,6 +40,17 @@ export const savedPageSchema = z.discriminatedUnion("type", [
     meta: pageTagsMetaSchema,
     tts: z.array(savedTtsSchema).min(1),
   }),
+  z
+    .object({
+      ...savedPageSharedSchema,
+      type: z.literal("comments"),
+      richText: z.null(),
+      meta: commentsPageMetaSchema,
+      comments: z.array(niconicoCommentSchema),
+      commentGroups: z.array(commentGroupSchema),
+      tts: z.array(savedTtsSchema),
+    })
+    .superRefine(refineCommentsPageRelations),
   z.object({
     ...savedPageSharedSchema,
     type: z.literal("outro"),
@@ -60,5 +77,6 @@ export type SavedPage = z.infer<typeof savedPageSchema>;
 export type SavedTransition = z.infer<typeof savedTransitionSchema>;
 export type SavedSequenceItem = z.infer<typeof savedSequenceItemSchema>;
 export type SavedEyecatchTextPage = Extract<SavedPage, { type: "eyecatch-text" }>;
+export type SavedCommentsPage = Extract<SavedPage, { type: "comments" }>;
 export type SavedOutroPage = Extract<SavedPage, { type: "outro" }>;
 export type SavedEndcardPage = Extract<SavedPage, { type: "endcard" }>;

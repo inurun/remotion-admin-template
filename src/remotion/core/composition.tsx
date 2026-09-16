@@ -17,6 +17,7 @@ function PageByType({ page }: { page: SavedPage }) {
       return <MainPage page={page} />;
     case "outro":
       return <OutroPage page={page} />;
+    case "comments":
     case "endcard":
     case "eyecatch-text":
       return null;

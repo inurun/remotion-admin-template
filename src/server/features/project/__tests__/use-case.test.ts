@@ -1947,6 +1947,200 @@ describe("project use-case", () => {
     expect(analyzeTextsMock).not.toHaveBeenCalled();
   });
 
+  it("saves an empty comments page without tts", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    const empty = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "comments-1",
+          title: "Comments",
+          type: "comments",
+          meta: { tags: [], commentReader: null, niconico: null },
+          comments: [],
+          commentGroups: [],
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [],
+        },
+      ],
+    });
+
+    expect(contentPage(empty.project.pages)).toMatchObject({
+      type: "comments",
+      comments: [],
+      commentGroups: [],
+      meta: { commentReader: null, niconico: null },
+    });
+    expect(contentPage(empty.project.pages)).not.toHaveProperty("durationSec");
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps comments snapshot fields when reusing ready reading audio", async () => {
+    const previousTts = {
+      id: "r1",
+      provider: "voisona" as const,
+      text: "うぽつ",
+      readText: "うぽつ",
+      voiceName: "zunda",
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      volume: 1,
+      audio: { status: "ready" as const, src: "/tts/r1.wav", durationSec: 1 },
+      speech: { g2p: createG2pItem("うぽつ") },
+    };
+    readSavedProjectMock.mockResolvedValueOnce({
+      voicePresets: DEFAULT_VOICE_PRESETS,
+      pages: [
+        {
+          id: "comments-1",
+          title: "Comments",
+          type: "comments",
+          meta: {
+            tags: [],
+            commentReader: { provider: "voisona", voiceName: "zunda" },
+            niconico: { videoId: "sm1", fetchedAt: now },
+          },
+          comments: [
+            {
+              id: "sm1:thread:main:1",
+              threadId: "thread",
+              fork: "main",
+              no: 1,
+              body: "うぽつ",
+              vposMs: 0,
+              postedAt: now,
+            },
+          ],
+          commentGroups: [
+            {
+              id: "g1",
+              commentIds: ["sm1:thread:main:1"],
+              displayText: null,
+              readingTtsId: "r1",
+              ttsIds: [],
+              minDurationSec: 3,
+            },
+          ],
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [previousTts],
+        },
+      ],
+    });
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "comments-1",
+          title: "Comments",
+          type: "comments",
+          meta: {
+            tags: [],
+            commentReader: { provider: "voisona", voiceName: "zunda" },
+            niconico: { videoId: "sm1", fetchedAt: now },
+          },
+          comments: [
+            {
+              id: "sm1:thread:main:1",
+              threadId: "thread",
+              fork: "main",
+              no: 1,
+              body: "うぽつ",
+              vposMs: 0,
+              postedAt: now,
+            },
+          ],
+          commentGroups: [
+            {
+              id: "g1",
+              commentIds: ["sm1:thread:main:1"],
+              displayText: null,
+              readingTtsId: "r1",
+              ttsIds: [],
+              minDurationSec: 3,
+            },
+          ],
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "r1",
+              provider: "voisona",
+              text: "うぽつ",
+              readText: "うぽつ",
+              voiceName: "zunda",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p: createG2pItem("うぽつ") },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.project.pages)).toMatchObject({
+      type: "comments",
+      comments: [{ id: "sm1:thread:main:1", body: "うぽつ" }],
+      commentGroups: [{ id: "g1", readingTtsId: "r1", ttsIds: [] }],
+    });
+    expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects comments pages with broken tts references", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
+    await expect(
+      saveProject({}, "project", {
+        meta: defaultMeta,
+        bgm: [],
+        pages: [
+          {
+            id: "comments-1",
+            title: "Comments",
+            type: "comments",
+            meta: {
+              tags: [],
+              commentReader: { provider: "voisona", voiceName: "zunda" },
+              niconico: { videoId: "sm1", fetchedAt: now },
+            },
+            comments: [
+              {
+                id: "sm1:thread:main:1",
+                threadId: "thread",
+                fork: "main",
+                no: 1,
+                body: "うぽつ",
+                vposMs: 0,
+                postedAt: now,
+              },
+            ],
+            commentGroups: [
+              {
+                id: "g1",
+                commentIds: ["sm1:thread:main:1"],
+                displayText: null,
+                readingTtsId: "missing",
+                ttsIds: [],
+                minDurationSec: 3,
+              },
+            ],
+            padBeforeSec: 0,
+            padAfterSec: 0,
+            richText: null,
+            tts: [],
+          },
+        ],
+      }),
+    ).rejects.toThrow();
+  });
+
   it("saves an eyecatch-text page duration from tts total without page pads", async () => {
     readSavedProjectMock.mockResolvedValueOnce({ pages: [] });
     analyzeTextsMock.mockResolvedValueOnce([helloG2p]);

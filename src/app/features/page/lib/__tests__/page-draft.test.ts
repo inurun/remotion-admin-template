@@ -74,4 +74,25 @@ describe("page draft", () => {
       }).title,
     ).toBe("");
   });
+
+  it("creates a blank comments page with reader and niconico off", () => {
+    expect(
+      createBlankPageInput({
+        id: "comments-id",
+        title: "Comments",
+        type: "comments",
+      }),
+    ).toEqual({
+      id: "comments-id",
+      title: "Comments",
+      type: "comments",
+      meta: { tags: [], commentReader: null, niconico: null },
+      comments: [],
+      commentGroups: [],
+      padBeforeSec: 0,
+      padAfterSec: 0,
+      richText: null,
+      tts: [],
+    });
+  });
 });

@@ -62,9 +62,26 @@ export {
 } from "@/_schemas/project/tts";
 
 export {
+  commentGroupSchema,
+  commentReaderSchema,
+  commentsNiconicoRefSchema,
+  commentsPageMetaSchema,
+  DEFAULT_COMMENT_GROUP_MIN_DURATION_SEC,
+  niconicoCommentSchema,
+  refineCommentsPageRelations,
+  type CommentGroup,
+  type CommentReader,
+  type CommentsNiconicoRef,
+  type CommentsPageMeta,
+  type CommentsPageRelationInput,
+  type NiconicoComment,
+} from "@/_schemas/project/comments";
+
+export {
   savedPageSchema,
   savedSequenceItemSchema,
   savedTransitionSchema,
+  type SavedCommentsPage,
   type SavedEndcardPage,
   type SavedEyecatchTextPage,
   type SavedOutroPage,

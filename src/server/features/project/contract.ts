@@ -3,6 +3,12 @@ import { savedProjectSchema } from "@/_schemas";
 import { storedG2pItemSchema } from "@/_schemas/g2p";
 import { savedTimelineSchema } from "@/_schemas/timeline";
 import {
+  commentGroupSchema,
+  commentsPageMetaSchema,
+  niconicoCommentSchema,
+  refineCommentsPageRelations,
+} from "@/_schemas/project/comments";
+import {
   avatarSettingsSchema,
   bgmTrackSchema,
   DEFAULT_VOICE_PRESETS,
@@ -78,6 +84,16 @@ export const savePageItemSchema = z.discriminatedUnion("type", [
     type: z.literal("main"),
     meta: pageTagsMetaSchema,
   }),
+  z
+    .object({
+      ...savePageSharedFields,
+      type: z.literal("comments"),
+      richText: z.null(),
+      meta: commentsPageMetaSchema,
+      comments: z.array(niconicoCommentSchema),
+      commentGroups: z.array(commentGroupSchema),
+    })
+    .superRefine(refineCommentsPageRelations),
   z.object({
     ...savePageSharedFields,
     type: z.literal("outro"),
