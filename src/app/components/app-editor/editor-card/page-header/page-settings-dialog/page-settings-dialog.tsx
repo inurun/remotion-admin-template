@@ -12,10 +12,13 @@ import {
 } from "@/app/components/ui/dialog";
 import { Field, FieldError } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { CommentImport } from "./comment-import/comment-import";
 import { usePageSettingsDialog } from "@/app/components/app-editor/editor-card/page-header/page-settings-dialog/use-page-settings-dialog";
+import { cn } from "@/_shared/lib/utils";
 
 export function PageSettingsDialog() {
   const dialog = usePageSettingsDialog();
+  const isComments = Boolean(dialog.commentsPage);
 
   return (
     <Dialog open={dialog.open} onOpenChange={dialog.handleOpenChange}>
@@ -32,7 +35,9 @@ export function PageSettingsDialog() {
       >
         <Settings />
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] w-[min(92vw,420px)]">
+      <DialogContent
+        className={cn("max-h-[90vh]", isComments ? "w-[min(96vw,960px)]" : "w-[min(92vw,420px)]")}
+      >
         <form
           className="flex min-h-0 flex-1 flex-col gap-4"
           onSubmit={(event) => void dialog.submit(event)}
@@ -40,11 +45,11 @@ export function PageSettingsDialog() {
           <DialogHeader>
             <DialogTitle>Page Settings</DialogTitle>
           </DialogHeader>
-          <DialogMain className="grid gap-4">
+          <DialogMain className="grid min-h-0 flex-1 gap-4 overflow-hidden">
             <Field data-invalid={Boolean(dialog.form.formState.errors.title)}>
               <label className="grid gap-2 text-sm font-medium">
                 Title
-                <Input autoFocus {...dialog.form.register("title")} />
+                <Input autoFocus={!isComments} {...dialog.form.register("title")} />
               </label>
               <FieldError errors={[dialog.form.formState.errors.title]} />
             </Field>
@@ -81,10 +86,24 @@ export function PageSettingsDialog() {
                 );
               })}
             </div>
+            {isComments ? <CommentImport importer={dialog.importer} /> : null}
+            {dialog.applyError ? <FieldError errors={[{ message: dialog.applyError }]} /> : null}
           </DialogMain>
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-            <Button type="submit">Save</Button>
+            {isComments ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={
+                  dialog.importer.selectedInsertIds.length === 0 || !dialog.importer.fetchValid
+                }
+                onClick={dialog.insertSelected}
+              >
+                Insert {dialog.importer.selectedInsertIds.length} comments
+              </Button>
+            ) : null}
+            <Button type="submit">Save settings</Button>
           </DialogFooter>
         </form>
       </DialogContent>

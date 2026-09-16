@@ -143,4 +143,41 @@ describe("collectTtsIntervals", () => {
       { from: 66, to: 96 },
     ]);
   });
+
+  it("ducks ready comment readings and replies but not group clips", () => {
+    const pages = [clip("p", 0, 5, [clip("g1", 0, 5), clip("r1", 1, 1), clip("t1", 2, 2)])];
+    const base = projectForClips(pages);
+    const main = base.pages[0];
+    if (!main || main.type === "transition") {
+      throw new Error("expected page");
+    }
+    const project: SavedProject = {
+      ...base,
+      pages: [
+        {
+          ...main,
+          type: "comments",
+          meta: {
+            tags: [],
+            niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+          },
+          richText: null,
+          comments: [],
+          commentGroups: [
+            {
+              id: "g1",
+              commentIds: ["c1"],
+              displayText: null,
+              ttsIds: ["r1", "t1"],
+            },
+          ],
+          tts: main.tts.filter((item) => item.id !== "g1"),
+        },
+      ],
+    };
+    expect(collectTtsIntervals(project, timeline(pages), FPS)).toEqual([
+      { from: 30, to: 60 },
+      { from: 60, to: 120 },
+    ]);
+  });
 });

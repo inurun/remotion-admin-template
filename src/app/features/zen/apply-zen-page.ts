@@ -41,7 +41,6 @@ export function applyZenPage(
         ...existing.meta,
         tags: next.meta.tags,
       },
-      tts,
     };
   }
 

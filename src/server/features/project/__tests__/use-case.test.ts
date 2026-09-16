@@ -1957,7 +1957,7 @@ describe("project use-case", () => {
           id: "comments-1",
           title: "Comments",
           type: "comments",
-          meta: { tags: [], commentReader: null, niconico: null },
+          meta: { tags: [], niconico: null },
           comments: [],
           commentGroups: [],
           padBeforeSec: 0,
@@ -1972,7 +1972,6 @@ describe("project use-case", () => {
       type: "comments",
       comments: [],
       commentGroups: [],
-      meta: { commentReader: null, niconico: null },
     });
     expect(contentPage(empty.project.pages)).not.toHaveProperty("durationSec");
     expect(analyzeTextsMock).not.toHaveBeenCalled();
@@ -2000,7 +1999,6 @@ describe("project use-case", () => {
           type: "comments",
           meta: {
             tags: [],
-            commentReader: { provider: "voisona", voiceName: "zunda" },
             niconico: { videoId: "sm1", fetchedAt: now },
           },
           comments: [
@@ -2019,9 +2017,7 @@ describe("project use-case", () => {
               id: "g1",
               commentIds: ["sm1:thread:main:1"],
               displayText: null,
-              readingTtsId: "r1",
-              ttsIds: [],
-              minDurationSec: 3,
+              ttsIds: ["r1"],
             },
           ],
           padBeforeSec: 0,
@@ -2042,7 +2038,6 @@ describe("project use-case", () => {
           type: "comments",
           meta: {
             tags: [],
-            commentReader: { provider: "voisona", voiceName: "zunda" },
             niconico: { videoId: "sm1", fetchedAt: now },
           },
           comments: [
@@ -2061,9 +2056,7 @@ describe("project use-case", () => {
               id: "g1",
               commentIds: ["sm1:thread:main:1"],
               displayText: null,
-              readingTtsId: "r1",
-              ttsIds: [],
-              minDurationSec: 3,
+              ttsIds: ["r1"],
             },
           ],
           padBeforeSec: 0,
@@ -2089,7 +2082,6 @@ describe("project use-case", () => {
     expect(contentPage(saved.project.pages)).toMatchObject({
       type: "comments",
       comments: [{ id: "sm1:thread:main:1", body: "うぽつ" }],
-      commentGroups: [{ id: "g1", readingTtsId: "r1", ttsIds: [] }],
     });
     expect(analyzeTextsMock).not.toHaveBeenCalled();
   });
@@ -2107,7 +2099,6 @@ describe("project use-case", () => {
             type: "comments",
             meta: {
               tags: [],
-              commentReader: { provider: "voisona", voiceName: "zunda" },
               niconico: { videoId: "sm1", fetchedAt: now },
             },
             comments: [
@@ -2126,9 +2117,7 @@ describe("project use-case", () => {
                 id: "g1",
                 commentIds: ["sm1:thread:main:1"],
                 displayText: null,
-                readingTtsId: "missing",
-                ttsIds: [],
-                minDurationSec: 3,
+                ttsIds: ["missing"],
               },
             ],
             padBeforeSec: 0,

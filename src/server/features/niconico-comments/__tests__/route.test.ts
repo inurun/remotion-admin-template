@@ -122,6 +122,7 @@ describe("niconico comments routes", () => {
           body: "うぽつ",
           vposMs: 1000,
           postedAt: "2026-09-16T00:00:01.000Z",
+          hidden: false,
         },
         {
           id: "sm46805363:1789483093:main:7",
@@ -131,6 +132,7 @@ describe("niconico comments routes", () => {
           body: "うぽつ",
           vposMs: 2000,
           postedAt: "2026-09-16T00:00:02.000Z",
+          hidden: false,
         },
       ],
     });

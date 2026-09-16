@@ -6,6 +6,8 @@ import { PageHeader } from "@/app/components/app-editor/editor-card/page-header/
 import { EndcardEditor } from "@/app/components/app-editor/editor-card/endcard-editor/endcard-editor";
 import { OutroBlocks } from "@/app/components/app-editor/editor-card/outro-blocks/outro-blocks";
 import { TtsList } from "@/app/components/app-editor/editor-card/tts-list/tts-list";
+import { CommentsEditor } from "@/app/components/app-editor/editor-card/comments-editor/comments-editor";
+import { CommentsZenRoot } from "@/app/components/app-editor/editor-card/page-header/comments-zen-dialog/comments-zen-dialog";
 import { ZenDialog } from "@/app/components/app-editor/editor-card/zen-dialog/zen-dialog";
 import { PageSwitchFade } from "@/app/components/app-editor/page-switch-fade/page-switch-fade";
 import { PanelCollapseTrigger } from "@/app/components/app-editor/panel-collapse-trigger/panel-collapse-trigger";
@@ -43,7 +45,12 @@ function SelectedPageEditor({ type }: { type: PageType }) {
   }
 
   if (type === "comments") {
-    return <PageHeader />;
+    return (
+      <CommentsZenRoot>
+        <PageHeader />
+        <CommentsEditor />
+      </CommentsZenRoot>
+    );
   }
 
   return (

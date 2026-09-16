@@ -49,7 +49,6 @@ export function createBlankPageInput({
       type,
       meta: {
         tags: [],
-        commentReader: null,
         niconico: null,
       },
       comments: [],

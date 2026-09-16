@@ -7,7 +7,10 @@ export type ZenCompletionAlias = {
   avatarType: AvatarType;
 };
 
-export function createZenCompletionSource(aliases: ZenCompletionAlias[]) {
+export function createZenCompletionSource(
+  aliases: ZenCompletionAlias[],
+  comments: Array<{ id: string; body: string }> = [],
+) {
   const aliasLabels = aliases.map((item) => item.alias);
   const optionsByAlias = new Map(
     aliases.map(({ alias, avatarType }) => {
@@ -50,6 +53,25 @@ export function createZenCompletionSource(aliases: ZenCompletionAlias[]) {
           .map((alias) => ({
             label: alias,
             type: "keyword",
+          })),
+      };
+    }
+
+    const quoteMatch = textBefore.match(/^>\s*(\S*)$/);
+    if (quoteMatch && comments.length > 0) {
+      const prefix = quoteMatch[1] ?? "";
+      return {
+        from: context.pos - prefix.length,
+        options: comments
+          .filter(
+            (comment) =>
+              comment.id.startsWith(prefix) ||
+              comment.body.startsWith(prefix) ||
+              `[${comment.id}]`.startsWith(prefix),
+          )
+          .map((comment) => ({
+            label: `[${comment.id}] ${comment.body}`,
+            type: "text",
           })),
       };
     }

@@ -127,12 +127,18 @@ function createCommentsTimeline(page: SavedCommentsPage) {
   const ttsById = new Map(page.tts.map((item) => [item.id, item]));
   const clips: SavedTimelineClip[] = [];
   let visualEnd = 0;
+  let isFirstVisible = true;
 
-  for (const [index, group] of page.commentGroups.entries()) {
-    const audioStart = index === 0 ? page.padBeforeSec : visualEnd;
-    const visualStart = index === 0 ? 0 : visualEnd;
+  for (const group of page.commentGroups) {
+    const ttsIds = group.ttsIds.filter((ttsId) => ttsById.has(ttsId));
+    if (ttsIds.length === 0) {
+      continue;
+    }
+
+    const audioStart = isFirstVisible ? page.padBeforeSec : visualEnd;
+    const visualStart = isFirstVisible ? 0 : visualEnd;
+    isFirstVisible = false;
     let audioCursor = audioStart;
-    const ttsIds = [...(group.readingTtsId ? [group.readingTtsId] : []), ...group.ttsIds];
 
     for (const ttsId of ttsIds) {
       const tts = ttsById.get(ttsId);
@@ -144,8 +150,7 @@ function createCommentsTimeline(page: SavedCommentsPage) {
       audioCursor = nextCursor;
     }
 
-    const contentDuration = Math.max(group.minDurationSec, audioCursor - audioStart);
-    visualEnd = audioStart + contentDuration;
+    visualEnd = audioCursor;
     pushUniqueClip(clips, {
       id: group.id,
       startSec: visualStart,
@@ -155,7 +160,7 @@ function createCommentsTimeline(page: SavedCommentsPage) {
   }
 
   const durationSec =
-    page.commentGroups.length === 0
+    clips.length === 0
       ? Math.max(MIN_TTS_DURATION_SECONDS, page.padBeforeSec + page.padAfterSec)
       : visualEnd + page.padAfterSec;
 

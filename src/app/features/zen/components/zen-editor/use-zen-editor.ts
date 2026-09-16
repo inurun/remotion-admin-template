@@ -9,7 +9,7 @@ import {
 } from "@/app/features/zen/components/zen-editor/zen-completion";
 import { createZenLinter } from "@/app/features/zen/components/zen-editor/zen-lint";
 import { zenLanguage } from "@/app/features/zen/components/zen-editor/zen-language";
-import type { ZenAliasTarget } from "@/app/features/zen/types";
+import type { ZenAliasTarget, ZenParseError } from "@/app/features/zen/types";
 
 const WRAP_GUIDE_PX = 180;
 
@@ -18,6 +18,8 @@ export function useZenEditor(
   lintAliases: Map<string, ZenAliasTarget>,
   value: string,
   onChange: (value: string) => void,
+  parseLint?: (source: string) => { errors: ZenParseError[] },
+  comments?: Array<{ id: string; body: string }>,
 ) {
   const { resolvedTheme } = useTheme();
   const theme = resolvedTheme === "dark" ? ("dark" as const) : ("light" as const);
@@ -34,9 +36,9 @@ export function useZenEditor(
     () => [
       zenLanguage,
       autocompletion({
-        override: [createZenCompletionSource(aliases)],
+        override: [createZenCompletionSource(aliases, comments ?? [])],
       }),
-      createZenLinter(lintAliases),
+      createZenLinter(lintAliases, parseLint),
       lintGutter(),
       EditorView.lineWrapping,
       scrollPastEnd(),
@@ -69,7 +71,7 @@ export function useZenEditor(
         },
       }),
     ],
-    [aliases, lintAliases],
+    [aliases, comments, lintAliases, parseLint],
   );
 
   return {

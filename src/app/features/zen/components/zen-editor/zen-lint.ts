@@ -23,13 +23,17 @@ function toDiagnostics(view: EditorView, errors: ZenParseError[]): Diagnostic[] 
   return diagnostics;
 }
 
-export function createZenLinter(aliases: Map<string, ZenAliasTarget>) {
+export function createZenLinter(
+  aliases: Map<string, ZenAliasTarget>,
+  parse?: (source: string) => { errors: ZenParseError[] },
+) {
+  const run = parse ?? ((source: string) => parseZenScript(source, { aliases }));
   return linter((view) => {
     const source = view.state.doc.toString();
     if (!source.trim()) {
       return [];
     }
 
-    return toDiagnostics(view, parseZenScript(source, { aliases }).errors);
+    return toDiagnostics(view, run(source).errors);
   });
 }

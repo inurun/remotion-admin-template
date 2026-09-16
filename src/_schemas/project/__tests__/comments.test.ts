@@ -11,13 +11,7 @@ const comment = {
   body: "うぽつ",
   vposMs: 1000,
   postedAt: "2026-09-16T00:00:00.000Z",
-};
-
-const reading = {
-  id: "r1",
-  provider: "voisona" as const,
-  text: "うぽつ",
-  voiceName: "zunda",
+  hidden: false,
 };
 
 const reply = {
@@ -37,7 +31,6 @@ function commentsPage(overrides: Record<string, unknown> = {}) {
     richText: null,
     meta: {
       tags: [],
-      commentReader: { provider: "voisona" as const, voiceName: "zunda" },
       niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
     },
     comments: [comment],
@@ -46,17 +39,15 @@ function commentsPage(overrides: Record<string, unknown> = {}) {
         id: "g1",
         commentIds: [comment.id],
         displayText: null,
-        readingTtsId: "r1",
         ttsIds: ["t1"],
-        minDurationSec: 3,
       },
     ],
-    tts: [reading, reply],
+    tts: [reply],
     ...overrides,
   };
 }
 
-function savedTts(item: typeof reading | typeof reply) {
+function savedTts(item: typeof reply) {
   return {
     ...item,
     audio: { status: "analyzing" as const, analysisKey: "k" },
@@ -73,7 +64,7 @@ describe("comments page schema", () => {
       padBeforeSec: 0,
       padAfterSec: 0,
       richText: null,
-      meta: { tags: [], commentReader: null, niconico: null },
+      meta: { tags: [], niconico: null },
       comments: [],
       commentGroups: [],
       tts: [],
@@ -84,16 +75,34 @@ describe("comments page schema", () => {
     expect(savedPageSchema.parse(empty)).not.toHaveProperty("durationSec");
   });
 
-  it("accepts grouped comments with reading and replies in the same tts list", () => {
+  it("defaults hidden to false", () => {
+    const parsed = pageFormSchema.parse(commentsPage());
+    if (parsed.type !== "comments") {
+      throw new Error("expected comments page");
+    }
+    expect(parsed.comments[0]?.hidden).toBe(false);
+  });
+
+  it("rejects hidden comments in a group", () => {
+    expect(
+      pageFormSchema.safeParse(
+        commentsPage({
+          comments: [{ ...comment, hidden: true }],
+        }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it("accepts grouped comments with replies in the same tts list", () => {
     const parsed = savedPageSchema.parse({
       ...commentsPage(),
-      tts: [savedTts(reading), savedTts(reply)],
+      tts: [savedTts(reply)],
     });
     if (parsed.type !== "comments") {
       throw new Error("expected comments page");
     }
-    expect(parsed.commentGroups[0]?.readingTtsId).toBe("r1");
-    expect(parsed.tts.map((item) => item.id)).toEqual(["r1", "t1"]);
+    expect(parsed.commentGroups[0]?.ttsIds).toEqual(["t1"]);
+    expect(parsed.tts.map((item) => item.id)).toEqual(["t1"]);
   });
 
   it("rejects broken references and orphan tts", () => {
@@ -106,28 +115,9 @@ describe("comments page schema", () => {
               id: "g1",
               commentIds: [],
               displayText: null,
-              readingTtsId: "r1",
               ttsIds: ["t1"],
-              minDurationSec: 3,
             },
           ],
-        }),
-      ).success,
-    ).toBe(false);
-    expect(
-      pageFormSchema.safeParse(
-        commentsPage({
-          commentGroups: [
-            {
-              id: "g1",
-              commentIds: [comment.id],
-              displayText: null,
-              readingTtsId: "r1",
-              ttsIds: ["r1"],
-              minDurationSec: 3,
-            },
-          ],
-          tts: [reading],
         }),
       ).success,
     ).toBe(false);
@@ -143,41 +133,16 @@ describe("comments page schema", () => {
               id: "g1",
               commentIds: [comment.id],
               displayText: null,
-              readingTtsId: "r1",
               ttsIds: ["t1"],
-              minDurationSec: 3,
             },
             {
               id: "g2",
               commentIds: [comment.id],
               displayText: null,
-              readingTtsId: "r2",
               ttsIds: [],
-              minDurationSec: 3,
             },
           ],
-          tts: [
-            reading,
-            reply,
-            { id: "r2", provider: "voisona", text: "うぽつ", voiceName: "zunda" },
-          ],
-        }),
-      ).success,
-    ).toBe(false);
-  });
-
-  it("rejects reading text or voice that does not match the page settings", () => {
-    expect(
-      pageFormSchema.safeParse(
-        commentsPage({
-          tts: [{ ...reading, text: "違う" }, reply],
-        }),
-      ).success,
-    ).toBe(false);
-    expect(
-      pageFormSchema.safeParse(
-        commentsPage({
-          tts: [{ ...reading, voiceName: "other" }, reply],
+          tts: [reply],
         }),
       ).success,
     ).toBe(false);
@@ -187,7 +152,7 @@ describe("comments page schema", () => {
     expect(
       pageFormSchema.safeParse(
         commentsPage({
-          meta: { tags: [], commentReader: null, niconico: null },
+          meta: { tags: [], niconico: null },
           commentGroups: [],
           tts: [],
         }),
@@ -200,7 +165,7 @@ describe("comments page schema", () => {
       savedPageSchema.parse({
         ...commentsPage(),
         durationSec: 9,
-        tts: [savedTts(reading), savedTts(reply)],
+        tts: [savedTts(reply)],
       }),
     ).not.toHaveProperty("durationSec");
   });

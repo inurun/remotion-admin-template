@@ -1,5 +1,5 @@
 {
-  "durationSec": 26.153333333333336,
+  "durationSec": 27.558666666666667,
   "tracks": [
     {
       "id": "sequence",
@@ -98,8 +98,39 @@
           ]
         },
         {
-          "id": "1b6584d9-cab1-49b8-953c-d833ae2bc3a7",
+          "id": "01bb6c59-ba56-4dc1-8086-5dd7dc16fc20",
           "startSec": 20.653333333333336,
+          "durationSec": 1.405333333333333,
+          "clips": [
+            {
+              "id": "00104e69-94cc-4dda-b67f-f4b1379b415c",
+              "startSec": 0,
+              "durationSec": 0.8039999999999999,
+              "clips": []
+            },
+            {
+              "id": "d03eb5b9-9f81-4d4d-a9a8-18357feefaf9",
+              "startSec": 0,
+              "durationSec": 0.8039999999999999,
+              "clips": []
+            },
+            {
+              "id": "096a0395-7087-471d-93cf-022e8960a8f0",
+              "startSec": 0.8039999999999999,
+              "durationSec": 0.6013333333333333,
+              "clips": []
+            },
+            {
+              "id": "d2c922a3-8550-4fe9-8b84-d23768c1a8d3",
+              "startSec": 0.8039999999999999,
+              "durationSec": 0.6013333333333332,
+              "clips": []
+            }
+          ]
+        },
+        {
+          "id": "1b6584d9-cab1-49b8-953c-d833ae2bc3a7",
+          "startSec": 22.058666666666667,
           "durationSec": 5.5,
           "clips": [
             {

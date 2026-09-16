@@ -1,7 +1,4 @@
 import { z } from "zod";
-import { voiceProviderSchema } from "@/_schemas/project/primitives";
-
-export const DEFAULT_COMMENT_GROUP_MIN_DURATION_SEC = 3;
 
 export const niconicoCommentSchema = z.object({
   id: z.string().min(1),
@@ -11,6 +8,7 @@ export const niconicoCommentSchema = z.object({
   body: z.string(),
   vposMs: z.number().int().nonnegative(),
   postedAt: z.iso.datetime({ offset: true }),
+  hidden: z.boolean().default(false),
 });
 
 export const commentGroupSchema = z.object({
@@ -22,18 +20,8 @@ export const commentGroupSchema = z.object({
     .refine((value) => value === null || value.trim().length > 0, {
       message: "displayText must be null or a non-blank string",
     }),
-  readingTtsId: z.string().min(1).nullable(),
   ttsIds: z.array(z.string().min(1)),
-  minDurationSec: z.number().positive().default(DEFAULT_COMMENT_GROUP_MIN_DURATION_SEC),
 });
-
-export const commentReaderSchema = z
-  .object({
-    provider: voiceProviderSchema,
-    voiceName: z.string().min(1),
-    voiceVersion: z.string().optional(),
-  })
-  .nullable();
 
 export const commentsNiconicoRefSchema = z
   .object({
@@ -44,13 +32,11 @@ export const commentsNiconicoRefSchema = z
 
 export const commentsPageMetaSchema = z.object({
   tags: z.array(z.string().trim().min(1)).default([]),
-  commentReader: commentReaderSchema,
   niconico: commentsNiconicoRefSchema,
 });
 
 export type NiconicoComment = z.infer<typeof niconicoCommentSchema>;
 export type CommentGroup = z.infer<typeof commentGroupSchema>;
-export type CommentReader = z.infer<typeof commentReaderSchema>;
 export type CommentsNiconicoRef = z.infer<typeof commentsNiconicoRefSchema>;
 export type CommentsPageMeta = z.infer<typeof commentsPageMetaSchema>;
 
@@ -68,10 +54,6 @@ export type CommentsPageRelationInput = {
   commentGroups: CommentGroup[];
   tts: CommentsPageRelationTts[];
 };
-
-function voiceKey(voice: { provider: string; voiceName?: string; voiceVersion?: string }) {
-  return `${voice.provider}::${voice.voiceName ?? ""}::${voice.voiceVersion ?? ""}`;
-}
 
 function parseCommentSnapshotId(id: string) {
   const parts = id.split(":");
@@ -169,10 +151,17 @@ export function refineCommentsPageRelations(page: CommentsPageRelationInput, ctx
     );
 
     for (const [commentIndex, commentId] of group.commentIds.entries()) {
-      if (!commentsById.has(commentId)) {
+      const comment = commentsById.get(commentId);
+      if (!comment) {
         ctx.addIssue({
           code: "custom",
           message: "commentGroups reference a missing comment",
+          path: ["commentGroups", groupIndex, "commentIds", commentIndex],
+        });
+      } else if (comment.hidden) {
+        ctx.addIssue({
+          code: "custom",
+          message: "hidden comments cannot be inserted",
           path: ["commentGroups", groupIndex, "commentIds", commentIndex],
         });
       }
@@ -185,66 +174,21 @@ export function refineCommentsPageRelations(page: CommentsPageRelationInput, ctx
       );
     }
 
-    const membershipIds = [
-      ...(group.readingTtsId ? [{ id: group.readingTtsId, path: "readingTtsId" as const }] : []),
-      ...group.ttsIds.map((id, index) => ({ id, path: ["ttsIds", index] as const })),
-    ];
-    for (const membership of membershipIds) {
-      if (!ttsById.has(membership.id)) {
+    for (const [ttsIndex, ttsId] of group.ttsIds.entries()) {
+      if (!ttsById.has(ttsId)) {
         ctx.addIssue({
           code: "custom",
           message: "commentGroups reference a missing tts",
-          path: ["commentGroups", groupIndex, membership.path].flat(),
+          path: ["commentGroups", groupIndex, "ttsIds", ttsIndex],
         });
       }
       addUniqueIssue(
         ctx,
         assignedTtsIds,
-        membership.id,
-        ["commentGroups", groupIndex, membership.path].flat(),
-        "tts belongs to multiple groups or both reading and replies",
+        ttsId,
+        ["commentGroups", groupIndex, "ttsIds", ttsIndex],
+        "tts belongs to multiple groups",
       );
-    }
-
-    if (page.meta.commentReader === null) {
-      if (group.readingTtsId !== null) {
-        ctx.addIssue({
-          code: "custom",
-          message: "readingTtsId must be null when comment reader is off",
-          path: ["commentGroups", groupIndex, "readingTtsId"],
-        });
-      }
-      continue;
-    }
-
-    if (group.readingTtsId === null) {
-      ctx.addIssue({
-        code: "custom",
-        message: "readingTtsId is required when comment reader is on",
-        path: ["commentGroups", groupIndex, "readingTtsId"],
-      });
-      continue;
-    }
-
-    const reading = ttsById.get(group.readingTtsId);
-    const firstComment = commentsById.get(group.commentIds[0] ?? "");
-    const expectedText = group.displayText ?? firstComment?.body ?? "";
-    if (!reading) {
-      continue;
-    }
-    if (reading.text !== expectedText) {
-      ctx.addIssue({
-        code: "custom",
-        message: "reading tts text must match the group display text",
-        path: ["commentGroups", groupIndex, "readingTtsId"],
-      });
-    }
-    if (voiceKey(reading) !== voiceKey(page.meta.commentReader)) {
-      ctx.addIssue({
-        code: "custom",
-        message: "reading tts voice must match the page comment reader",
-        path: ["commentGroups", groupIndex, "readingTtsId"],
-      });
     }
   }
 

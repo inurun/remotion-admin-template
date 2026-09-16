@@ -24,6 +24,10 @@ export const zenLanguage = StreamLanguage.define({
       return "zenSpeaker";
     }
 
+    if (stream.match(/^>\s?/)) {
+      return "zenQuote";
+    }
+
     stream.next();
     return null;
   },
@@ -32,5 +36,6 @@ export const zenLanguage = StreamLanguage.define({
     zenHeading: t.heading1,
     zenTag: t.meta,
     zenSpeaker: t.keyword,
+    zenQuote: t.processingInstruction,
   },
 });

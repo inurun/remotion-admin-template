@@ -8,7 +8,6 @@ export type CommentPageLookup = {
 export type ResolvedCommentGroup<Tts extends { id: string }> = {
   group: CommentGroup;
   comments: NiconicoComment[];
-  reading: Tts | null;
   replies: Tts[];
 };
 
@@ -34,7 +33,6 @@ export function resolveCommentGroups<Tts extends { id: string }>(
       const comment = commentsById.get(commentId);
       return comment ? [comment] : [];
     }),
-    reading: group.readingTtsId ? (ttsById.get(group.readingTtsId) ?? null) : null,
     replies: group.ttsIds.flatMap((ttsId) => {
       const item = ttsById.get(ttsId);
       return item ? [item] : [];
@@ -53,5 +51,5 @@ export function listPageTtsInPlaybackOrder<Tts extends { id: string }>(
     comments: page.comments,
     commentGroups: page.commentGroups,
     tts: page.tts,
-  }).flatMap((resolved) => [...(resolved.reading ? [resolved.reading] : []), ...resolved.replies]);
+  }).flatMap((resolved) => resolved.replies);
 }

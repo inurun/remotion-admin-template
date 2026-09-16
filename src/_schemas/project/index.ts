@@ -63,14 +63,11 @@ export {
 
 export {
   commentGroupSchema,
-  commentReaderSchema,
   commentsNiconicoRefSchema,
   commentsPageMetaSchema,
-  DEFAULT_COMMENT_GROUP_MIN_DURATION_SEC,
   niconicoCommentSchema,
   refineCommentsPageRelations,
   type CommentGroup,
-  type CommentReader,
   type CommentsNiconicoRef,
   type CommentsPageMeta,
   type CommentsPageRelationInput,

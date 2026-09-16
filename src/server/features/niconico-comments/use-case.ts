@@ -175,6 +175,7 @@ function toMainComments(videoId: string, payload: unknown) {
         body: comment.body,
         vposMs: comment.vposMs,
         postedAt: toPostedAt(comment.postedAt),
+        hidden: false,
       });
     }
   }

@@ -86,7 +86,7 @@ describe("page draft", () => {
       id: "comments-id",
       title: "Comments",
       type: "comments",
-      meta: { tags: [], commentReader: null, niconico: null },
+      meta: { tags: [], niconico: null },
       comments: [],
       commentGroups: [],
       padBeforeSec: 0,

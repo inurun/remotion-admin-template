@@ -165,7 +165,6 @@ describe("automatic G2P context", () => {
       type: "comments" as const,
       meta: {
         tags: [],
-        commentReader: { provider: "voisona" as const, voiceName: "zunda" },
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
       },
       comments: [
@@ -177,6 +176,7 @@ describe("automatic G2P context", () => {
           body: "うぽつ",
           vposMs: 0,
           postedAt: "2026-09-16T00:00:00.000Z",
+          hidden: false,
         },
         {
           id: "sm1:thread:main:2",
@@ -186,6 +186,7 @@ describe("automatic G2P context", () => {
           body: "質問",
           vposMs: 1,
           postedAt: "2026-09-16T00:00:01.000Z",
+          hidden: false,
         },
       ],
       commentGroups: [
@@ -193,17 +194,13 @@ describe("automatic G2P context", () => {
           id: "g1",
           commentIds: ["sm1:thread:main:1"],
           displayText: null,
-          readingTtsId: "r1",
-          ttsIds: ["t1"],
-          minDurationSec: 3,
+          ttsIds: ["r1", "t1"],
         },
         {
           id: "g2",
           commentIds: ["sm1:thread:main:2"],
           displayText: null,
-          readingTtsId: "r2",
-          ttsIds: [],
-          minDurationSec: 3,
+          ttsIds: ["r2"],
         },
       ],
       padBeforeSec: 0,

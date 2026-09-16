@@ -276,7 +276,6 @@ describe("toTimeline", () => {
       type: "comments",
       meta: {
         tags: [],
-        commentReader: { provider: "voisona", voiceName: "zunda" },
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
       },
       comments: [
@@ -304,17 +303,13 @@ describe("toTimeline", () => {
           id: "g1",
           commentIds: ["sm1:thread:main:1"],
           displayText: null,
-          readingTtsId: "r1",
-          ttsIds: ["t1", "t2"],
-          minDurationSec: 3,
+          ttsIds: ["r1", "t1", "t2"],
         },
         {
           id: "g2",
           commentIds: ["sm1:thread:main:2"],
           displayText: null,
-          readingTtsId: "r2",
-          ttsIds: [],
-          minDurationSec: 3,
+          ttsIds: ["r2"],
         },
       ],
       padBeforeSec: 1,
@@ -329,7 +324,7 @@ describe("toTimeline", () => {
     });
 
     const clip = toTimeline(project([page])).tracks[0]?.clips[0];
-    expect(clip?.durationSec).toBe(9);
+    expect(clip?.durationSec).toBe(7);
     expect(
       clip?.clips.map(({ id, startSec, durationSec }) => ({ id, startSec, durationSec })),
     ).toEqual([
@@ -338,19 +333,18 @@ describe("toTimeline", () => {
       { id: "t2", startSec: 3, durationSec: 2 },
       { id: "g1", startSec: 0, durationSec: 5 },
       { id: "r2", startSec: 5, durationSec: 1 },
-      { id: "g2", startSec: 5, durationSec: 3 },
+      { id: "g2", startSec: 5, durationSec: 1 },
     ]);
     expect(page).not.toHaveProperty("durationSec");
   });
 
-  it("keeps a silent comments group at min duration when reading is off", () => {
+  it("skips comments groups that have no tts", () => {
     const page = savedPageSchema.parse({
       id: "comments",
       title: "Comments",
       type: "comments",
       meta: {
         tags: [],
-        commentReader: null,
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
       },
       comments: [
@@ -378,17 +372,13 @@ describe("toTimeline", () => {
           id: "g1",
           commentIds: ["sm1:thread:main:1"],
           displayText: null,
-          readingTtsId: null,
           ttsIds: ["t1", "t2"],
-          minDurationSec: 3,
         },
         {
           id: "g2",
           commentIds: ["sm1:thread:main:2"],
           displayText: null,
-          readingTtsId: null,
           ttsIds: [],
-          minDurationSec: 3,
         },
       ],
       padBeforeSec: 1,
@@ -397,7 +387,15 @@ describe("toTimeline", () => {
       tts: [tts("t1", 1, "ありがとう", "himari"), tts("t2", 2, "よろしく", "himari")],
     });
 
-    expect(toTimeline(project([page])).tracks[0]?.clips[0]?.durationSec).toBe(8);
+    const clip = toTimeline(project([page])).tracks[0]?.clips[0];
+    expect(clip?.durationSec).toBe(5);
+    expect(
+      clip?.clips.map(({ id, startSec, durationSec }) => ({ id, startSec, durationSec })),
+    ).toEqual([
+      { id: "t1", startSec: 1, durationSec: 1 },
+      { id: "t2", startSec: 2, durationSec: 2 },
+      { id: "g1", startSec: 0, durationSec: 4 },
+    ]);
   });
 
   it("does not freeze comments duration when audio is still pending", () => {
@@ -407,7 +405,6 @@ describe("toTimeline", () => {
       type: "comments",
       meta: {
         tags: [],
-        commentReader: { provider: "voisona", voiceName: "zunda" },
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
       },
       comments: [
@@ -426,9 +423,7 @@ describe("toTimeline", () => {
           id: "g1",
           commentIds: ["sm1:thread:main:1"],
           displayText: null,
-          readingTtsId: "r1",
-          ttsIds: [],
-          minDurationSec: 3,
+          ttsIds: ["r1"],
         },
       ],
       padBeforeSec: 1,
@@ -458,7 +453,7 @@ describe("toTimeline", () => {
         },
       ],
     });
-    expect(timeline.tracks[0]?.clips[0]?.durationSec).toBe(5);
+    expect(timeline.tracks[0]?.clips[0]?.durationSec).toBe(2 + MIN_TTS_DURATION_SECONDS);
     expect(timeline.tracks[0]?.clips[0]?.clips).toEqual([
       {
         id: "r1",
@@ -466,7 +461,7 @@ describe("toTimeline", () => {
         durationSec: MIN_TTS_DURATION_SECONDS,
         clips: [],
       },
-      { id: "g1", startSec: 0, durationSec: 4, clips: [] },
+      { id: "g1", startSec: 0, durationSec: 1 + MIN_TTS_DURATION_SECONDS, clips: [] },
     ]);
   });
 });

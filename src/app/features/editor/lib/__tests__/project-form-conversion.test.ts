@@ -40,7 +40,6 @@ describe("page form values", () => {
       type: "comments" as const,
       meta: {
         tags: ["niconico"],
-        commentReader: { provider: "voisona" as const, voiceName: "zunda" },
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
       },
       comments: [
@@ -52,6 +51,7 @@ describe("page form values", () => {
           body: "うぽつ",
           vposMs: 0,
           postedAt: "2026-09-16T00:00:00.000Z",
+          hidden: false,
         },
       ],
       commentGroups: [
@@ -59,9 +59,7 @@ describe("page form values", () => {
           id: "g1",
           commentIds: ["sm1:thread:main:1"],
           displayText: null,
-          readingTtsId: "r1",
-          ttsIds: ["t1"],
-          minDurationSec: 3,
+          ttsIds: ["r1", "t1"],
         },
       ],
       padBeforeSec: 0,

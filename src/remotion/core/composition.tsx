@@ -4,6 +4,7 @@ import { BgmLayer } from "../layers/layer-bgm/layer-bgm";
 import { IntroPage } from "../pages/intro/intro-page";
 import { MainPage } from "../pages/main/main-page";
 import { OutroPage } from "../pages/outro/outro-page";
+import { CommentsPage } from "../pages/comments/comments-page";
 import { getTransitionPresentation } from "../transitions/registry";
 import { getTransitionEasing } from "../transitions/variants";
 import { linearTiming, TransitionSeries } from "@remotion/transitions";
@@ -18,6 +19,7 @@ function PageByType({ page }: { page: SavedPage }) {
     case "outro":
       return <OutroPage page={page} />;
     case "comments":
+      return <CommentsPage page={page} />;
     case "endcard":
     case "eyecatch-text":
       return null;
