@@ -80,6 +80,31 @@ export const DEFAULT_VOICE_DEFINITIONS: DefaultVoiceDefinition[] = [
     alias: "futaba",
     hotkey: "ctrl+7",
   },
+  {
+    voice: {
+      provider: "voisona",
+      voiceName: "ui_ja_JP",
+      voiceVersion: "2.0.0",
+      displayName: "ui v2.0.0",
+    },
+    label: "☂ うい",
+    alias: "ui",
+    hotkey: "ctrl+8",
+  },
+  {
+    voice: {
+      provider: "coeiroink",
+      speakerUuid: "272c0178-a248-11f1-82fa-0242ac1c000c",
+      styleId: 1295160681,
+      modelVersion: "0.0.1",
+      displayName: "カゼヒキ / はな風邪",
+      speakerName: "カゼヒキ",
+      styleName: "はな風邪",
+    },
+    label: "🤧 カゼヒキ",
+    alias: "kazehiki",
+    hotkey: "ctrl+9",
+  },
 ];
 
 export function getDefaultVoiceOptions(): VoiceOption[] {

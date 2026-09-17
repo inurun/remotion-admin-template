@@ -2,6 +2,7 @@ export {
   DEFAULT_AVATAR_TYPE,
   avatarOptions,
   getAvatarTypeByVoiceName,
+  getAvatarTypeForVoice,
   getOpenedMouthOptions,
   resolveAvatarSettings,
   voiceNameAvatarMap,

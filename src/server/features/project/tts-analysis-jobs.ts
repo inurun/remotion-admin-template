@@ -23,7 +23,6 @@ import {
   type AutomaticAnalyzeTarget,
 } from "@/server/features/tts/automatic-llm-analysis";
 import { resolveTtsSynthesisSettings } from "@/server/features/tts/synthesis-settings";
-import { getOptionalVoiceVersion } from "@/server/features/tts/providers/comparison";
 import {
   createPreviousTtsComparisonInput,
   getTtsProvider,
@@ -56,12 +55,10 @@ function planTtsWav(
 ) {
   const provider = getTtsProvider(item.provider);
   const resolved = resolveTtsSynthesisSettings(item, presets);
-  const voiceVersion = getOptionalVoiceVersion(resolved.voiceVersion ?? "");
   return provider.plan(serverEnv, {
     ...createPreviousTtsComparisonInput(resolved),
     g2p,
     projectPath,
-    ...(voiceVersion ? { voiceVersion } : {}),
   } as never);
 }
 

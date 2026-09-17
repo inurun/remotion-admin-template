@@ -2,9 +2,10 @@ import { z } from "zod";
 import { storedG2pItemSchema } from "@/_schemas/g2p";
 import {
   avatarSettingsSchema,
+  coeiroinkSynthesisSettingsSchema,
   voicepeakSynthesisSettingsSchema,
-  voisonaSynthesisSettingsSchema,
   voicevoxSynthesisSettingsSchema,
+  voisonaSynthesisSettingsSchema,
 } from "@/_schemas/project/primitives";
 
 const ttsSpeechSchema = z.object({
@@ -15,14 +16,23 @@ const ttsBaseSchema = z.object({
   id: z.string().min(1),
   text: z.string(),
   readText: z.string().optional(),
-  voiceName: z.string().optional(),
-  voiceVersion: z.string().optional(),
   padBeforeSec: z.number().default(0),
   padAfterSec: z.number().default(0),
   volume: z.number().min(0).max(1).default(1),
   speech: ttsSpeechSchema.optional(),
   avatar: avatarSettingsSchema.optional(),
 });
+
+const namedTtsIdentity = {
+  voiceName: z.string().optional(),
+  voiceVersion: z.string().optional(),
+};
+
+const coeiroinkTtsIdentity = {
+  speakerUuid: z.string().min(1),
+  styleId: z.number().int(),
+  modelVersion: z.string().min(1),
+};
 
 export const savedTtsAudioSchema = z.discriminatedUnion("status", [
   z
@@ -58,19 +68,29 @@ export type SavedTtsAudio = z.infer<typeof savedTtsAudioSchema>;
 export const savedTtsSchema = z.discriminatedUnion("provider", [
   ttsBaseSchema.extend({
     provider: z.literal("voisona"),
+    ...namedTtsIdentity,
     synthesisSettings: voisonaSynthesisSettingsSchema.nullish(),
     audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),
   ttsBaseSchema.extend({
     provider: z.literal("voicevox"),
+    ...namedTtsIdentity,
     synthesisSettings: voicevoxSynthesisSettingsSchema.nullish(),
     audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),
   ttsBaseSchema.extend({
     provider: z.literal("voicepeak"),
+    ...namedTtsIdentity,
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),
+    audio: savedTtsAudioSchema,
+    speech: ttsSpeechSchema.default({}),
+  }),
+  ttsBaseSchema.extend({
+    provider: z.literal("coeiroink"),
+    ...coeiroinkTtsIdentity,
+    synthesisSettings: coeiroinkSynthesisSettingsSchema.nullish(),
     audio: savedTtsAudioSchema,
     speech: ttsSpeechSchema.default({}),
   }),

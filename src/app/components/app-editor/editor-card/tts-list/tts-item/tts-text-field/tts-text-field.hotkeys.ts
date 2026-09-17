@@ -6,6 +6,7 @@ import { useTts } from "@/app/features/tts";
 import { eventMatchesHotkey } from "@/app/features/settings/lib/hotkeys";
 import { getVoiceId, useSettings } from "@/app/features/settings";
 import type { VoiceSettings } from "@/app/features/settings/storage/use-settings-store";
+import { applyTtsVoiceChange } from "@/app/features/tts";
 
 function getVoiceForHotkey(
   event: globalThis.KeyboardEvent,
@@ -18,17 +19,21 @@ function getVoiceForHotkey(
 }
 
 function setTtsVoice({
+  getValues,
   setValue,
   ttsIndex,
   voice,
 }: {
+  getValues: ReturnType<typeof useFormContext<PageFormValues>>["getValues"];
   setValue: ReturnType<typeof useFormContext<PageFormValues>>["setValue"];
   ttsIndex: number;
   voice: VoiceOption;
 }) {
-  setValue(`tts.${ttsIndex}.voiceName`, voice.voiceName, { shouldDirty: true });
-  setValue(`tts.${ttsIndex}.provider`, voice.provider, { shouldDirty: true });
-  setValue(`tts.${ttsIndex}.voiceVersion`, voice.voiceVersion ?? "", { shouldDirty: true });
+  const current = getValues(`tts.${ttsIndex}`);
+  if (!current) {
+    return;
+  }
+  setValue(`tts.${ttsIndex}`, applyTtsVoiceChange(current, voice), { shouldDirty: true });
 }
 
 export function useTtsTextFieldKeyDown({
@@ -44,7 +49,7 @@ export function useTtsTextFieldKeyDown({
 }) {
   const { analyze } = useTts();
   const { hotkeys, options, voiceSettings } = useSettings();
-  const { setValue } = useFormContext<PageFormValues>();
+  const { setValue, getValues } = useFormContext<PageFormValues>();
 
   return useCallback(
     (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -76,7 +81,7 @@ export function useTtsTextFieldKeyDown({
       }
 
       event.preventDefault();
-      setTtsVoice({ setValue, ttsIndex, voice });
+      setTtsVoice({ getValues, setValue, ttsIndex, voice });
     },
     [
       analyze,
@@ -84,6 +89,7 @@ export function useTtsTextFieldKeyDown({
       hotkeys.analyze,
       hotkeys.deleteTts,
       onInsertAfter,
+      getValues,
       onRemove,
       options,
       setValue,

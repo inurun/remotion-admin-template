@@ -44,8 +44,6 @@ type CommentsPageRelationTts = {
   id: string;
   text: string;
   provider: string;
-  voiceName?: string;
-  voiceVersion?: string;
 };
 
 export type CommentsPageRelationInput = {

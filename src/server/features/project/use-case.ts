@@ -8,6 +8,9 @@ import {
   DEFAULT_PROJECT_META,
   DEFAULT_VOICE_PRESETS,
   savedProjectSchema,
+  copyVoiceIdentity,
+  hasVoiceIdentity,
+  toVoiceIdentity,
 } from "@/_schemas";
 import { withoutStaleDictionaryWords } from "@/server/features/tts/g2p-item";
 import { nowIso } from "@/_shared/lib/date/date";
@@ -132,8 +135,8 @@ function validateTts(item: SaveTtsItem) {
     throw new Error(`text is required for tts ${item.id}`);
   }
 
-  if (!item.voiceName?.trim()) {
-    throw new Error(`voiceName is required for tts ${item.id}`);
+  if (!hasVoiceIdentity(item)) {
+    throw new Error(`voice is required for tts ${item.id}`);
   }
 }
 
@@ -150,9 +153,10 @@ async function audioFileExists(src: string) {
   }
 }
 
-function withEffectiveSynthesisSettings<
-  T extends Pick<SaveTtsItem, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
->(item: T, presets: Record<string, VoicePreset>): T {
+function withEffectiveSynthesisSettings<T extends SaveTtsItem>(
+  item: T,
+  presets: Record<string, VoicePreset>,
+): T {
   const synthesisSettings = getEffectiveTtsSynthesisSettings(item, presets);
   return {
     ...item,
@@ -312,18 +316,32 @@ async function assignBatchG2p(serverEnv: ServerEnv, plans: PlannedTts[]) {
   }
 }
 
+function voiceFieldsFromComparison(nextInput: TtsComparisonInput<SaveTtsItem["provider"]>) {
+  if (nextInput.provider === "coeiroink") {
+    return {
+      provider: "coeiroink" as const,
+      speakerUuid: nextInput.speakerUuid,
+      styleId: nextInput.styleId,
+      modelVersion: nextInput.modelVersion,
+    };
+  }
+
+  return {
+    provider: nextInput.provider,
+    voiceName: nextInput.voiceName,
+    ...(nextInput.voiceVersion ? { voiceVersion: nextInput.voiceVersion } : {}),
+  };
+}
+
 function createTtsFields(
   item: SaveTtsItem,
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
-  voiceVersion?: string,
 ) {
   return {
     id: item.id,
-    provider: item.provider,
     text: item.text,
     readText: nextInput.readText,
-    voiceName: nextInput.voiceName,
-    ...(voiceVersion ? { voiceVersion } : {}),
+    ...voiceFieldsFromComparison(nextInput),
     ...getTtsPlaybackSettings(item),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
@@ -333,11 +351,7 @@ function createTtsFields(
 
 function createReusedSavedTts(item: SaveTtsItem, previous: SavedTts) {
   return {
-    ...createTtsFields(
-      item,
-      createPreviousTtsComparisonInput(previous),
-      getOptionalVoiceVersion(previous.voiceVersion ?? ""),
-    ),
+    ...createTtsFields(item, createPreviousTtsComparisonInput(previous)),
     audio: previous.audio,
   };
 }
@@ -346,10 +360,9 @@ function createReadySavedTts(
   item: SaveTtsItem,
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
   audio: SynthesizeResponse,
-  voiceVersion?: string,
 ) {
   return {
-    ...createTtsFields(item, nextInput, voiceVersion),
+    ...createTtsFields(item, nextInput),
     audio: {
       status: "ready" as const,
       src: audio.audioSrc,
@@ -362,10 +375,9 @@ function createPendingSavedTts(
   item: SaveTtsItem,
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
   audioSrc: string,
-  voiceVersion?: string,
 ) {
   return {
-    ...createTtsFields(item, nextInput, voiceVersion),
+    ...createTtsFields(item, nextInput),
     audio: {
       status: "pending" as const,
       src: audioSrc,
@@ -377,10 +389,9 @@ function createAnalyzingSavedTts(
   item: SaveTtsItem,
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
   analysisKey: string,
-  voiceVersion?: string,
 ) {
   return {
-    ...createTtsFields(item, nextInput, voiceVersion),
+    ...createTtsFields(item, nextInput),
     audio: {
       status: "analyzing" as const,
       analysisKey,
@@ -398,11 +409,7 @@ function createAnalyzingReuseTts(
   }
 
   return {
-    ...createTtsFields(
-      item,
-      { ...nextInput, g2p: previous.speech.g2p },
-      getOptionalVoiceVersion(nextInput.voiceVersion),
-    ),
+    ...createTtsFields(item, { ...nextInput, g2p: previous.speech.g2p }),
     audio: previous.audio,
   };
 }
@@ -444,7 +451,6 @@ function planProviderSynthesis(
   itemId: string,
   nextInput: TtsComparisonInput<SaveTtsItem["provider"]>,
 ): PlannedSynthesis {
-  const voiceVersion = getOptionalVoiceVersion(nextInput.voiceVersion);
   const provider = getTtsProvider(nextInput.provider);
   if (provider.usesG2p) {
     assertHaqumeiTextLength(nextInput.readText, itemId);
@@ -453,7 +459,6 @@ function planProviderSynthesis(
   return provider.plan(serverEnv, {
     ...nextInput,
     projectPath,
-    ...(voiceVersion ? { voiceVersion } : {}),
   } as never);
 }
 
@@ -513,12 +518,7 @@ async function buildSavedTts(
       baselineKana: baseline.kana,
     });
     return {
-      tts: createAnalyzingSavedTts(
-        plan.item,
-        plan.nextInput,
-        analysisKey,
-        getOptionalVoiceVersion(plan.nextInput.voiceVersion),
-      ) as SavedTts,
+      tts: createAnalyzingSavedTts(plan.item, plan.nextInput, analysisKey) as SavedTts,
       analysis: {
         pageId,
         ttsId: plan.item.id,
@@ -527,21 +527,15 @@ async function buildSavedTts(
     };
   }
 
-  const voiceVersion = getOptionalVoiceVersion(plan.nextInput.voiceVersion);
   const planned = planProviderSynthesis(serverEnv, projectPath, plan.item.id, plan.nextInput);
   const cached = await readCachedWav(planned.wav);
   if (cached) {
     return {
-      tts: createReadySavedTts(plan.item, plan.nextInput, cached, voiceVersion) as SavedTts,
+      tts: createReadySavedTts(plan.item, plan.nextInput, cached) as SavedTts,
     };
   }
 
-  const tts = createPendingSavedTts(
-    plan.item,
-    plan.nextInput,
-    planned.wav.audioSrc,
-    voiceVersion,
-  ) as SavedTts;
+  const tts = createPendingSavedTts(plan.item, plan.nextInput, planned.wav.audioSrc) as SavedTts;
   if (shouldSkipPendingJob(projectPath, plan.previous, planned.wav.audioSrc, forceResynthesis)) {
     return { tts };
   }
@@ -651,16 +645,15 @@ function buildPreviousTtsMap(previousProject?: SavedProject) {
 }
 
 function toSaveTtsItemFromSaved(item: SavedTts): SaveTtsItem {
+  const identity = toVoiceIdentity(item);
   return {
     id: item.id,
-    provider: item.provider,
     text: item.text,
     readText: item.readText,
-    voiceName: item.voiceName,
+    ...(identity ? copyVoiceIdentity(identity) : { provider: item.provider }),
     padBeforeSec: item.padBeforeSec,
     padAfterSec: item.padAfterSec,
     volume: item.volume,
-    ...(item.voiceVersion ? { voiceVersion: item.voiceVersion } : {}),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
     speech: item.speech.g2p ? { g2p: item.speech.g2p } : {},
@@ -748,10 +741,6 @@ function resolveSequenceOrder(
     }
   }
   return nextOrder;
-}
-
-function getOptionalVoiceVersion(value: string) {
-  return value || undefined;
 }
 
 export async function listProjects(): Promise<ProjectFileSummary[]> {

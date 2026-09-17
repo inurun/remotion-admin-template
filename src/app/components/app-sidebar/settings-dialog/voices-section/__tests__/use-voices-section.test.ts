@@ -38,8 +38,12 @@ describe("useVoicesSection helpers", () => {
       }),
     );
 
-    expect(getVisibleVoices(values).map((item) => item.voiceName)).toEqual(["b", "a"]);
-    expect(getAddableVoices(values).map((item) => item.voiceName)).toEqual(["c"]);
+    expect(
+      getVisibleVoices(values).map((item) => ("voiceName" in item ? item.voiceName : "")),
+    ).toEqual(["b", "a"]);
+    expect(
+      getAddableVoices(values).map((item) => ("voiceName" in item ? item.voiceName : "")),
+    ).toEqual(["c"]);
   });
 
   it("drops stale selected ids when applying a fetched catalog", () => {

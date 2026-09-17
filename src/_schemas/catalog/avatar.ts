@@ -30,6 +30,13 @@ export function getAvatarTypeByVoiceName(voiceName: string | undefined): AvatarT
   return voiceName ? (voiceNameAvatarMap[voiceName] ?? DEFAULT_AVATAR_TYPE) : DEFAULT_AVATAR_TYPE;
 }
 
+export function getAvatarTypeForVoice(voice: { provider: string; voiceName?: string }): AvatarType {
+  if (voice.provider === "coeiroink") {
+    return DEFAULT_AVATAR_TYPE;
+  }
+  return getAvatarTypeByVoiceName(voice.voiceName);
+}
+
 export function getOpenedMouthOptions(type: AvatarType) {
   return avatarOptions[type].mouth.filter((mouth) => mouth.endsWith("opened"));
 }

@@ -1,10 +1,13 @@
-import type { VoicePreset, VoiceOption } from "@/_schemas";
-import { voicePresetId } from "@/_schemas";
+import type { VoicePreset, VoiceOption, VoiceIdentity } from "@/_schemas";
+import { toVoiceIdentity, voicePresetId } from "@/_schemas";
 
 type TtsSynthesisFields = {
   provider: VoicePreset["provider"];
   voiceName?: string;
   voiceVersion?: string;
+  speakerUuid?: string;
+  styleId?: number;
+  modelVersion?: string;
   synthesisSettings?: VoicePreset["synthesisSettings"] | null;
 };
 
@@ -12,18 +15,17 @@ function getConcreteSynthesisSettings(value: TtsSynthesisFields["synthesisSettin
   return !value || Object.keys(value).length === 0 ? undefined : value;
 }
 
+function presetIdFor(item: TtsSynthesisFields) {
+  const identity = toVoiceIdentity(item);
+  return identity ? voicePresetId(identity) : undefined;
+}
+
 export function getEffectiveTtsSynthesisSettings(
-  item: Pick<TtsSynthesisFields, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+  item: TtsSynthesisFields,
   presets: Record<string, VoicePreset>,
 ) {
-  const preset =
-    presets[
-      voicePresetId({
-        provider: item.provider,
-        voiceName: item.voiceName ?? "",
-        voiceVersion: item.voiceVersion ?? "",
-      })
-    ];
+  const presetId = presetIdFor(item);
+  const preset = presetId ? presets[presetId] : undefined;
   return (
     getConcreteSynthesisSettings(item.synthesisSettings) ??
     getConcreteSynthesisSettings(preset?.synthesisSettings)
@@ -43,7 +45,7 @@ export function resolveTtsSynthesisSettings<T extends TtsSynthesisFields>(
 
 export function getVoicePresetSettings(
   presets: Record<string, VoicePreset>,
-  voice: Pick<VoiceOption, "provider" | "voiceName" | "voiceVersion">,
+  voice: VoiceOption | VoiceIdentity,
 ) {
   return presets[voicePresetId(voice)]?.synthesisSettings;
 }

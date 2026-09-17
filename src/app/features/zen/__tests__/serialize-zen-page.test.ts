@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { VoiceOption } from "@/_schemas";
+import type { NamedVoiceProvider, VoiceOption } from "@/_schemas";
+import { getVoiceId } from "@/_schemas";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
@@ -13,7 +14,7 @@ import type { VoiceSettings } from "@/app/features/settings/storage/use-settings
 function voice(
   voiceName: string,
   displayName: string,
-  provider: VoiceOption["provider"] = "voicevox",
+  provider: NamedVoiceProvider = "voicevox",
 ): VoiceOption {
   return { provider, voiceName, voiceVersion: "", displayName };
 }
@@ -22,7 +23,7 @@ function aliases(entries: Array<{ alias: string; voice: VoiceOption }>) {
   const voices = entries.map((entry) => entry.voice);
   const voiceSettings = Object.fromEntries(
     entries.map((entry) => [
-      `${entry.voice.provider}::${entry.voice.voiceName}::`,
+      getVoiceId(entry.voice),
       { label: entry.voice.displayName, alias: entry.alias, hotkey: "" } satisfies VoiceSettings,
     ]),
   );

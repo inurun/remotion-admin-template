@@ -17,8 +17,10 @@ const requiredPaths = [
   "/v1/dictionary/entries/{id}",
   "/v1/synthesis/voicevox",
   "/v1/synthesis/voisona",
+  "/v1/synthesis/coeiroink",
   "/v1/voices/voicevox",
   "/v1/voices/voisona",
+  "/v1/voices/coeiroink",
 ] as const;
 
 function trimEnvValue(value: string | undefined) {
@@ -111,7 +113,11 @@ function assertBinaryWavSchema(openapi: Record<string, unknown>) {
   const components = isRecord(openapi.components) ? openapi.components.schemas : undefined;
   const componentSchemas = isRecord(components) ? components : undefined;
 
-  for (const synthesisPath of ["/v1/synthesis/voicevox", "/v1/synthesis/voisona"] as const) {
+  for (const synthesisPath of [
+    "/v1/synthesis/voicevox",
+    "/v1/synthesis/voisona",
+    "/v1/synthesis/coeiroink",
+  ] as const) {
     const pathItem = paths[synthesisPath];
     if (!isRecord(pathItem) || !isRecord(pathItem.post) || !isRecord(pathItem.post.responses)) {
       throw new Error(`haqumei-api schema missing POST ${synthesisPath}`);

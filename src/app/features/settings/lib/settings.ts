@@ -28,9 +28,22 @@ function pickCatalogVoice(
   }
 
   const candidates = catalogByMatchKey.get(getVoiceMatchKey(parsed)) ?? [];
+  if (parsed.provider === "coeiroink") {
+    if (parsed.modelVersion) {
+      const versionMatch = candidates.find(
+        (voice) => voice.provider === "coeiroink" && voice.modelVersion === parsed.modelVersion,
+      );
+      if (versionMatch) {
+        return versionMatch;
+      }
+    }
+    return candidates[0];
+  }
+
   if (parsed.voiceVersion) {
     const versionMatch = candidates.find(
-      (voice) => (voice.voiceVersion ?? "") === parsed.voiceVersion,
+      (voice) =>
+        voice.provider !== "coeiroink" && (voice.voiceVersion ?? "") === parsed.voiceVersion,
     );
     if (versionMatch) {
       return versionMatch;

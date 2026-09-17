@@ -1,11 +1,8 @@
+import { hasVoiceIdentity } from "@/_schemas";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 
 function hasText(item: TtsFormValues) {
   return Boolean((item.text ?? "").trim());
-}
-
-function hasVoiceName(item: TtsFormValues) {
-  return Boolean(item.voiceName);
 }
 
 export function isTtsActionReady(
@@ -16,7 +13,7 @@ export function isTtsActionReady(
     return false;
   }
 
-  return hasText(item) && hasVoiceName(item);
+  return hasText(item) && hasVoiceIdentity(item);
 }
 
 export function canStartTtsAnalyze(

@@ -5,6 +5,7 @@ import {
   storedG2pItemSchema,
   voiceOptionSchema,
   voiceProviderSchema,
+  coeiroinkSynthesisSettingsSchema,
   voicepeakSynthesisSettingsSchema,
   voicevoxSynthesisSettingsSchema,
   voisonaSynthesisSettingsSchema,
@@ -127,6 +128,16 @@ export const ttsSynthesizeRequestSchema = z.discriminatedUnion("provider", [
     voiceName: z.string().min(1),
     voiceVersion: z.string().optional(),
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),
+  }),
+  z.object({
+    provider: z.literal("coeiroink"),
+    projectPath: z.string().min(1),
+    text: z.string().min(1),
+    g2p: storedG2pItemSchema.optional(),
+    speakerUuid: z.string().min(1),
+    styleId: z.number().int(),
+    modelVersion: z.string().min(1),
+    synthesisSettings: coeiroinkSynthesisSettingsSchema.nullish(),
   }),
 ]);
 

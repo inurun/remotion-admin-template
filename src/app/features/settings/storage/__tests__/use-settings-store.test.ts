@@ -161,11 +161,9 @@ describe("useSettingsStore", () => {
     });
     useSettingsStore.getState().mergeFetchedVoices([voice("a", "A"), voice("c", "C")]);
 
-    expect(useSettingsStore.getState().voices.map((item) => item.voiceName)).toEqual([
-      "a",
-      "c",
-      "b",
-    ]);
+    expect(
+      useSettingsStore.getState().voices.map((item) => ("voiceName" in item ? item.voiceName : "")),
+    ).toEqual(["a", "c", "b"]);
     expect(useSettingsStore.getState().voiceOrder).toEqual(["voisona::b::", "voisona::a::"]);
     expect(useSettingsStore.getState().voiceSettings["voisona::b::"]).toEqual({
       label: "Actor B",

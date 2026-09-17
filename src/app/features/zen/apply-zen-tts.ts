@@ -1,20 +1,13 @@
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { getVoiceId } from "@/app/features/settings";
+import { getVoiceId, toVoiceIdentity, voiceIdentitiesEqual } from "@/_schemas";
 import { applyTtsTextChange } from "@/app/features/tts/lib/apply-tts-text-change";
 import { applyTtsVoiceChange } from "@/app/features/tts/lib/apply-tts-voice-change";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
 import type { ZenAliasTarget } from "@/app/features/zen/types";
 
 function ttsAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
-  return (
-    voiceAliases.get(
-      getVoiceId({
-        provider: item.provider,
-        voiceName: item.voiceName ?? "",
-        voiceVersion: item.voiceVersion,
-      }),
-    ) ?? ""
-  );
+  const identity = toVoiceIdentity(item);
+  return (identity ? voiceAliases.get(getVoiceId(identity)) : undefined) ?? "";
 }
 
 function isSameTtsKey(
@@ -33,16 +26,27 @@ function applyAvatar(existing: TtsFormValues, next: TtsFormValues): TtsFormValue
 
 function applySubstitute(existing: TtsFormValues, next: TtsFormValues): TtsFormValues {
   let result = existing;
+  const existingIdentity = toVoiceIdentity(existing);
+  const nextIdentity = toVoiceIdentity(next);
   const voiceChanged =
-    existing.provider !== next.provider ||
-    existing.voiceName !== next.voiceName ||
-    (existing.voiceVersion ?? "") !== (next.voiceVersion ?? "");
+    !existingIdentity || !nextIdentity || !voiceIdentitiesEqual(existingIdentity, nextIdentity);
 
-  if (voiceChanged) {
+  if (voiceChanged && nextIdentity && next.provider !== "coeiroink") {
     result = applyTtsVoiceChange(result, {
       provider: next.provider,
       voiceName: next.voiceName ?? "",
       voiceVersion: next.voiceVersion ?? "",
+      displayName: next.voiceName ?? "",
+    });
+  } else if (voiceChanged && next.provider === "coeiroink") {
+    result = applyTtsVoiceChange(result, {
+      provider: "coeiroink",
+      speakerUuid: next.speakerUuid,
+      styleId: next.styleId,
+      modelVersion: next.modelVersion,
+      displayName: "",
+      speakerName: "",
+      styleName: "",
     });
   }
 

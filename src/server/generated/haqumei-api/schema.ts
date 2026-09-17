@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/synthesis/coeiroink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["synthesis_coeiroink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/synthesis/voicevox": {
         parameters: {
             query?: never;
@@ -158,6 +174,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["synthesis_voisona"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voices/coeiroink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["voices_coeiroink"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -236,6 +268,43 @@ export interface components {
             haqumei_version: string;
             items: components["schemas"]["AnalyzeItem"][];
             schema_version: string;
+        };
+        CoeiroinkSynthesisRequest: {
+            item: components["schemas"]["G2pItem"];
+            schema_version: string;
+            speaker_uuid: string;
+            /** Format: int32 */
+            style_id: number;
+            synthesis_settings?: components["schemas"]["CoeiroinkSynthesisSettings"];
+        };
+        CoeiroinkSynthesisSettings: {
+            /** Format: double */
+            intonationScale?: number;
+            /** Format: int32 */
+            outputSamplingRate?: number;
+            /** Format: double */
+            pauseLength?: number;
+            /** Format: double */
+            pitchScale?: number;
+            /** Format: double */
+            postPhonemeLength?: number;
+            /** Format: double */
+            prePhonemeLength?: number;
+            /** Format: double */
+            speedScale?: number;
+            /** Format: double */
+            volumeScale?: number;
+        };
+        CoeiroinkVoice: {
+            speaker_name: string;
+            speaker_uuid: string;
+            /** Format: int32 */
+            style_id: number;
+            style_name: string;
+            version: string;
+        };
+        CoeiroinkVoicesResponse: {
+            voices: components["schemas"]["CoeiroinkVoice"][];
         };
         ContextCandidate: {
             description?: string;
@@ -360,53 +429,25 @@ export interface components {
             synthesis_settings?: components["schemas"]["VoicevoxSynthesisSettings"];
         };
         VoicevoxSynthesisSettings: {
-            /**
-             * Format: double
-             * @default null
-             */
-            intonationScale: number;
-            /**
-             * Format: int32
-             * @default null
-             */
-            outputSamplingRate: number;
-            /** @default null */
-            outputStereo: boolean;
-            /**
-             * Format: double
-             * @default null
-             */
-            pauseLength: number | null;
-            /**
-             * Format: double
-             * @default null
-             */
-            pauseLengthScale: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            pitchScale: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            postPhonemeLength: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            prePhonemeLength: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            speedScale: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            volumeScale: number;
+            /** Format: double */
+            intonationScale?: number;
+            /** Format: int32 */
+            outputSamplingRate?: number;
+            outputStereo?: boolean;
+            /** Format: double */
+            pauseLength?: number | null;
+            /** Format: double */
+            pauseLengthScale?: number;
+            /** Format: double */
+            pitchScale?: number;
+            /** Format: double */
+            postPhonemeLength?: number;
+            /** Format: double */
+            prePhonemeLength?: number;
+            /** Format: double */
+            speedScale?: number;
+            /** Format: double */
+            volumeScale?: number;
         };
         VoicevoxVoice: {
             /** Format: int32 */
@@ -431,38 +472,19 @@ export interface components {
             voice_version?: string;
         };
         VoisonaSynthesisSettings: {
-            /**
-             * Format: double
-             * @default null
-             */
-            alp: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            huskiness: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            intonation: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            pitch: number;
-            /**
-             * Format: double
-             * @default null
-             */
-            speed: number;
-            /** @default null */
-            style_weights: number[];
-            /**
-             * Format: double
-             * @default null
-             */
-            volume: number;
+            /** Format: double */
+            alp?: number;
+            /** Format: double */
+            huskiness?: number;
+            /** Format: double */
+            intonation?: number;
+            /** Format: double */
+            pitch?: number;
+            /** Format: double */
+            speed?: number;
+            style_weights?: number[];
+            /** Format: double */
+            volume?: number;
         };
         VoisonaVoice: {
             display_names?: components["schemas"]["VoisonaDisplayName"][];
@@ -947,6 +969,94 @@ export interface operations {
             };
         };
     };
+    synthesis_coeiroink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoeiroinkSynthesisRequest"];
+            };
+        };
+        responses: {
+            /** @description WAV audio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/wav": components["schemas"]["WavFile"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     synthesis_voicevox: {
         parameters: {
             query?: never;
@@ -1082,6 +1192,41 @@ export interface operations {
                 };
             };
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            504: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    voices_coeiroink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoeiroinkVoicesResponse"];
+                };
+            };
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -85,4 +85,26 @@ export const DEFAULT_VOICE_PRESETS = {
       style_weights: [0, 1, 0, 0.2, 0, 1],
     },
   },
+  "voisona::ui_ja_JP::2.0.0": {
+    provider: "voisona" as const,
+    voiceName: "ui_ja_JP",
+    voiceVersion: "2.0.0",
+    synthesisSettings: {
+      alp: 0.1,
+      speed: 1.3,
+      huskiness: 0.8,
+      style_weights: [0.33, 0, 0, 0.33, 0.33],
+    },
+  },
+  "coeiroink::272c0178-a248-11f1-82fa-0242ac1c000c::1295160681::0.0.1": {
+    provider: "coeiroink",
+    speakerUuid: "272c0178-a248-11f1-82fa-0242ac1c000c",
+    styleId: 1295160681,
+    modelVersion: "0.0.1",
+    synthesisSettings: {
+      speedScale: 1.2,
+      prePhonemeLength: 0,
+      postPhonemeLength: 0,
+    },
+  },
 };

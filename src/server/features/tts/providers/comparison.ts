@@ -7,9 +7,7 @@ import type {
   TtsProvider,
 } from "@/server/features/tts/providers/types";
 
-export function getEffectiveReadText(
-  item: Pick<TtsInputForProvider<TtsProvider>, "text" | "readText">,
-) {
+export function getEffectiveReadText(item: { text: string; readText?: string }) {
   return item.readText?.trim() || item.text;
 }
 
@@ -43,28 +41,58 @@ export function createDraftComparisonInput<TProvider extends TtsProvider>(
   item: TtsInputForProvider<TProvider>,
   readText: string,
 ): TtsComparisonInput<TProvider> {
-  return {
+  const raw = item as TtsInputForProvider<TtsProvider>;
+  const g2p = raw.speech?.g2p;
+  const base = {
     provider,
-    text: item.text,
+    text: raw.text,
     readText,
-    voiceName: item.voiceName?.trim() || "",
-    voiceVersion: item.voiceVersion?.trim() || "",
-    ...(item.speech?.g2p ? { g2p: item.speech.g2p } : {}),
-    synthesisSettings: normalizeSynthesisSettings(item.synthesisSettings),
+    ...(g2p ? { g2p } : {}),
+    synthesisSettings: normalizeSynthesisSettings(raw.synthesisSettings),
   };
+
+  if (raw.provider === "coeiroink") {
+    return {
+      ...base,
+      speakerUuid: raw.speakerUuid,
+      styleId: raw.styleId,
+      modelVersion: raw.modelVersion,
+    } as unknown as TtsComparisonInput<TProvider>;
+  }
+
+  return {
+    ...base,
+    voiceName: raw.voiceName?.trim() || "",
+    voiceVersion: raw.voiceVersion?.trim() || "",
+  } as unknown as TtsComparisonInput<TProvider>;
 }
 
 export function createPreviousComparisonInput<TProvider extends TtsProvider>(
   provider: TProvider,
   item: SavedTtsForProvider<TProvider>,
 ): TtsComparisonInput<TProvider> {
-  return {
+  const raw = item as SavedTtsForProvider<TtsProvider>;
+  const g2p = raw.speech.g2p;
+  const base = {
     provider,
-    text: item.text,
-    readText: normalizeOptionalString(item.readText),
-    voiceName: normalizeOptionalString(item.voiceName),
-    voiceVersion: normalizeOptionalString(item.voiceVersion),
-    ...(item.speech.g2p ? { g2p: item.speech.g2p } : {}),
-    synthesisSettings: normalizeSynthesisSettings(item.synthesisSettings),
+    text: raw.text,
+    readText: normalizeOptionalString(raw.readText),
+    ...(g2p ? { g2p } : {}),
+    synthesisSettings: normalizeSynthesisSettings(raw.synthesisSettings),
   };
+
+  if (raw.provider === "coeiroink") {
+    return {
+      ...base,
+      speakerUuid: raw.speakerUuid,
+      styleId: raw.styleId,
+      modelVersion: raw.modelVersion,
+    } as unknown as TtsComparisonInput<TProvider>;
+  }
+
+  return {
+    ...base,
+    voiceName: normalizeOptionalString(raw.voiceName),
+    voiceVersion: normalizeOptionalString(raw.voiceVersion),
+  } as unknown as TtsComparisonInput<TProvider>;
 }

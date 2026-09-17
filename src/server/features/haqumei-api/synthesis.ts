@@ -3,13 +3,18 @@ import {
   type StoredG2pItem,
   type VoicevoxSynthesisSettings,
   type VoisonaSynthesisSettings,
+  type CoeiroinkSynthesisSettings,
 } from "@/_schemas";
 import { toG2pItem } from "@/server/features/tts/g2p-item";
 import type { ServerEnv } from "@/server/core/env";
 import { planWav, synthesizeWithWavCache } from "@/server/features/tts/wav-cache";
 import type { PlannedSynthesis } from "@/server/features/tts/providers/types";
 import { getHaqumeiApiClient, unwrapHaqumeiData } from "./client";
-import { buildVoicevoxSynthesisRequest, buildVoisonaSynthesisRequest } from "./synthesis-settings";
+import {
+  buildVoicevoxSynthesisRequest,
+  buildVoisonaSynthesisRequest,
+  buildCoeiroinkSynthesisRequest,
+} from "./synthesis-settings";
 
 function parseSpeakerId(voiceName: string) {
   const speaker = Number(voiceName);
@@ -134,4 +139,63 @@ export function synthesizeVoisona(input: {
   synthesisSettings?: VoisonaSynthesisSettings;
 }) {
   return planVoisonaSynthesis(input).run();
+}
+
+export function planCoeiroinkSynthesis(input: {
+  serverEnv: ServerEnv;
+  projectPath: string;
+  g2p: StoredG2pItem;
+  speakerUuid: string;
+  styleId: number;
+  modelVersion: string;
+  synthesisSettings?: CoeiroinkSynthesisSettings;
+}): PlannedSynthesis {
+  const g2p = toG2pItem(input.g2p);
+  const body = buildCoeiroinkSynthesisRequest({
+    item: g2p,
+    speakerUuid: input.speakerUuid,
+    styleId: input.styleId,
+    synthesisSettings: input.synthesisSettings,
+  });
+  const wav = planWav({
+    projectPath: input.projectPath,
+    cacheKey: {
+      provider: "coeiroink",
+      g2p,
+      speakerUuid: input.speakerUuid,
+      styleId: input.styleId,
+      modelVersion: input.modelVersion,
+      synthesisSettings: body.synthesis_settings,
+    },
+  });
+
+  return {
+    wav,
+    run: () =>
+      synthesizeWithWavCache({
+        wav,
+        writeWav: async (outputPath) => {
+          const response = await getHaqumeiApiClient(input.serverEnv).POST(
+            "/v1/synthesis/coeiroink",
+            {
+              body,
+              parseAs: "blob",
+            },
+          );
+          await writeWavFromBlob(outputPath, unwrapHaqumeiData(response));
+        },
+      }),
+  };
+}
+
+export function synthesizeCoeiroink(input: {
+  serverEnv: ServerEnv;
+  projectPath: string;
+  g2p: StoredG2pItem;
+  speakerUuid: string;
+  styleId: number;
+  modelVersion: string;
+  synthesisSettings?: CoeiroinkSynthesisSettings;
+}) {
+  return planCoeiroinkSynthesis(input).run();
 }

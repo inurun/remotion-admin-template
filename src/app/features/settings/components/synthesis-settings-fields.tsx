@@ -28,12 +28,26 @@ const VOICEPEAK_EMOTION_KEYS = [
   "teto-sweet",
 ] as const;
 
+const COEIROINK_FIELDS = [
+  "speedScale",
+  "pitchScale",
+  "intonationScale",
+  "volumeScale",
+  "pauseLength",
+  "prePhonemeLength",
+  "postPhonemeLength",
+  "outputSamplingRate",
+] as const;
+
 function getFields(provider: VoiceOption["provider"]): readonly SynthesisSettingsKey[] {
   if (provider === "voisona") {
     return VOISONA_FIELDS;
   }
   if (provider === "voicepeak") {
     return VOICEPEAK_FIELDS;
+  }
+  if (provider === "coeiroink") {
+    return COEIROINK_FIELDS;
   }
   return VOICEVOX_FIELDS;
 }
@@ -210,7 +224,7 @@ export function SynthesisSettingsFields({
           <span className="truncate">{field}</span>
           <Input
             type="number"
-            step="0.01"
+            step={field === "outputSamplingRate" ? "1" : "0.01"}
             value={(settings as Record<string, number | null | undefined>)[field] ?? ""}
             onChange={(event) => {
               const next = {

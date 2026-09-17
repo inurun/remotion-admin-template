@@ -1,5 +1,7 @@
 import {
   DEFAULT_VOICE_PRESETS,
+  copyVoiceIdentity,
+  toVoiceIdentity,
   type SavedPage,
   type SavedProject,
   type SavedSequenceItem,
@@ -12,16 +14,15 @@ import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { normalizeProjectMeta } from "@/app/features/project/lib/normalize-project-meta";
 
 export function toTtsFormValues(item: SavedTts): TtsFormValues {
+  const identity = toVoiceIdentity(item);
   return {
     id: item.id,
-    provider: item.provider,
     text: item.text,
     readText: item.readText,
-    voiceName: item.voiceName,
     padBeforeSec: item.padBeforeSec,
     padAfterSec: item.padAfterSec,
     volume: item.volume,
-    ...(item.voiceVersion ? { voiceVersion: item.voiceVersion } : {}),
+    ...(identity ? copyVoiceIdentity(identity) : { provider: item.provider, voiceName: "" }),
     ...(item.synthesisSettings ? { synthesisSettings: item.synthesisSettings } : {}),
     ...(item.avatar ? { avatar: item.avatar } : {}),
     speech: item.speech.g2p ? { g2p: item.speech.g2p } : {},

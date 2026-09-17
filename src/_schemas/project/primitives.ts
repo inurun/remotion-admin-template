@@ -11,7 +11,23 @@ export {
   KASANE_TETO_NARRATOR,
 } from "@/_schemas/catalog/voices";
 
-export const voiceProviderSchema = z.enum(["voisona", "voicevox", "voicepeak"]);
+export {
+  copyVoiceIdentity,
+  getVoiceId,
+  getVoiceMatchKey,
+  hasVoiceIdentity,
+  parseVoiceId,
+  toVoiceIdentity,
+  ttsVoiceId,
+  voiceIdentitiesEqual,
+  voicePresetId,
+  type CoeiroinkVoiceIdentity,
+  type NamedVoiceIdentity,
+  type NamedVoiceProvider,
+  type VoiceIdentity,
+} from "@/_schemas/project/voice-identity";
+
+export const voiceProviderSchema = z.enum(["voisona", "voicevox", "voicepeak", "coeiroink"]);
 
 export const voisonaSynthesisSettingsSchema = z.object({
   alp: z.number().optional(),
@@ -40,49 +56,82 @@ export const voicepeakSynthesisSettingsSchema = z.object({
   emotion: z.record(z.string(), z.number()).optional(),
 });
 
+export const coeiroinkSynthesisSettingsSchema = z.object({
+  speedScale: z.number().gt(0).optional(),
+  volumeScale: z.number().min(0).optional(),
+  intonationScale: z.number().min(0).optional(),
+  pitchScale: z.number().finite().optional(),
+  prePhonemeLength: z.number().min(0).optional(),
+  postPhonemeLength: z.number().min(0).optional(),
+  pauseLength: z.number().min(0).optional(),
+  outputSamplingRate: z.number().int().positive().optional(),
+});
+
 export const avatarSettingsSchema = z.object({
   base: z.string().min(1),
   eyes: z.string().min(1),
   mouth: z.string().min(1),
 });
 
-export const voiceOptionSchema = z.object({
-  provider: voiceProviderSchema,
+const namedVoiceOptionFields = {
   voiceName: z.string().min(1),
   voiceVersion: z.string().optional(),
   displayName: z.string().min(1),
-});
+};
 
-const voicePresetBaseSchema = {
+export const voiceOptionSchema = z.discriminatedUnion("provider", [
+  z.object({
+    provider: z.literal("voisona"),
+    ...namedVoiceOptionFields,
+  }),
+  z.object({
+    provider: z.literal("voicevox"),
+    ...namedVoiceOptionFields,
+  }),
+  z.object({
+    provider: z.literal("voicepeak"),
+    ...namedVoiceOptionFields,
+  }),
+  z.object({
+    provider: z.literal("coeiroink"),
+    speakerUuid: z.string().min(1),
+    styleId: z.number().int(),
+    modelVersion: z.string().min(1),
+    displayName: z.string().min(1),
+    speakerName: z.string().min(1),
+    styleName: z.string().min(1),
+  }),
+]);
+
+const namedVoicePresetFields = {
   voiceName: z.string().min(1),
   voiceVersion: z.string().optional(),
 };
 
 export const voicePresetSchema = z.discriminatedUnion("provider", [
   z.object({
-    ...voicePresetBaseSchema,
+    ...namedVoicePresetFields,
     provider: z.literal("voisona"),
     synthesisSettings: voisonaSynthesisSettingsSchema,
   }),
   z.object({
-    ...voicePresetBaseSchema,
+    ...namedVoicePresetFields,
     provider: z.literal("voicevox"),
     synthesisSettings: voicevoxSynthesisSettingsSchema,
   }),
   z.object({
-    ...voicePresetBaseSchema,
+    ...namedVoicePresetFields,
     provider: z.literal("voicepeak"),
     synthesisSettings: voicepeakSynthesisSettingsSchema,
   }),
+  z.object({
+    provider: z.literal("coeiroink"),
+    speakerUuid: z.string().min(1),
+    styleId: z.number().int(),
+    modelVersion: z.string().min(1),
+    synthesisSettings: coeiroinkSynthesisSettingsSchema,
+  }),
 ]);
-
-export function voicePresetId(voice: {
-  provider: string;
-  voiceName: string;
-  voiceVersion?: string;
-}) {
-  return `${voice.provider}::${voice.voiceName}::${voice.voiceVersion ?? ""}`;
-}
 
 export const pageTypeSchema = z.enum([
   "intro",
@@ -255,6 +304,7 @@ export type BgmTrack = z.infer<typeof bgmTrackSchema>;
 export type VoisonaSynthesisSettings = z.infer<typeof voisonaSynthesisSettingsSchema>;
 export type VoicevoxSynthesisSettings = z.infer<typeof voicevoxSynthesisSettingsSchema>;
 export type VoicepeakSynthesisSettings = z.infer<typeof voicepeakSynthesisSettingsSchema>;
+export type CoeiroinkSynthesisSettings = z.infer<typeof coeiroinkSynthesisSettingsSchema>;
 export type AvatarSettings = z.infer<typeof avatarSettingsSchema>;
 export type VoiceOption = z.infer<typeof voiceOptionSchema>;
 export type VoicePreset = z.infer<typeof voicePresetSchema>;

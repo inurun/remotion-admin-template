@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createAnalyzeItem, createG2pItem } from "@/_schemas/__tests__/g2p-fixture";
-import { buildVoicevoxSynthesisRequest, buildVoisonaSynthesisRequest } from "../synthesis-settings";
+import {
+  buildVoicevoxSynthesisRequest,
+  buildVoisonaSynthesisRequest,
+  buildCoeiroinkSynthesisRequest,
+} from "../synthesis-settings";
 
 const item = createG2pItem("hello");
 
@@ -81,6 +85,46 @@ describe("synthesis request builders", () => {
       text: "雨衣",
       kana: "アメコロ'",
       warnings: [],
+    });
+  });
+
+  it("sends only g2p fields, uuid, numeric style, and provided coeiroink settings", () => {
+    const request = buildCoeiroinkSynthesisRequest({
+      item,
+      speakerUuid: "speaker-1",
+      styleId: 0,
+      synthesisSettings: {
+        speedScale: 1.2,
+        outputSamplingRate: 44100,
+      },
+    });
+
+    expect(request).toEqual({
+      schema_version: "2",
+      item,
+      speaker_uuid: "speaker-1",
+      style_id: 0,
+      synthesis_settings: {
+        speedScale: 1.2,
+        outputSamplingRate: 44100,
+      },
+    });
+    expect(JSON.stringify(request)).not.toContain("modelVersion");
+    expect(JSON.stringify(request)).not.toContain("dictionary_words");
+  });
+
+  it("omits empty coeiroink settings", () => {
+    expect(
+      buildCoeiroinkSynthesisRequest({
+        item,
+        speakerUuid: "speaker-1",
+        styleId: 1,
+      }),
+    ).toEqual({
+      schema_version: "2",
+      item,
+      speaker_uuid: "speaker-1",
+      style_id: 1,
     });
   });
 });

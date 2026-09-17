@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { VoiceOption } from "@/_schemas";
+import type { NamedVoiceProvider, VoiceOption } from "@/_schemas";
+import { getVoiceId } from "@/_schemas";
 import { createAliasMap } from "@/app/features/zen/create-alias-map";
 import { parseZenScript } from "@/app/features/zen/parse-zen-script";
 import type { VoiceSettings } from "@/app/features/settings/storage/use-settings-store";
@@ -7,7 +8,7 @@ import type { VoiceSettings } from "@/app/features/settings/storage/use-settings
 function voice(
   voiceName: string,
   displayName: string,
-  provider: VoiceOption["provider"] = "voicevox",
+  provider: NamedVoiceProvider = "voicevox",
 ): VoiceOption {
   return { provider, voiceName, voiceVersion: "", displayName };
 }
@@ -16,7 +17,7 @@ function aliases(entries: Array<{ alias: string; voice: VoiceOption }>) {
   const voices = entries.map((entry) => entry.voice);
   const voiceSettings = Object.fromEntries(
     entries.map((entry) => [
-      `${entry.voice.provider}::${entry.voice.voiceName}::`,
+      getVoiceId(entry.voice),
       { label: entry.voice.displayName, alias: entry.alias, hotkey: "" } satisfies VoiceSettings,
     ]),
   );
@@ -80,14 +81,20 @@ avatar指定行でeyesの指定だけ可能に
       "なんだこいつ",
       "どうしてももくそもないもん",
     ]);
-    expect(page1.tts[0]?.voiceName).toBe("3");
-    expect(page1.tts[3]?.voiceName).toBe("46");
+    expect(page1.tts[0] && "voiceName" in page1.tts[0] ? page1.tts[0].voiceName : undefined).toBe(
+      "3",
+    );
+    expect(page1.tts[3] && "voiceName" in page1.tts[3] ? page1.tts[3].voiceName : undefined).toBe(
+      "46",
+    );
     expect(page1.tts[3]?.avatar?.eyes).toBe("shaded-opened");
 
     const page2 = result.pages[1];
     expect(page2.title).toBe("ページ2");
     expect(page2.tts).toHaveLength(1);
-    expect(page2.tts[0]?.voiceName).toBe("futaba-minato_ja_JP");
+    expect(page2.tts[0] && "voiceName" in page2.tts[0] ? page2.tts[0].voiceName : undefined).toBe(
+      "futaba-minato_ja_JP",
+    );
   });
 
   it("parses untitled pages separated by ---", () => {

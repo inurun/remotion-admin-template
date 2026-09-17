@@ -108,7 +108,7 @@
                 },
                 "example": {
                   "code": "analysis_failed",
-                  "detail": "texts[37] \"\u5bfe\u8c61\u30c6\u30ad\u30b9\u30c8\": mora mismatch: split=8 pitch_nuclei=7",
+                  "detail": "texts[37] \"対象テキスト\": mora mismatch: split=8 pitch_nuclei=7",
                   "errors": [
                     {
                       "message": "mora mismatch: split=8 pitch_nuclei=7",
@@ -547,6 +547,114 @@
         }
       }
     },
+    "/v1/synthesis/coeiroink": {
+      "post": {
+        "tags": ["crate::synthesis"],
+        "operationId": "synthesis_coeiroink",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoeiroinkSynthesisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "WAV audio",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "$ref": "#/components/schemas/WavFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/synthesis/voicevox": {
       "post": {
         "tags": ["crate::synthesis"],
@@ -733,6 +841,44 @@
         }
       }
     },
+    "/v1/voices/coeiroink": {
+      "get": {
+        "tags": ["crate::synthesis"],
+        "operationId": "voices_coeiroink",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoeiroinkVoicesResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/voices/voicevox": {
       "get": {
         "tags": ["crate::synthesis"],
@@ -895,6 +1041,108 @@
           },
           "schema_version": {
             "type": "string"
+          }
+        }
+      },
+      "CoeiroinkSynthesisRequest": {
+        "type": "object",
+        "required": ["schema_version", "item", "speaker_uuid", "style_id"],
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/G2pItem"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "speaker_uuid": {
+            "type": "string"
+          },
+          "style_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "synthesis_settings": {
+            "$ref": "#/components/schemas/CoeiroinkSynthesisSettings"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CoeiroinkSynthesisSettings": {
+        "type": "object",
+        "properties": {
+          "intonationScale": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "outputSamplingRate": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1
+          },
+          "pauseLength": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "pitchScale": {
+            "type": "number",
+            "format": "double"
+          },
+          "postPhonemeLength": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "prePhonemeLength": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          },
+          "speedScale": {
+            "type": "number",
+            "format": "double",
+            "exclusiveMinimum": 0
+          },
+          "volumeScale": {
+            "type": "number",
+            "format": "double",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "CoeiroinkVoice": {
+        "type": "object",
+        "required": ["speaker_uuid", "style_id", "speaker_name", "style_name", "version"],
+        "properties": {
+          "speaker_name": {
+            "type": "string"
+          },
+          "speaker_uuid": {
+            "type": "string"
+          },
+          "style_id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "style_name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "CoeiroinkVoicesResponse": {
+        "type": "object",
+        "required": ["voices"],
+        "properties": {
+          "voices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoeiroinkVoice"
+            }
           }
         }
       },
@@ -1326,53 +1574,43 @@
         "properties": {
           "intonationScale": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "outputSamplingRate": {
             "type": "integer",
             "format": "int32",
-            "default": null,
             "minimum": 0
           },
           "outputStereo": {
-            "type": "boolean",
-            "default": null
+            "type": "boolean"
           },
           "pauseLength": {
             "type": ["number", "null"],
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "pauseLengthScale": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "pitchScale": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "postPhonemeLength": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "prePhonemeLength": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "speedScale": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           },
           "volumeScale": {
             "type": "number",
-            "format": "double",
-            "default": null
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -1451,35 +1689,30 @@
           "alp": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 1,
             "minimum": -1
           },
           "huskiness": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 20,
             "minimum": -20
           },
           "intonation": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 2,
             "minimum": 0
           },
           "pitch": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 600,
             "minimum": -600
           },
           "speed": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 5,
             "minimum": 0.2
           },
@@ -1488,13 +1721,11 @@
             "items": {
               "type": "number",
               "format": "double"
-            },
-            "default": null
+            }
           },
           "volume": {
             "type": "number",
             "format": "double",
-            "default": null,
             "maximum": 8,
             "minimum": -8
           }

@@ -1,7 +1,6 @@
-export function getVoiceValue(item: {
-  provider: string;
-  voiceName: string;
-  voiceVersion?: string;
-}) {
-  return `${item.provider}::${item.voiceName}::${item.voiceVersion ?? ""}`;
+import { getVoiceId, toVoiceIdentity } from "@/_schemas";
+
+export function getVoiceValue(item: Parameters<typeof toVoiceIdentity>[0]) {
+  const identity = toVoiceIdentity(item);
+  return identity ? getVoiceId(identity) : "";
 }

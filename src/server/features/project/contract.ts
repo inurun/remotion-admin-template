@@ -17,6 +17,7 @@ import {
   pageTagsMetaSchema,
   projectNiconicoMetaSchema,
   transitionVariantSchema,
+  coeiroinkSynthesisSettingsSchema,
   voicepeakSynthesisSettingsSchema,
   voicePresetSchema,
   voicevoxSynthesisSettingsSchema,
@@ -32,8 +33,6 @@ const saveTtsBaseFields = {
   id: z.string().min(1),
   text: z.string(),
   readText: z.string().optional(),
-  voiceName: z.string().optional(),
-  voiceVersion: z.string().optional(),
   padBeforeSec: z.number().default(0),
   padAfterSec: z.number().default(0),
   volume: z.number().min(0).max(1).default(1),
@@ -41,21 +40,41 @@ const saveTtsBaseFields = {
   avatar: avatarSettingsSchema.optional(),
 };
 
+const namedSaveTtsIdentity = {
+  voiceName: z.string().optional(),
+  voiceVersion: z.string().optional(),
+};
+
+const coeiroinkSaveTtsIdentity = {
+  speakerUuid: z.string().min(1),
+  styleId: z.number().int(),
+  modelVersion: z.string().min(1),
+};
+
 export const saveTtsItemSchema = z.discriminatedUnion("provider", [
   z.object({
     ...saveTtsBaseFields,
+    ...namedSaveTtsIdentity,
     provider: z.literal("voisona"),
     synthesisSettings: voisonaSynthesisSettingsSchema.nullish(),
   }),
   z.object({
     ...saveTtsBaseFields,
+    ...namedSaveTtsIdentity,
     provider: z.literal("voicevox"),
     synthesisSettings: voicevoxSynthesisSettingsSchema.nullish(),
   }),
   z.object({
     ...saveTtsBaseFields,
+    ...namedSaveTtsIdentity,
     provider: z.literal("voicepeak"),
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),
+  }),
+  z.object({
+    ...saveTtsBaseFields,
+    ...coeiroinkSaveTtsIdentity,
+    provider: z.literal("coeiroink"),
+    synthesisSettings: coeiroinkSynthesisSettingsSchema.nullish(),
   }),
 ]);
 

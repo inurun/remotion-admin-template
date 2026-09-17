@@ -1,4 +1,8 @@
-import { type VoicevoxSynthesisSettings, type VoisonaSynthesisSettings } from "@/_schemas";
+import {
+  type VoicevoxSynthesisSettings,
+  type VoisonaSynthesisSettings,
+  type CoeiroinkSynthesisSettings,
+} from "@/_schemas";
 import { toG2pItem } from "@/server/features/tts/g2p-item";
 import type { components } from "@/server/generated/haqumei-api/schema";
 
@@ -74,5 +78,32 @@ export function buildVoisonaSynthesisRequest(input: {
             synthesisSettings as components["schemas"]["VoisonaSynthesisSettings"],
         }
       : {}),
+  };
+}
+
+function isEmptyCoeiroinkSettings(settings?: CoeiroinkSynthesisSettings) {
+  if (!settings) {
+    return true;
+  }
+
+  return Object.values(settings).every((value) => value === undefined);
+}
+
+export function buildCoeiroinkSynthesisRequest(input: {
+  item: components["schemas"]["G2pItem"];
+  speakerUuid: string;
+  styleId: number;
+  synthesisSettings?: CoeiroinkSynthesisSettings;
+}): components["schemas"]["CoeiroinkSynthesisRequest"] {
+  const synthesisSettings = isEmptyCoeiroinkSettings(input.synthesisSettings)
+    ? undefined
+    : omitUndefinedSettings(input.synthesisSettings ?? {});
+
+  return {
+    schema_version: SYNTHESIS_SCHEMA_VERSION,
+    item: toG2pItem(input.item),
+    speaker_uuid: input.speakerUuid,
+    style_id: input.styleId,
+    ...(synthesisSettings ? { synthesis_settings: synthesisSettings } : {}),
   };
 }

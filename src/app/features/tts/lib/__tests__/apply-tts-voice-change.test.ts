@@ -29,6 +29,7 @@ describe("applyTtsVoiceChange", () => {
         provider: "voisona",
         voiceName: "voice",
         voiceVersion: "2",
+        displayName: "voice",
       }).speech,
     ).toEqual({ g2p });
 
@@ -36,7 +37,30 @@ describe("applyTtsVoiceChange", () => {
       applyTtsVoiceChange(source, {
         provider: "voicepeak",
         voiceName: "Kasane Teto",
+        displayName: "Kasane Teto",
       }).speech,
     ).toEqual({ g2p });
+  });
+
+  it("drops old identity and settings when switching to coeiroink", () => {
+    const next = applyTtsVoiceChange(item(), {
+      provider: "coeiroink",
+      speakerUuid: "speaker-1",
+      styleId: 0,
+      modelVersion: "1",
+      displayName: "カゼヒキ / はな風邪",
+      speakerName: "カゼヒキ",
+      styleName: "はな風邪",
+    });
+
+    expect(next).toMatchObject({
+      provider: "coeiroink",
+      speakerUuid: "speaker-1",
+      styleId: 0,
+      modelVersion: "1",
+      synthesisSettings: null,
+    });
+    expect(next).not.toHaveProperty("voiceName");
+    expect(next.speech).toEqual({ g2p: createG2pItem("hello") });
   });
 });

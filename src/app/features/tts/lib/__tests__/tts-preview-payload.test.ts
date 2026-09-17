@@ -79,6 +79,8 @@ describe("getPreviewPayload", () => {
   });
 
   it("requires a voice name", () => {
-    expect(() => getPreviewPayload(createTts({ voiceName: " " }), "project")).toThrow("Voice name");
+    expect(() => getPreviewPayload(createTts({ voiceName: " " }), "project")).toThrow(
+      "Voice is required",
+    );
   });
 });

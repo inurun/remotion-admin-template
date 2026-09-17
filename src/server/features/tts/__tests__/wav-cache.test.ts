@@ -47,4 +47,34 @@ describe("wav cache planning", () => {
       }).audioSrc,
     ).not.toBe(original);
   });
+
+  it("changes src when coeiroink identity or settings change", () => {
+    const base = {
+      projectPath: "project",
+      cacheKey: {
+        provider: "coeiroink",
+        g2p: { text: "hello", kana: "ハロ" },
+        speakerUuid: "speaker-1",
+        styleId: 0,
+        modelVersion: "1",
+        synthesisSettings: { speedScale: 1 },
+      },
+    };
+    const original = planWav(base).audioSrc;
+    expect(
+      planWav({ ...base, cacheKey: { ...base.cacheKey, speakerUuid: "speaker-2" } }).audioSrc,
+    ).not.toBe(original);
+    expect(planWav({ ...base, cacheKey: { ...base.cacheKey, styleId: 1 } }).audioSrc).not.toBe(
+      original,
+    );
+    expect(
+      planWav({ ...base, cacheKey: { ...base.cacheKey, modelVersion: "2" } }).audioSrc,
+    ).not.toBe(original);
+    expect(
+      planWav({
+        ...base,
+        cacheKey: { ...base.cacheKey, synthesisSettings: { speedScale: 1.2 } },
+      }).audioSrc,
+    ).not.toBe(original);
+  });
 });

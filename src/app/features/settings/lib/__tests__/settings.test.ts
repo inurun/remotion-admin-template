@@ -67,7 +67,7 @@ describe("settings voices", () => {
       },
     });
 
-    expect(getDefaultVoice(options)?.voiceName).toBe("b");
+    expect(getDefaultVoice(options)?.displayName).toBe("Actor B");
   });
 
   it("remaps selected ids onto versioned catalog voices and keeps missing stubs", () => {
@@ -88,8 +88,33 @@ describe("settings voices", () => {
     });
 
     expect(next.voiceOrder).toEqual(["voicevox::3::0.15.0", "voisona::b::"]);
-    expect(next.voices.map((item) => item.voiceName)).toEqual(["3", "c", "b"]);
+    expect(
+      next.voices.map((item) => ("voiceName" in item ? item.voiceName : item.speakerUuid)),
+    ).toEqual(["3", "c", "b"]);
     expect(next.voiceSettings["voicevox::3::0.15.0"]?.alias).toBe("zunda");
+  });
+
+  it("remaps coeiroink ids onto a new model version", () => {
+    const selected = {
+      provider: "coeiroink" as const,
+      speakerUuid: "speaker-1",
+      styleId: 0,
+      modelVersion: "1",
+      displayName: "カゼヒキ / はな風邪",
+      speakerName: "カゼヒキ",
+      styleName: "はな風邪",
+    };
+    const next = mergeCatalogVoices({
+      catalog: [{ ...selected, modelVersion: "2" }],
+      selectedVoices: [selected],
+      voiceOrder: ["coeiroink::speaker-1::0::1"],
+      voiceSettings: {
+        "coeiroink::speaker-1::0::1": { label: "カゼヒキ", alias: "kaze", hotkey: "ctrl+8" },
+      },
+    });
+
+    expect(next.voiceOrder).toEqual(["coeiroink::speaker-1::0::2"]);
+    expect(next.voiceSettings["coeiroink::speaker-1::0::2"]?.alias).toBe("kaze");
   });
 });
 

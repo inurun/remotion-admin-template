@@ -1,5 +1,4 @@
 import { useFormContext, useWatch } from "react-hook-form";
-import { voiceProviderSchema } from "@/_schemas";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useSettings } from "@/app/features/settings";
 import { getVoiceValue } from "@/app/features/editor";
@@ -17,31 +16,22 @@ export function useTtsVoiceField(index: number, onSelect: (index: number) => voi
     name: `tts.${index}`,
   });
 
-  const fieldName = `tts.${index}.voiceName` as const;
+  const fieldName = `tts.${index}.provider` as const;
   const fieldState = getFieldState(fieldName, formState);
-  const selectedValue = getVoiceValue({
-    provider: ttsItem?.provider ?? "voisona",
-    voiceName: ttsItem?.voiceName ?? "",
-    voiceVersion: ttsItem?.voiceVersion ?? "",
-  });
+  const selectedValue = ttsItem ? getVoiceValue(ttsItem) : "";
   const matchedItem = selectItems.find((item) => item.value === selectedValue);
 
   const changeVoice = (value: string | null) => {
-    if (!value || !ttsItem || !selectItems.some((item) => item.value === value)) {
+    if (!value || !ttsItem) {
       return;
     }
 
-    const [nextProvider, nextVoiceName, nextVoiceVersion] = value.split("::");
-    const parsedProvider = voiceProviderSchema.catch("voisona").parse(nextProvider);
-    setValue(
-      `tts.${index}`,
-      applyTtsVoiceChange(ttsItem, {
-        provider: parsedProvider,
-        voiceName: nextVoiceName ?? "",
-        voiceVersion: nextVoiceVersion ?? "",
-      }),
-      { shouldDirty: true },
-    );
+    const option = options.find((item) => getVoiceValue(item) === value);
+    if (!option) {
+      return;
+    }
+
+    setValue(`tts.${index}`, applyTtsVoiceChange(ttsItem, option), { shouldDirty: true });
     onSelect(index);
   };
 

@@ -2,7 +2,7 @@ import type { PageFormValues } from "@/app/features/page/model/page-form-schema"
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   avatarOptions,
-  getAvatarTypeByVoiceName,
+  getAvatarTypeForVoice,
   getOpenedMouthOptions,
   resolveAvatarSettings,
   type AvatarSettings,
@@ -33,13 +33,13 @@ function AvatarSelect({
 function AvatarSettingsControls({
   onChange,
   value,
-  voiceName,
+  tts,
 }: {
   onChange: (value: AvatarSettings) => void;
   value: AvatarSettings | undefined;
-  voiceName: string | undefined;
+  tts: PageFormValues["tts"][number];
 }) {
-  const avatarType = getAvatarTypeByVoiceName(voiceName);
+  const avatarType = getAvatarTypeForVoice(tts);
   const options = avatarOptions[avatarType];
   const openedMouthOptions = getOpenedMouthOptions(avatarType);
   const avatar = resolveAvatarSettings(avatarType, value);
@@ -81,21 +81,21 @@ function AvatarSettingsControls({
 
 function BoundAvatarSettingsField({ ttsIndex }: { ttsIndex: number }) {
   const { control } = useFormContext<PageFormValues>();
-  const voiceName = useWatch({
+  const tts = useWatch({
     control,
-    name: `tts.${ttsIndex}.voiceName`,
+    name: `tts.${ttsIndex}`,
   });
+
+  if (!tts) {
+    return null;
+  }
 
   return (
     <Controller
       name={`tts.${ttsIndex}.avatar`}
       control={control}
       render={({ field }) => (
-        <AvatarSettingsControls
-          value={field.value}
-          voiceName={voiceName}
-          onChange={field.onChange}
-        />
+        <AvatarSettingsControls value={field.value} tts={tts} onChange={field.onChange} />
       )}
     />
   );

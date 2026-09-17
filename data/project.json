@@ -4,7 +4,7 @@
     "description": "Admin + Remotion stub template",
     "width": 1920,
     "height": 1080,
-    "updatedAt": "2026-09-16T14:01:17.974Z",
+    "updatedAt": "2026-09-17T05:01:04.612Z",
     "weather": {},
     "niconico": {
       "title": "HTML説明文テスト",
@@ -42,8 +42,6 @@
           "id": "a9461dc8-acfe-4eec-b3cb-9dbcafbe5e31",
           "text": "これはvoisonaのtsmlサンプルだよ！claudeとか読めないし、ラーメンは辛いし",
           "readText": "これはvoisonaのtsmlサンプルだよ！claudeとか読めないし、ラーメンは辛いし",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -82,6 +80,8 @@
             "mouth": "opened"
           },
           "provider": "voisona",
+          "voiceName": "futaba-minato_ja_JP",
+          "voiceVersion": "2.0.2",
           "audio": {
             "status": "ready",
             "src": "/tts/project/0ae04be1505268952b70a4832a90631b.wav",
@@ -92,8 +92,6 @@
           "id": "e29c3eee-8560-4f13-a5ce-692330b432af",
           "text": "界隈の主はあっちの方にいった",
           "readText": "界隈の主はあっちの方にいった",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -120,6 +118,8 @@
             "mouth": "opened"
           },
           "provider": "voisona",
+          "voiceName": "futaba-minato_ja_JP",
+          "voiceVersion": "2.0.2",
           "audio": {
             "status": "ready",
             "src": "/tts/project/0aed5de250f461acb931dcdae18b8487.wav",
@@ -130,8 +130,6 @@
           "id": "a4489975-e842-4a1c-b297-c15fb32a679e",
           "text": "この料理はとても辛くて辛い",
           "readText": "この料理はとても辛くて辛い",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -148,6 +146,8 @@
             "mouth": "opened"
           },
           "provider": "voisona",
+          "voiceName": "futaba-minato_ja_JP",
+          "voiceVersion": "2.0.2",
           "audio": {
             "status": "ready",
             "src": "/tts/project/1254ee4c4ddb980adbd3f76a0b8fc899.wav",
@@ -158,8 +158,6 @@
           "id": "8a5104a1-319f-4da8-a344-b05262d0adb7",
           "text": "二着の服を着て出かける",
           "readText": "二着の服を着て出かける",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -176,6 +174,8 @@
             "mouth": "opened"
           },
           "provider": "voisona",
+          "voiceName": "futaba-minato_ja_JP",
+          "voiceVersion": "2.0.2",
           "audio": {
             "status": "ready",
             "src": "/tts/project/a04b09860dc957aa8a10e1c0a1970cc5.wav",
@@ -186,8 +186,6 @@
           "id": "f34f4979-1cf1-4008-b8b3-0a2e2ebf3ecc",
           "text": "主に池の主を紹介する",
           "readText": "主に池の主を紹介する",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -204,6 +202,8 @@
             "mouth": "opened"
           },
           "provider": "voisona",
+          "voiceName": "futaba-minato_ja_JP",
+          "voiceVersion": "2.0.2",
           "audio": {
             "status": "ready",
             "src": "/tts/project/9925dd83cc1c8e5697d08ad1ea64d9c7.wav",
@@ -212,18 +212,17 @@
         },
         {
           "id": "4f400fb3-ab71-40bd-96f9-9520aa2ba2a2",
-          "text": "基本はこの体で体の体裁を\n保ってください",
-          "readText": "基本はこの体で体の体裁を\n保ってください",
-          "voiceName": "futaba-minato_ja_JP",
-          "voiceVersion": "2.0.2",
+          "text": "かぜひきです",
+          "readText": "かぜひきです",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
           "speech": {
             "g2p": {
-              "text": "基本はこの体で体の体裁を\n保ってください",
-              "kana": "キホン|ワ'/コノ'/テ'イ|デ/テ'イ|ノ/テーサイ|ヲ'/タモ'ッ|テ|クダサイ",
-              "warnings": []
+              "text": "かぜひきです",
+              "kana": "カゼヒキ|デ'ス",
+              "warnings": [],
+              "dictionary_words": []
             }
           },
           "avatar": {
@@ -231,11 +230,19 @@
             "eyes": "opened",
             "mouth": "opened"
           },
-          "provider": "voisona",
+          "provider": "coeiroink",
+          "speakerUuid": "272c0178-a248-11f1-82fa-0242ac1c000c",
+          "styleId": 1295160681,
+          "modelVersion": "0.0.1",
+          "synthesisSettings": {
+            "speedScale": 1.2,
+            "prePhonemeLength": 0,
+            "postPhonemeLength": 0
+          },
           "audio": {
             "status": "ready",
-            "src": "/tts/project/67360ef06803ea4ceb462d02c0ccffb8.wav",
-            "durationSec": 3.025
+            "src": "/tts/project/ee357009a78d781742057ce26913854b.wav",
+            "durationSec": 1.1636281179138324
           }
         }
       ]
@@ -255,7 +262,6 @@
           "id": "d6a74a06-7769-412c-8d0c-f81b6cc32c4a",
           "text": "テストだも",
           "readText": "テストだも",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -272,6 +278,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/ddd18e502ff2c96020a74aa33410f830.wav",
@@ -282,7 +289,6 @@
           "id": "de3934b3-8322-44be-bf9b-9481127a733f",
           "text": "テスト",
           "readText": "テスト",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -299,6 +305,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
@@ -309,7 +316,6 @@
           "id": "0efa9d67-a2b7-4a5b-91f1-4f9201c12775",
           "text": "なんだもん",
           "readText": "なんだもん",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -326,6 +332,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/6f19c0be48b74486caabbbed392d8255.wav",
@@ -336,7 +343,6 @@
           "id": "13bcc8bf-88ca-4ef1-8cdd-4b5b2c6b1722",
           "text": "なんだもん？",
           "readText": "なんだもん？",
-          "voiceName": "43",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -354,6 +360,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "43",
           "audio": {
             "status": "ready",
             "src": "/tts/project/9875f7a7245e0a3a47fda9455fbb7c1d.wav",
@@ -377,7 +384,6 @@
           "id": "062cad1e-d221-4708-90b8-2017877d1e35",
           "text": "ラブコメ",
           "readText": "ラブコメ",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -394,6 +400,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/e91454101be81b7019a6e33890b11a00.wav",
@@ -404,7 +411,6 @@
           "id": "87cf7567-d968-40b7-9f77-a228d8447723",
           "text": "なのです",
           "readText": "なのです",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -422,6 +428,7 @@
             "mouth": "opened"
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/fd62f83e3aae200f828b92ac7f83151d.wav",
@@ -1283,7 +1290,6 @@
           "id": "00104e69-94cc-4dda-b67f-f4b1379b415c",
           "text": "テストなのだ",
           "readText": "テストなのだ",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -1296,6 +1302,7 @@
             }
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/72f14aef12211d271ed56eb5711cee91.wav",
@@ -1306,7 +1313,6 @@
           "id": "096a0395-7087-471d-93cf-022e8960a8f0",
           "text": "弱そう",
           "readText": "弱そう",
-          "voiceName": "3",
           "padBeforeSec": 0,
           "padAfterSec": 0,
           "volume": 1,
@@ -1319,6 +1325,7 @@
             }
           },
           "provider": "voicevox",
+          "voiceName": "3",
           "audio": {
             "status": "ready",
             "src": "/tts/project/ef41f1d32f3dcc35871a9caf65e8d315.wav",
@@ -1468,6 +1475,17 @@
           0,
           1
         ]
+      }
+    },
+    "coeiroink::272c0178-a248-11f1-82fa-0242ac1c000c::1295160681::0.0.1": {
+      "provider": "coeiroink",
+      "speakerUuid": "272c0178-a248-11f1-82fa-0242ac1c000c",
+      "styleId": 1295160681,
+      "modelVersion": "0.0.1",
+      "synthesisSettings": {
+        "speedScale": 1.2,
+        "prePhonemeLength": 0,
+        "postPhonemeLength": 0
       }
     }
   }

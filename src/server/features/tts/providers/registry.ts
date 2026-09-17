@@ -4,11 +4,13 @@ import type { TtsProvider, TtsProviderAdapter } from "./types";
 import { voisonaProvider } from "./voisona-provider";
 import { voicepeakProvider } from "./voicepeak-provider";
 import { voicevoxProvider } from "./voicevox-provider";
+import { coeiroinkProvider } from "./coeiroink-provider";
 
 const providers = {
   voisona: voisonaProvider,
   voicevox: voicevoxProvider,
   voicepeak: voicepeakProvider,
+  coeiroink: coeiroinkProvider,
 } satisfies { [TProvider in TtsProvider]: TtsProviderAdapter<TProvider> };
 
 export function getTtsProvider<TProvider extends TtsProvider>(provider: TProvider) {

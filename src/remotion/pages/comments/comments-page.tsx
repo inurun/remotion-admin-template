@@ -33,7 +33,8 @@ export function CommentsPage({ page }: { page: SavedCommentsPage }) {
         </div>
         {speaking ? (
           <p className="text-3xl text-white/80">
-            {speaking.voiceName ?? speaking.provider}: {speaking.text}
+            {"voiceName" in speaking && speaking.voiceName ? speaking.voiceName : speaking.provider}
+            : {speaking.text}
           </p>
         ) : null}
       </div>

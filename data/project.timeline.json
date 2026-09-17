@@ -1,5 +1,5 @@
 {
-  "durationSec": 27.558666666666667,
+  "durationSec": 25.6972947845805,
   "tracks": [
     {
       "id": "sequence",
@@ -7,7 +7,7 @@
         {
           "id": "4fefb322-99a7-4b25-a677-43744c8265c8",
           "startSec": 0,
-          "durationSec": 16.64,
+          "durationSec": 14.778628117913833,
           "clips": [
             {
               "id": "a9461dc8-acfe-4eec-b3cb-9dbcafbe5e31",
@@ -42,14 +42,14 @@
             {
               "id": "4f400fb3-ab71-40bd-96f9-9520aa2ba2a2",
               "startSec": 13.615,
-              "durationSec": 3.025,
+              "durationSec": 1.1636281179138324,
               "clips": []
             }
           ]
         },
         {
           "id": "03a1618f-952b-4cec-8eda-a65dfff2fe5b",
-          "startSec": 16.64,
+          "startSec": 14.778628117913833,
           "durationSec": 2.768,
           "clips": [
             {
@@ -80,7 +80,7 @@
         },
         {
           "id": "4992c3d4-0531-4a1c-a9dc-681654619cd7",
-          "startSec": 19.408,
+          "startSec": 17.546628117913833,
           "durationSec": 1.2453333333333334,
           "clips": [
             {
@@ -99,7 +99,7 @@
         },
         {
           "id": "01bb6c59-ba56-4dc1-8086-5dd7dc16fc20",
-          "startSec": 20.653333333333336,
+          "startSec": 18.791961451247168,
           "durationSec": 1.405333333333333,
           "clips": [
             {
@@ -130,7 +130,7 @@
         },
         {
           "id": "1b6584d9-cab1-49b8-953c-d833ae2bc3a7",
-          "startSec": 22.058666666666667,
+          "startSec": 20.1972947845805,
           "durationSec": 5.5,
           "clips": [
             {

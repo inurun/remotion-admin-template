@@ -1,7 +1,6 @@
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { getAvatarTypeByVoiceName, resolveAvatarSettings } from "@/_schemas";
-import { getVoiceId } from "@/app/features/settings";
+import { getAvatarTypeForVoice, resolveAvatarSettings, ttsVoiceId } from "@/_schemas";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
 import { serializeAvatarTokens } from "@/app/features/zen/avatar-tokens";
 import type { ZenAliasTarget, ZenSpeakerBlock } from "@/app/features/zen/types";
@@ -11,12 +10,12 @@ function serializeSpeechText(text: string) {
 }
 
 function resolveAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
-  const voiceId = getVoiceId({
-    provider: item.provider,
-    voiceName: item.voiceName ?? "",
-    voiceVersion: item.voiceVersion,
-  });
-  return voiceAliases.get(voiceId) ?? item.voiceName ?? "unknown";
+  const voiceId = ttsVoiceId(item);
+  return (
+    voiceAliases.get(voiceId) ??
+    (item.provider === "coeiroink" ? item.speakerUuid : item.voiceName) ??
+    "unknown"
+  );
 }
 
 function toSpeakerBlocks(
@@ -27,7 +26,7 @@ function toSpeakerBlocks(
 
   for (const item of tts) {
     const alias = resolveAlias(item, voiceAliases);
-    const avatar = resolveAvatarSettings(getAvatarTypeByVoiceName(item.voiceName), item.avatar);
+    const avatar = resolveAvatarSettings(getAvatarTypeForVoice(item), item.avatar);
     const last = speakers.at(-1);
     if (last && last.alias === alias && JSON.stringify(last.avatar) === JSON.stringify(avatar)) {
       last.lines.push(serializeSpeechText(item.text));

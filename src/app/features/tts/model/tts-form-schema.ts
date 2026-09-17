@@ -2,6 +2,7 @@ import { z } from "zod";
 import { storedG2pItemSchema } from "@/_schemas/g2p";
 import {
   avatarSettingsSchema,
+  coeiroinkSynthesisSettingsSchema,
   voicepeakSynthesisSettingsSchema,
   voicevoxSynthesisSettingsSchema,
   voisonaSynthesisSettingsSchema,
@@ -15,8 +16,6 @@ const ttsFormBaseSchema = {
   id: z.string().min(1),
   text: z.string(),
   readText: z.string().optional(),
-  voiceName: z.string().optional(),
-  voiceVersion: z.string().optional(),
   padBeforeSec: z.number().default(0),
   padAfterSec: z.number().default(0),
   volume: z.number().min(0).max(1).default(1),
@@ -24,21 +23,41 @@ const ttsFormBaseSchema = {
   avatar: avatarSettingsSchema.optional(),
 };
 
+const namedTtsFormIdentity = {
+  voiceName: z.string().optional(),
+  voiceVersion: z.string().optional(),
+};
+
+const coeiroinkTtsFormIdentity = {
+  speakerUuid: z.string().min(1),
+  styleId: z.number().int(),
+  modelVersion: z.string().min(1),
+};
+
 export const ttsFormSchema = z.discriminatedUnion("provider", [
   z.object({
     ...ttsFormBaseSchema,
+    ...namedTtsFormIdentity,
     provider: z.literal("voisona"),
     synthesisSettings: voisonaSynthesisSettingsSchema.nullish(),
   }),
   z.object({
     ...ttsFormBaseSchema,
+    ...namedTtsFormIdentity,
     provider: z.literal("voicevox"),
     synthesisSettings: voicevoxSynthesisSettingsSchema.nullish(),
   }),
   z.object({
     ...ttsFormBaseSchema,
+    ...namedTtsFormIdentity,
     provider: z.literal("voicepeak"),
     synthesisSettings: voicepeakSynthesisSettingsSchema.nullish(),
+  }),
+  z.object({
+    ...ttsFormBaseSchema,
+    ...coeiroinkTtsFormIdentity,
+    provider: z.literal("coeiroink"),
+    synthesisSettings: coeiroinkSynthesisSettingsSchema.nullish(),
   }),
 ]);
 

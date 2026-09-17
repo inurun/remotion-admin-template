@@ -1,4 +1,4 @@
-import { getAvatarTypeByVoiceName, type VoiceOption } from "@/_schemas";
+import { getAvatarTypeForVoice, type VoiceOption } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import type { VoiceSettings } from "@/app/features/settings/storage/use-settings-store";
 import type { ZenAliasTarget, ZenParseError } from "@/app/features/zen/types";
@@ -35,7 +35,7 @@ export function createAliasMap(
     seen.set(alias, voiceId);
     aliases.set(alias, {
       voice,
-      avatarType: getAvatarTypeByVoiceName(voice.voiceName),
+      avatarType: getAvatarTypeForVoice(voice),
     });
   }
 

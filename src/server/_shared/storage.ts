@@ -10,6 +10,7 @@ import {
   savedTimelineSchema,
   SEQUENCE_TRACK_ID,
   voicePresetId,
+  hasVoiceIdentity,
   DEFAULT_PROJECT_META,
   type SavedProject,
   type SavedSchedules,
@@ -199,7 +200,7 @@ function coerceVoicePresets(value: unknown) {
         return [];
       }
       const record = preset as VoicePreset;
-      if (!record.provider || !record.voiceName) {
+      if (!hasVoiceIdentity(record)) {
         return [];
       }
       return [[voicePresetId(record), record] as const];

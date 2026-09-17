@@ -2,6 +2,7 @@ import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import { useFormContext, useWatch } from "react-hook-form";
 import type { VoicePreset } from "@/_schemas";
+import { toVoiceIdentity } from "@/_schemas";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 import {
   getEffectiveTtsSynthesisSettings,
@@ -11,7 +12,7 @@ import { useEditorSession } from "@/app/features/editor";
 import { useSelectedTts, useTtsFormIndex } from "@/app/features/tts";
 
 export function getDisplayedTtsSynthesisSettings(
-  item: Pick<TtsFormValues, "provider" | "voiceName" | "voiceVersion" | "synthesisSettings">,
+  item: TtsFormValues,
   presets: Record<string, VoicePreset>,
 ) {
   return getEffectiveTtsSynthesisSettings(item, presets);
@@ -47,13 +48,11 @@ export function useTtsSettingsDialog() {
     if (!item) {
       return;
     }
-    setSynthesisSettings(
-      getVoicePresetSettings(voicePresets, {
-        provider: item.provider,
-        voiceName: item.voiceName ?? "",
-        voiceVersion: item.voiceVersion ?? "",
-      }),
-    );
+    const identity = toVoiceIdentity(item);
+    if (!identity) {
+      return;
+    }
+    setSynthesisSettings(getVoicePresetSettings(voicePresets, identity));
   };
 
   return {

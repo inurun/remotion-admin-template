@@ -14,19 +14,28 @@ export type SavedTtsForProvider<TProvider extends TtsProvider> = Extract<
   { provider: TProvider }
 >;
 
-export type TtsComparisonInput<TProvider extends TtsProvider> = {
+type ComparisonBase<TProvider extends TtsProvider> = {
   provider: TProvider;
   text: string;
   readText: string;
-  voiceName: string;
-  voiceVersion: string;
   g2p?: StoredG2pItem;
   synthesisSettings?: NonNullable<TtsInputForProvider<TProvider>["synthesisSettings"]>;
 };
 
+export type TtsComparisonInput<TProvider extends TtsProvider = TtsProvider> = Extract<
+  | (ComparisonBase<"voisona"> & { voiceName: string; voiceVersion: string })
+  | (ComparisonBase<"voicevox"> & { voiceName: string; voiceVersion: string })
+  | (ComparisonBase<"voicepeak"> & { voiceName: string; voiceVersion: string })
+  | (ComparisonBase<"coeiroink"> & {
+      speakerUuid: string;
+      styleId: number;
+      modelVersion: string;
+    }),
+  { provider: TProvider }
+>;
+
 export type TtsSynthesisInput<TProvider extends TtsProvider> = TtsComparisonInput<TProvider> & {
   projectPath: string;
-  voiceVersion?: string;
 };
 
 export type PlannedSynthesis = {

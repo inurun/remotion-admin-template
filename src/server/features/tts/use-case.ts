@@ -4,6 +4,7 @@ import { clearProjectTtsCache, readSavedProject } from "@/server/_shared/storage
 import { analyzeText } from "@/server/features/haqumei-api/analyze";
 import { validateG2pItem } from "@/server/features/haqumei-api/validate";
 import {
+  listOptionalCoeiroinkVoices,
   listOptionalVoisonaVoices,
   listVoicevoxVoices,
 } from "@/server/features/haqumei-api/voices";
@@ -17,7 +18,6 @@ import {
 } from "./contract";
 import { getEffectiveReadText, getUsableG2p } from "./providers/comparison";
 import { getTtsProvider } from "./providers/registry";
-import type { TtsSynthesisInput } from "./providers/types";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
 import { TtsCacheClearConflictError } from "@/server/features/tts/errors";
 
@@ -48,7 +48,7 @@ async function loadOptionalProviderVoices(
 
 export async function listTtsVoices(serverEnv: ServerEnv) {
   const haqumeiApiUrl = getHaqumeiApiUrl(serverEnv);
-  const [voisona, voicevox, voicepeak] = await Promise.all([
+  const [voisona, voicevox, voicepeak, coeiroink] = await Promise.all([
     loadProviderVoices("VoiSona", haqumeiApiUrl, listOptionalVoisonaVoices(serverEnv)),
     loadProviderVoices("VOICEVOX", haqumeiApiUrl, listVoicevoxVoices(serverEnv)),
     loadOptionalProviderVoices(
@@ -56,9 +56,10 @@ export async function listTtsVoices(serverEnv: ServerEnv) {
       getVoicepeakBase(serverEnv),
       listVoicepeakVoices(serverEnv),
     ),
+    loadProviderVoices("COEIROINK", haqumeiApiUrl, listOptionalCoeiroinkVoices(serverEnv)),
   ]);
 
-  return [...voisona, ...voicevox, ...voicepeak];
+  return [...voisona, ...voicevox, ...voicepeak, ...coeiroink];
 }
 
 export async function analyzeTts(serverEnv: ServerEnv, input: unknown) {
@@ -79,15 +80,12 @@ export async function synthesizeTts(serverEnv: ServerEnv, input: unknown) {
     ? (getUsableG2p(parsed.g2p, readText) ?? (await analyzeText(serverEnv, readText)))
     : parsed.g2p;
   const synthesisInput = {
-    provider: parsed.provider,
-    projectPath: parsed.projectPath,
-    text: parsed.text,
+    ...parsed,
     readText,
-    voiceName: parsed.voiceName,
-    voiceVersion: parsed.voiceVersion ?? "",
     ...(g2p ? { g2p } : {}),
     synthesisSettings: parsed.synthesisSettings ?? undefined,
-  } satisfies TtsSynthesisInput<typeof parsed.provider>;
+    ...(parsed.provider === "coeiroink" ? {} : { voiceVersion: parsed.voiceVersion ?? "" }),
+  };
 
   return provider.synthesize(serverEnv, synthesisInput as never);
 }

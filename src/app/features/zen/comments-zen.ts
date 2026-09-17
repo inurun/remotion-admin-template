@@ -2,8 +2,7 @@ import type { CommentGroup, NiconicoComment } from "@/_schemas/project/comments"
 import type { AvatarSettings } from "@/_schemas";
 import type { CommentsPageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
-import { getAvatarTypeByVoiceName, resolveAvatarSettings } from "@/_schemas";
-import { getVoiceId } from "@/app/features/settings";
+import { getAvatarTypeForVoice, resolveAvatarSettings, ttsVoiceId } from "@/_schemas";
 import { createVoiceAliasMap } from "@/app/features/zen/create-alias-map";
 import { serializeAvatarTokens } from "@/app/features/zen/avatar-tokens";
 import { extractInlineTags, uniqueTags } from "@/app/features/zen/tag-utils";
@@ -74,12 +73,12 @@ function escapeSpeechLine(text: string) {
 }
 
 function resolveAlias(item: TtsFormValues, voiceAliases: Map<string, string>) {
-  const voiceId = getVoiceId({
-    provider: item.provider,
-    voiceName: item.voiceName ?? "",
-    voiceVersion: item.voiceVersion,
-  });
-  return voiceAliases.get(voiceId) ?? item.voiceName ?? "unknown";
+  const voiceId = ttsVoiceId(item);
+  return (
+    voiceAliases.get(voiceId) ??
+    (item.provider === "coeiroink" ? item.speakerUuid : item.voiceName) ??
+    "unknown"
+  );
 }
 
 export function serializeZenCommentsPage(
@@ -117,7 +116,7 @@ export function serializeZenCommentsPage(
         continue;
       }
       const alias = resolveAlias(item, voiceAliases);
-      const avatar = resolveAvatarSettings(getAvatarTypeByVoiceName(item.voiceName), item.avatar);
+      const avatar = resolveAvatarSettings(getAvatarTypeForVoice(item), item.avatar);
       const tokens = serializeAvatarTokens(avatar, aliases.get(alias)?.avatarType ?? "demo");
       const key = `${alias}\0${JSON.stringify(avatar)}`;
       if (key !== lastKey) {
@@ -403,8 +402,8 @@ function commentIdSetKey(ids: readonly string[]) {
   return [...ids].sort().join("\0");
 }
 
-function ttsVoiceKey(item: Pick<TtsFormValues, "provider" | "voiceName" | "voiceVersion">) {
-  return `${item.provider}::${item.voiceName ?? ""}::${item.voiceVersion ?? ""}`;
+function ttsVoiceKey(item: TtsFormValues) {
+  return ttsVoiceId(item);
 }
 
 function speakerVoiceKey(alias: string, aliases: Map<string, ZenAliasTarget>) {
@@ -412,7 +411,7 @@ function speakerVoiceKey(alias: string, aliases: Map<string, ZenAliasTarget>) {
   if (!voice) {
     return "";
   }
-  return `${voice.provider}::${voice.voiceName}::${voice.voiceVersion ?? ""}`;
+  return ttsVoiceId(voice);
 }
 
 function matchGroups(
@@ -544,17 +543,8 @@ export function applyZenCommentsPage(
       }
       let resolved: TtsFormValues;
       if (item) {
-        const voiceChanged =
-          item.provider !== target.voice.provider ||
-          item.voiceName !== target.voice.voiceName ||
-          (item.voiceVersion ?? "") !== (target.voice.voiceVersion ?? "");
-        let next = voiceChanged
-          ? applyTtsVoiceChange(item, {
-              provider: target.voice.provider,
-              voiceName: target.voice.voiceName,
-              voiceVersion: target.voice.voiceVersion ?? "",
-            })
-          : item;
+        const voiceChanged = ttsVoiceKey(item) !== ttsVoiceId(target.voice);
+        let next = voiceChanged ? applyTtsVoiceChange(item, target.voice) : item;
         if (next.text !== reply.text) {
           next = applyTtsTextChange(next, reply.text);
         }

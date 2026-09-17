@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/react/sortable";
 import type { UseFormReturn } from "react-hook-form";
 import { useFormState, useWatch } from "react-hook-form";
 import type { VoiceOption, VoicePreset } from "@/_schemas";
-import { voicePresetId } from "@/_schemas";
+import { copyVoiceIdentity, voicePresetId } from "@/_schemas";
 import { getVoiceId } from "@/app/features/settings";
 import { SynthesisSettingsFields } from "@/app/features/settings/components/synthesis-settings-fields";
 import { getVoicePresetSettings } from "@/app/features/tts/lib/synthesis-settings";
@@ -88,9 +88,7 @@ export function useVoiceRow({
         delete nextPresets[id];
       } else {
         nextPresets[id] = {
-          provider: voice.provider,
-          voiceName: voice.voiceName,
-          ...(voice.voiceVersion ? { voiceVersion: voice.voiceVersion } : {}),
+          ...copyVoiceIdentity(voice),
           synthesisSettings: value,
         } as VoicePreset;
       }
