@@ -43,9 +43,14 @@ export default defineConfig(({ mode }) => {
       devServer({
         entry: "./src/index.tsx",
         exclude: [/^\/src\/.*\.json(?:\?.*)?$/, ...defaultOptions.exclude],
+        handleHotUpdate: () => {},
       }),
       tailwindcss(),
-      ssrPlugin(),
+      ssrPlugin({
+        hotReload: {
+          ignore: ["**/*.test.ts", "src/app/**"],
+        },
+      }),
       react(),
     ],
     resolve,
