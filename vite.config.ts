@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       ssrPlugin({
         hotReload: {
-          ignore: ["**/*.test.ts", "src/app/**"],
+          ignore: ["**/*.test.ts", "src/app/**", "src/remotion/**"],
         },
       }),
       react(),

@@ -1,4 +1,4 @@
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { cn } from "@/_shared/lib/utils";
@@ -9,6 +9,11 @@ import { CommentDropSlot } from "../comment-drop-slot/comment-drop-slot";
 import { CommentRow } from "../comment-row/comment-row";
 import { ReplyRow } from "../reply-row/reply-row";
 import { useCommentGroupBlock } from "./use-comment-group-block";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/app/components/ui/collapsible";
 
 export function CommentGroupBlock({
   pageId,
@@ -50,54 +55,61 @@ export function CommentGroupBlock({
   return (
     <article
       ref={ref}
-      className={cn("grid gap-2 rounded-lg border border-border p-3", isDragging && "opacity-60")}
+      className={cn("grid rounded-lg border border-border px-3 pt-3", isDragging && "opacity-60")}
     >
       <CommentDropSlot
         id={`drop:merge:${group.id}`}
         data={{ kind: "merge-group", pageId, groupId: group.id }}
         label="Merge here"
       />
-      <div className="flex items-center gap-2">
-        <span
-          ref={handleRef}
-          className="inline-flex size-6 cursor-grab items-center justify-center text-muted-foreground"
-        >
-          <GripVertical className="size-4" />
-        </span>
-        <p className="flex-1 text-sm font-medium">{comments.length} comments</p>
-        <Button type="button" size="icon-xs" variant="destructive" onClick={onRemoveGroup}>
-          <Trash2 />
-        </Button>
-      </div>
-      {comments.map((comment, index) => (
-        <div key={comment.id}>
-          <CommentDropSlot
-            id={`drop:comment:${group.id}:${index}`}
-            data={{ kind: "comment-slot", pageId, groupId: group.id, index }}
-            label="Move comment"
+      <Collapsible>
+        <div className="flex items-center gap-2">
+          <span
+            ref={handleRef}
+            className="inline-flex size-6 cursor-grab items-center justify-center text-muted-foreground"
+          >
+            <GripVertical className="size-4" />
+          </span>
+          <Input
+            value={group.displayText ?? ""}
+            placeholder={commentGroupDisplayText(group, commentsById)}
+            onChange={(event) =>
+              onDisplayText(event.target.value === "" ? null : event.target.value)
+            }
           />
-          <CommentRow
-            pageId={pageId}
-            groupId={group.id}
-            comment={comment}
-            onChangeBody={(body) => onChangeCommentBody(comment.id, body)}
-            onRemove={() => onRemoveComment(comment.id)}
-          />
+          <CollapsibleTrigger>
+            <Button type="button" size="icon-xs" variant="outline">
+              {group.commentIds.length > 1 ? group.commentIds.length : <ChevronDown />}
+            </Button>
+          </CollapsibleTrigger>
+          <Button type="button" size="icon-xs" variant="destructive" onClick={onRemoveGroup}>
+            <Trash2 />
+          </Button>
         </div>
-      ))}
+        <CollapsibleContent>
+          {comments.map((comment, index) => (
+            <div key={comment.id} className="pl-3">
+              <CommentDropSlot
+                id={`drop:comment:${group.id}:${index}`}
+                data={{ kind: "comment-slot", pageId, groupId: group.id, index }}
+                label="Move comment"
+              />
+              <CommentRow
+                pageId={pageId}
+                groupId={group.id}
+                comment={comment}
+                onChangeBody={(body) => onChangeCommentBody(comment.id, body)}
+                onRemove={() => onRemoveComment(comment.id)}
+              />
+            </div>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
       <CommentDropSlot
         id={`drop:comment:${group.id}:end`}
         data={{ kind: "comment-slot", pageId, groupId: group.id, index: comments.length }}
         label="Move comment"
       />
-      <label className="grid gap-1 text-xs">
-        Display
-        <Input
-          value={group.displayText ?? ""}
-          placeholder={commentGroupDisplayText(group, commentsById)}
-          onChange={(event) => onDisplayText(event.target.value === "" ? null : event.target.value)}
-        />
-      </label>
       {replies.map((reply, index) => (
         <div key={reply.id}>
           <CommentDropSlot
