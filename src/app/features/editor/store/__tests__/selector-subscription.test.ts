@@ -5,7 +5,6 @@ import {
   selectSequenceOrder,
 } from "@/app/features/editor/store/editor-session-state";
 import { createEditorSessionStore } from "@/app/features/editor/store/editor-session-store";
-import { selectPageThumbnailBindingKey } from "@/app/features/editor/store/saved-project-state";
 import { createSavedProjectStore } from "@/app/features/editor/store/saved-project-store";
 import { createSavedMainPage, createSavedProject, createSavedTts } from "./fixtures";
 
@@ -32,7 +31,7 @@ function countSelectorNotifications<State, Selected>(
 }
 
 describe("editor subscription boundaries", () => {
-  it("does not notify the page-list structure or another thumbnail binding when page content is edited", () => {
+  it("does not notify the page-list structure or another page revision when page content is edited", () => {
     const project = createSavedProject({
       pages: [
         createSavedMainPage({ id: "page-a", title: "A" }),
@@ -66,15 +65,15 @@ describe("editor subscription boundaries", () => {
       editorStore.getState,
       (state) => selectItemDirtyVersion(state, "page-a") > 0,
     );
-    const otherThumbnail = countSelectorNotifications(
+    const otherItemRevision = countSelectorNotifications(
       savedStore.subscribe,
       savedStore.getState,
-      (state) => selectPageThumbnailBindingKey(state, "page-b"),
+      (state) => state.itemRevision["page-b"] ?? 0,
     );
-    const editedThumbnail = countSelectorNotifications(
+    const editedItemRevision = countSelectorNotifications(
       savedStore.subscribe,
       savedStore.getState,
-      (state) => selectPageThumbnailBindingKey(state, "page-a"),
+      (state) => state.itemRevision["page-a"] ?? 0,
     );
 
     const pageABefore = editorStore.getState().itemsById["page-a"];
@@ -106,14 +105,14 @@ describe("editor subscription boundaries", () => {
     expect(otherItemType.count).toBe(0);
     expect(otherItemDirty.count).toBe(0);
     expect(editedItemDirty.count).toBe(1);
-    expect(otherThumbnail.count).toBe(0);
-    expect(editedThumbnail.count).toBe(0);
+    expect(otherItemRevision.count).toBe(0);
+    expect(editedItemRevision.count).toBe(0);
 
     pageListStructure.unsubscribe();
     otherItemType.unsubscribe();
     otherItemDirty.unsubscribe();
     editedItemDirty.unsubscribe();
-    otherThumbnail.unsubscribe();
-    editedThumbnail.unsubscribe();
+    otherItemRevision.unsubscribe();
+    editedItemRevision.unsubscribe();
   });
 });

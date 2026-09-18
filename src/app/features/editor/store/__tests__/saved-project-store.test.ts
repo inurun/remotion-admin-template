@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_TIMELINE } from "@/_schemas";
-import {
-  reconstructSavedProject,
-  selectPageThumbnailBinding,
-  selectPageThumbnailBindingKey,
-  shouldMountRemotionThumbnail,
-} from "@/app/features/editor/store/saved-project-state";
+import { reconstructSavedProject } from "@/app/features/editor/store/saved-project-state";
 import { createSavedProjectStore } from "@/app/features/editor/store/saved-project-store";
 import {
   applyUpdateTts,
@@ -14,8 +9,8 @@ import {
 } from "@/app/features/editor/store/editor-session-state";
 import { createSavedMainPage, createSavedProject, createSavedTts } from "./fixtures";
 
-describe("saved project store and thumbnail spike", () => {
-  it("keeps thumbnail bindings stable when another page is saved", () => {
+describe("saved project store revisions", () => {
+  it("keeps other item revisions stable when another page is saved", () => {
     const store = createSavedProjectStore(
       createSavedProject({
         pages: [
@@ -25,27 +20,26 @@ describe("saved project store and thumbnail spike", () => {
       }),
     );
 
-    const pageBBefore = selectPageThumbnailBinding(store.getState(), "page-b");
-    const pageBKeyBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
+    const pageBItemRevision = store.getState().itemRevision["page-b"];
+    const renderRevision = store.getState().renderRevision;
     store.getState().applySaveResult({
       project: reconstructSavedProject(store.getState()),
       timeline: EMPTY_TIMELINE,
       updatedItemIds: ["page-a"],
     });
 
-    const pageBAfter = selectPageThumbnailBinding(store.getState(), "page-b");
-    expect(pageBAfter.itemRevision).toBe(pageBBefore.itemRevision);
-    expect(pageBAfter.renderRevision).toBe(pageBBefore.renderRevision);
-    expect(selectPageThumbnailBindingKey(store.getState(), "page-b")).toBe(pageBKeyBefore);
-    expect(selectPageThumbnailBinding(store.getState(), "page-a").itemRevision).toBe(
-      pageBBefore.itemRevision + 1,
-    );
+    expect(store.getState().itemRevision["page-b"]).toBe(pageBItemRevision);
+    expect(store.getState().renderRevision).toBe(renderRevision);
+    expect(store.getState().itemRevision["page-a"]).toBe((pageBItemRevision ?? 0) + 1);
   });
 
-  it("does not change saved thumbnail bindings when editor TTS changes", () => {
+  it("does not change saved revisions when editor TTS changes", () => {
     const saved = createSavedProject();
     const store = createSavedProjectStore(saved);
-    const before = selectPageThumbnailBinding(store.getState(), "page-1");
+    const before = {
+      itemRevision: store.getState().itemRevision["page-1"],
+      renderRevision: store.getState().renderRevision,
+    };
 
     const session = createEditorSessionState(saved);
     const nextSession = applyUpdateTts(session, "page-1", "tts-1", {
@@ -60,33 +54,8 @@ describe("saved project store and thumbnail spike", () => {
     });
 
     expect(nextSession.itemsById["page-1"]).not.toBe(session.itemsById["page-1"]);
-    expect(selectPageThumbnailBinding(store.getState(), "page-1")).toEqual(before);
-  });
-
-  it("does not mount Remotion trees for hidden or unsaved pages", () => {
-    expect(shouldMountRemotionThumbnail({ inViewport: false, hasSavedContentPage: true })).toBe(
-      false,
-    );
-    expect(shouldMountRemotionThumbnail({ inViewport: true, hasSavedContentPage: false })).toBe(
-      false,
-    );
-    expect(shouldMountRemotionThumbnail({ inViewport: true, hasSavedContentPage: true })).toBe(
-      true,
-    );
-  });
-
-  it("treats unsaved pages as thumbnail placeholders", () => {
-    const store = createSavedProjectStore(createSavedProject());
-    expect(selectPageThumbnailBinding(store.getState(), "unsaved-page").hasSavedContentPage).toBe(
-      false,
-    );
-    expect(
-      shouldMountRemotionThumbnail({
-        inViewport: true,
-        hasSavedContentPage: selectPageThumbnailBinding(store.getState(), "unsaved-page")
-          .hasSavedContentPage,
-      }),
-    ).toBe(false);
+    expect(store.getState().itemRevision["page-1"]).toBe(before.itemRevision);
+    expect(store.getState().renderRevision).toBe(before.renderRevision);
   });
 
   it("bumps renderRevision when width, height, or sequence order changes", () => {
@@ -125,7 +94,7 @@ describe("saved project store and thumbnail spike", () => {
     expect(store.getState().renderRevision).toBe(before + 2);
   });
 
-  it("invalidates later thumbnails when an earlier saved page duration changes", () => {
+  it("bumps renderRevision when an earlier saved page duration changes", () => {
     const initialTimeline = {
       durationSec: 2,
       tracks: [
@@ -144,7 +113,7 @@ describe("saved project store and thumbnail spike", () => {
       }),
       initialTimeline,
     );
-    const pageBBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
+    const renderRevisionBefore = store.getState().renderRevision;
     const project = reconstructSavedProject(store.getState());
 
     store.getState().applySaveResult({
@@ -164,18 +133,18 @@ describe("saved project store and thumbnail spike", () => {
       updatedItemIds: ["page-a"],
     });
 
-    expect(selectPageThumbnailBindingKey(store.getState(), "page-b")).not.toBe(pageBBefore);
+    expect(store.getState().renderRevision).not.toBe(renderRevisionBefore);
     expect(store.getState().renderRevision).toBe(1);
     expect(store.getState().itemRevision["page-a"]).toBe(1);
     expect(store.getState().itemRevision["page-b"]).toBe(0);
   });
 
-  it("does not invalidate later thumbnails for unrelated non-timing draft edits", () => {
+  it("does not bump saved revisions for unrelated non-timing draft edits", () => {
     const saved = createSavedProject({
       pages: [createSavedMainPage({ id: "page-a" }), createSavedMainPage({ id: "page-b" })],
     });
     const store = createSavedProjectStore(saved);
-    const pageBBefore = selectPageThumbnailBindingKey(store.getState(), "page-b");
+    const pageBItemRevision = store.getState().itemRevision["page-b"];
     const session = createEditorSessionState(saved);
     const pageA = session.itemsById["page-a"];
     if (!pageA || pageA.type === "transition") {
@@ -184,7 +153,7 @@ describe("saved project store and thumbnail spike", () => {
 
     const next = applyUpsertPage(session, "page-a", { ...pageA, title: "typed" });
     expect(next.itemsById["page-a"]).not.toBe(session.itemsById["page-a"]);
-    expect(selectPageThumbnailBindingKey(store.getState(), "page-b")).toBe(pageBBefore);
+    expect(store.getState().itemRevision["page-b"]).toBe(pageBItemRevision);
     expect(store.getState().renderRevision).toBe(0);
   });
 
@@ -200,7 +169,7 @@ describe("saved project store and thumbnail spike", () => {
         ],
       }),
     );
-    const pageBBefore = selectPageThumbnailBinding(store.getState(), "page-b");
+    const pageBItemRevision = store.getState().itemRevision["page-b"];
 
     store.getState().applyExternalProject(
       createSavedProject({
@@ -218,10 +187,8 @@ describe("saved project store and thumbnail spike", () => {
       }),
     );
 
-    expect(selectPageThumbnailBinding(store.getState(), "page-a").itemRevision).toBe(1);
-    expect(selectPageThumbnailBinding(store.getState(), "page-b").itemRevision).toBe(
-      pageBBefore.itemRevision,
-    );
+    expect(store.getState().itemRevision["page-a"]).toBe(1);
+    expect(store.getState().itemRevision["page-b"]).toBe(pageBItemRevision);
     expect(store.getState().renderRevision).toBe(1);
   });
 

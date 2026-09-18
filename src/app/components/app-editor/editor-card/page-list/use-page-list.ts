@@ -1,9 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
-import { useRemotionComposition } from "@/app/features/remotion/hook/use-remotion-composition";
-import { getPageMoveState } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
+import { VIDEO_FPS } from "@/constants";
+import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import {
+  getPageMoveState,
+  getPlayingPageId,
+  getProjectPageTimings,
+} from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
+import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
 import {
   useProjectRoute,
   useSelectedPageId,
@@ -12,13 +18,31 @@ import { getProjectPageHref, getProjectRootHref } from "@/app/features/project/l
 import { resolveSelectedPageIndexAfterRemove } from "@/app/features/page";
 
 export function usePageList() {
-  const component = useRemotionComposition();
   const sequenceOrder = useEditorSession((state) => state.sequenceOrder);
   const removeSequenceItem = useEditorSession((state) => state.removeSequenceItem);
   const reorderSequence = useEditorSession((state) => state.reorderSequence);
   const selectedPageId = useSelectedPageId();
   const { projectPath, navigate } = useProjectRoute();
   const selectedPageIndex = selectedPageId ? sequenceOrder.indexOf(selectedPageId) : -1;
+  const timeline = useSavedProject((state) => state.timeline);
+  const pageTimings = useMemo(() => getProjectPageTimings(timeline), [timeline]);
+  const playerControl = useRemotionPlayerControl();
+  const playingPageId = useSyncExternalStore(
+    useCallback(
+      (onStoreChange) => {
+        const handleFrameChange = () => onStoreChange();
+        playerControl.addEventListener("frameupdate", handleFrameChange);
+        playerControl.addEventListener("seeked", handleFrameChange);
+        return () => {
+          playerControl.removeEventListener("frameupdate", handleFrameChange);
+          playerControl.removeEventListener("seeked", handleFrameChange);
+        };
+      },
+      [playerControl],
+    ),
+    () => getPlayingPageId(pageTimings, playerControl.getCurrentFrame(), VIDEO_FPS),
+    () => pageTimings[0]?.id ?? null,
+  );
 
   const selectPage = useCallback(
     (index: number) => {
@@ -86,9 +110,9 @@ export function usePageList() {
   );
 
   return {
-    component,
     sequenceOrder,
     selectedPageIndex,
+    playingPageId,
     selectPage,
     remove,
     handleDragEnd,

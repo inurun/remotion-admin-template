@@ -81,7 +81,7 @@ export function EditorCard() {
         </CardHeader>
         <CollapsibleContent>
           <CardContent>
-            <div className="grid gap-4 sm:grid-cols-[minmax(50px,180px)_minmax(200px,1fr)]">
+            <div className="grid gap-4 sm:grid-cols-[minmax(50px,150px)_minmax(200px,1fr)]">
               <PageList />
               {showPageForm && selectedPageId && selectedPageType ? (
                 <SelectedPageContextProvider pageId={selectedPageId}>

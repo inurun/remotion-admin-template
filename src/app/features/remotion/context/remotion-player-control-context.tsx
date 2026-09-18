@@ -1,5 +1,7 @@
 import type { CallbackListener, EventTypes, PlayerRef } from "@remotion/player";
-import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+
+type PlayerEventCallback = CallbackListener<EventTypes>;
 
 type RemotionPlayerControlContextValue = {
   addEventListener: <T extends EventTypes>(name: T, callback: CallbackListener<T>) => void;
@@ -19,15 +21,23 @@ const RemotionPlayerControlContext = createContext<RemotionPlayerControlContextV
 
 export function RemotionPlayerControlProvider({ children }: { children: React.ReactNode }) {
   const playerRef = useRef<PlayerRef | null>(null);
+  const [playerGeneration, setPlayerGeneration] = useState(0);
 
   const setPlayerRef = useCallback((player: PlayerRef | null) => {
+    if (playerRef.current === player) {
+      return;
+    }
+
     playerRef.current = player;
+    setPlayerGeneration((generation) => generation + 1);
   }, []);
 
-  const value = useMemo<RemotionPlayerControlContextValue>(
-    () => ({
+  const value = useMemo<RemotionPlayerControlContextValue>(() => {
+    void playerGeneration;
+
+    return {
       addEventListener: (name, callback) => {
-        playerRef.current?.addEventListener(name, callback);
+        playerRef.current?.addEventListener(name, callback as PlayerEventCallback);
       },
       getCurrentFrame: () => playerRef.current?.getCurrentFrame() ?? 0,
       getVolume: () => playerRef.current?.getVolume() ?? 1,
@@ -39,7 +49,7 @@ export function RemotionPlayerControlProvider({ children }: { children: React.Re
         playerRef.current?.play();
       },
       removeEventListener: (name, callback) => {
-        playerRef.current?.removeEventListener(name, callback);
+        playerRef.current?.removeEventListener(name, callback as PlayerEventCallback);
       },
       seekTo: (frame) => {
         playerRef.current?.seekTo(frame);
@@ -51,9 +61,8 @@ export function RemotionPlayerControlProvider({ children }: { children: React.Re
       toggle: () => {
         playerRef.current?.toggle();
       },
-    }),
-    [setPlayerRef],
-  );
+    };
+  }, [playerGeneration, setPlayerRef]);
 
   return (
     <RemotionPlayerControlContext.Provider value={value}>

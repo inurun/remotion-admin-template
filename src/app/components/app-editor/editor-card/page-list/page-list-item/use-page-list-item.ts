@@ -1,27 +1,41 @@
+import { useCallback, useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import {
-  getPageListStaggerDelayMs,
-  resolvePageListItemPresentation,
-} from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
-import type { PageThumbnailProps } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-thumbnail/use-page-thumbnail";
+import { resolvePageListItemPresentation } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import { useEditorSession } from "@/app/features/editor/store/editor-session-store-context";
 import { useSavedProject } from "@/app/features/editor/store/saved-project-store-context";
 
 export type PageListItemProps = {
   index: number;
+  isPlaying: boolean;
   isSelected: boolean;
   onRemove: () => void;
   onSelect: () => void;
   pageId: string;
-  thumbnail: Omit<PageThumbnailProps, "dirty">;
 };
 
-export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "index" | "pageId">) {
+function assignRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref) {
+    ref.current = value;
+  }
+}
+
+export function usePageListItem({
+  index,
+  isPlaying,
+  pageId,
+}: Pick<PageListItemProps, "index" | "isPlaying" | "pageId">) {
   const width = useSavedProject((state) => state.project.meta.width);
   const height = useSavedProject((state) => state.project.meta.height);
   const item = useEditorSession((state) => state.itemsById[pageId]);
   const dirty = useEditorSession((state) => (state.dirty.itemIds[pageId] ?? 0) > 0);
-  const { ref, handleRef, isDragging } = useSortable({
+  const nodeRef = useRef<HTMLElement | null>(null);
+  const {
+    ref: sortableRef,
+    handleRef,
+    isDragging,
+  } = useSortable({
     id: pageId,
     index,
     transition: {
@@ -30,6 +44,21 @@ export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "inde
       idle: true,
     },
   });
+  const ref = useCallback(
+    (node: HTMLElement | null) => {
+      nodeRef.current = node;
+      assignRef(sortableRef, node);
+    },
+    [sortableRef],
+  );
+
+  useEffect(() => {
+    if (!isPlaying) {
+      return;
+    }
+
+    nodeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [isPlaying]);
 
   return {
     ref,
@@ -38,6 +67,5 @@ export function usePageListItem({ index, pageId }: Pick<PageListItemProps, "inde
     aspectRatio: `${width} / ${height}`,
     dirty,
     presentation: resolvePageListItemPresentation(item),
-    staggerDelayMs: getPageListStaggerDelayMs(index),
   };
 }

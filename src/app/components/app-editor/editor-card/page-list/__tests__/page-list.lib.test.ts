@@ -1,27 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  getPageListStaggerDelayMs,
-  getPageThumbnailFrame,
+  getPlayingPageId,
   getProjectPageTimings,
   getPageMoveState,
-  PAGE_LIST_STAGGER_MAX_MS,
-  PAGE_LIST_STAGGER_STEP_MS,
   resolvePageListItemPresentation,
 } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 
 describe("page list", () => {
-  it("uses a frame one second after the page starts", () => {
-    expect(getPageThumbnailFrame({ startSec: 2, endSec: 5 }, 24, 120)).toBe(72);
-  });
-
-  it("keeps short-page thumbnails inside the page range", () => {
-    expect(getPageThumbnailFrame({ startSec: 0, endSec: 0.5 }, 24, 120)).toBe(11);
-  });
-
-  it("keeps thumbnails inside the project range", () => {
-    expect(getPageThumbnailFrame({ startSec: 4, endSec: 8 }, 24, 100)).toBe(99);
-  });
-
   it("builds page timings from the saved timeline", () => {
     expect(
       getProjectPageTimings({
@@ -40,6 +25,30 @@ describe("page list", () => {
       { id: "page-1", startSec: 0, endSec: 1.75 },
       { id: "page-2", startSec: 1.75, endSec: 4.75 },
     ]);
+  });
+
+  it("resolves the playing page from the current frame", () => {
+    const pages = [
+      { id: "page-1", startSec: 0, endSec: 1.75 },
+      { id: "page-2", startSec: 1.75, endSec: 4.75 },
+    ];
+
+    expect(getPlayingPageId(pages, 0, 24)).toBe("page-1");
+    expect(getPlayingPageId(pages, Math.round(1.75 * 24) - 1, 24)).toBe("page-1");
+    expect(getPlayingPageId(pages, Math.round(1.75 * 24), 24)).toBe("page-2");
+    expect(getPlayingPageId([], 0, 24)).toBeNull();
+  });
+
+  it("picks the last overlapping clip at a transition cut", () => {
+    const pages = [
+      { id: "page-1", startSec: 0, endSec: 5 },
+      { id: "tr-1", startSec: 4.2, endSec: 5 },
+      { id: "page-2", startSec: 4.2, endSec: 7.2 },
+    ];
+
+    expect(getPlayingPageId(pages, Math.round(4.1 * 24), 24)).toBe("page-1");
+    expect(getPlayingPageId(pages, Math.round(4.2 * 24), 24)).toBe("page-2");
+    expect(getPlayingPageId(pages, Math.round(7.2 * 24), 24)).toBe("page-2");
   });
 
   it("accounts for transition overlap in sequence timings", () => {
@@ -86,13 +95,6 @@ describe("page list", () => {
     expect(getPageMoveState(["a", "b"], 0, 0, 2)).toBeNull();
   });
 
-  it("staggers page list items by 100ms and caps the delay", () => {
-    expect(getPageListStaggerDelayMs(0)).toBe(0);
-    expect(getPageListStaggerDelayMs(3)).toBe(3 * PAGE_LIST_STAGGER_STEP_MS);
-    expect(getPageListStaggerDelayMs(10)).toBe(PAGE_LIST_STAGGER_MAX_MS);
-    expect(getPageListStaggerDelayMs(-1)).toBe(0);
-  });
-
   it("presents transitions without a thumbnail title", () => {
     expect(resolvePageListItemPresentation({ type: "transition", variant: "slide" })).toEqual({
       kind: "transition",
@@ -102,15 +104,19 @@ describe("page list", () => {
 
   it("presents page titles only when they are non-empty", () => {
     expect(resolvePageListItemPresentation(undefined)).toBeNull();
-    expect(resolvePageListItemPresentation({ type: "main", title: "  Opening  " })).toEqual({
+    expect(
+      resolvePageListItemPresentation({ type: "main", title: "  Opening  ", tts: [{}, {}] }),
+    ).toEqual({
       kind: "page",
       pageType: "main",
       title: "Opening",
+      ttsCount: 2,
     });
-    expect(resolvePageListItemPresentation({ type: "intro", title: "   " })).toEqual({
+    expect(resolvePageListItemPresentation({ type: "intro", title: "   ", tts: [] })).toEqual({
       kind: "page",
       pageType: "intro",
       title: null,
+      ttsCount: 0,
     });
   });
 });

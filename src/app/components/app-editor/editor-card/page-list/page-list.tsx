@@ -2,15 +2,10 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { usePageList } from "@/app/components/app-editor/editor-card/page-list/use-page-list";
 import { AddPageDialog } from "@/app/components/app-editor/editor-card/page-list/add-page-dialog/add-page-dialog";
 import { PageListItem } from "@/app/components/app-editor/editor-card/page-list/page-list-item/page-list-item";
-import { PageListLoading } from "@/app/components/app-editor/editor-card/page-list/page-list-loading/page-list-loading";
 
 export function PageList() {
-  const { component, handleDragEnd, sequenceOrder, remove, selectedPageIndex, selectPage } =
+  const { handleDragEnd, sequenceOrder, remove, selectedPageIndex, playingPageId, selectPage } =
     usePageList();
-
-  if (!component) {
-    return <PageListLoading count={sequenceOrder.length} />;
-  }
 
   return (
     <aside className="flex max-w-full flex-col gap-3 overflow-hidden">
@@ -35,13 +30,10 @@ export function PageList() {
                 key={pageId}
                 index={index}
                 isSelected={selectedPageIndex === index}
+                isPlaying={playingPageId === pageId}
                 onRemove={() => remove(index)}
                 onSelect={() => selectPage(index)}
                 pageId={pageId}
-                thumbnail={{
-                  component,
-                  pageId,
-                }}
               />
             ))}
           </div>

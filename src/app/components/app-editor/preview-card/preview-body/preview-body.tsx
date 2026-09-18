@@ -6,7 +6,6 @@ import {
   type PreviewPlayerAreaProps,
   usePreviewPlayerArea,
 } from "@/app/components/app-editor/preview-card/use-preview-card";
-import { usePagePreviewSeek } from "@/app/components/app-editor/preview-card/use-page-preview-seek";
 import { VolumeControl } from "@/app/components/app-editor/preview-card/volume-control/volume-control";
 
 function PreviewPlayerArea({
@@ -17,7 +16,6 @@ function PreviewPlayerArea({
   schedules,
 }: PreviewPlayerAreaProps) {
   const { playbackRate, setPlaybackRate } = usePreviewPlayerArea();
-  usePagePreviewSeek({ durationInFrames, timeline });
 
   return (
     <>
