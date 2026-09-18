@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getConfigPaneClassName,
   getPreviewConfigColumnClassName,
+  getTimelinePaneClassName,
 } from "@/app/components/app-editor/app-editor.lib";
 import {
   DESKTOP_EDITOR_LAYOUT_QUERY,
@@ -33,5 +34,12 @@ describe("desktop editor layout", () => {
     expect(getConfigPaneClassName(true, true)).toContain("overflow-y-auto");
     expect(getConfigPaneClassName(true, false)).toContain("shrink-0");
     expect(getConfigPaneClassName(false, true)).not.toContain("overflow-y-auto");
+  });
+
+  it("fills the timeline pane on desktop", () => {
+    expect(getTimelinePaneClassName(true)).toContain("h-full");
+    expect(getTimelinePaneClassName(true)).toContain("overflow-hidden");
+    expect(getTimelinePaneClassName(false)).not.toContain("h-full");
+    expect(getTimelinePaneClassName(false)).toContain("min-h-48");
   });
 });
