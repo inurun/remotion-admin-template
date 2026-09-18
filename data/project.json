@@ -4,7 +4,7 @@
     "description": "Admin + Remotion stub template",
     "width": 1920,
     "height": 1080,
-    "updatedAt": "2026-09-17T05:01:04.612Z",
+    "updatedAt": "2026-09-18T05:00:16.522Z",
     "weather": {},
     "niconico": {
       "title": "HTML説明文テスト",
@@ -470,7 +470,7 @@
           "body": "うぽつ",
           "vposMs": 1600,
           "postedAt": "2026-09-16T10:26:57+09:00",
-          "hidden": true
+          "hidden": false
         },
         {
           "id": "sm46805363:1789483093:main:23",
@@ -490,7 +490,7 @@
           "body": "うぽつです",
           "vposMs": 2220,
           "postedAt": "2026-09-16T06:43:38+09:00",
-          "hidden": true
+          "hidden": false
         },
         {
           "id": "sm46805363:1789483093:main:54",
@@ -1267,22 +1267,23 @@
         {
           "id": "d03eb5b9-9f81-4d4d-a9a8-18357feefaf9",
           "commentIds": [
-            "sm46805363:1789483093:main:23"
+            "sm46805363:1789483093:main:23",
+            "sm46805363:1789483093:main:59",
+            "sm46805363:1789483093:main:49"
           ],
           "displayText": "うぽつ",
           "ttsIds": [
-            "00104e69-94cc-4dda-b67f-f4b1379b415c"
+            "00104e69-94cc-4dda-b67f-f4b1379b415c",
+            "096a0395-7087-471d-93cf-022e8960a8f0"
           ]
         },
         {
-          "id": "d2c922a3-8550-4fe9-8b84-d23768c1a8d3",
+          "id": "261b4762-57a7-46b6-a36f-1edf531336fe",
           "commentIds": [
-            "sm46805363:1789483093:main:24"
+            "sm46805363:1789483093:main:52"
           ],
           "displayText": null,
-          "ttsIds": [
-            "096a0395-7087-471d-93cf-022e8960a8f0"
-          ]
+          "ttsIds": []
         }
       ],
       "tts": [

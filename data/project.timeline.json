@@ -109,21 +109,15 @@
               "clips": []
             },
             {
-              "id": "d03eb5b9-9f81-4d4d-a9a8-18357feefaf9",
-              "startSec": 0,
-              "durationSec": 0.8039999999999999,
-              "clips": []
-            },
-            {
               "id": "096a0395-7087-471d-93cf-022e8960a8f0",
               "startSec": 0.8039999999999999,
               "durationSec": 0.6013333333333333,
               "clips": []
             },
             {
-              "id": "d2c922a3-8550-4fe9-8b84-d23768c1a8d3",
-              "startSec": 0.8039999999999999,
-              "durationSec": 0.6013333333333332,
+              "id": "d03eb5b9-9f81-4d4d-a9a8-18357feefaf9",
+              "startSec": 0,
+              "durationSec": 1.405333333333333,
               "clips": []
             }
           ]
