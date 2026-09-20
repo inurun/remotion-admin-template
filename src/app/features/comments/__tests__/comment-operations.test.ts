@@ -15,6 +15,8 @@ import {
   moveGroup,
   moveReply,
   setCommentBody,
+  setGroupDisplayText,
+  normalizeCommentGroupDisplayText,
 } from "@/app/features/comments/comment-operations";
 import {
   applyCommentsPageSettings,
@@ -227,6 +229,15 @@ describe("comment import helpers", () => {
     const all = toggleAllUninserted(ids, new Set(["a"]));
     expect(all.size).toBe(3);
     expect(toggleAllUninserted(ids, all).size).toBe(0);
+  });
+
+  it("normalizes displayText on blur, not as blank spaces", () => {
+    expect(normalizeCommentGroupDisplayText("  hello  ")).toBe("hello");
+    expect(normalizeCommentGroupDisplayText("   ")).toBe(null);
+    expect(normalizeCommentGroupDisplayText("")).toBe(null);
+    expect(normalizeCommentGroupDisplayText(null)).toBe(null);
+    const next = setGroupDisplayText(page(), "g1", "  見出し  ");
+    expect(next.commentGroups[0]?.displayText).toBe("見出し");
   });
 
   it("edits comment text by id without changing identity, and refresh keeps the edit", () => {

@@ -1,10 +1,7 @@
+import { memo } from "react";
 import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
 import { cn } from "@/_shared/lib/utils";
-import { commentGroupDisplayText } from "@/app/features/comments/resolve-comment-groups";
-import type { ResolvedCommentGroup } from "@/app/features/comments/resolve-comment-groups";
-import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { CommentDropSlot } from "../comment-drop-slot/comment-drop-slot";
 import { CommentRow } from "../comment-row/comment-row";
 import { ReplyRow } from "../reply-row/reply-row";
@@ -14,43 +11,49 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/app/components/ui/collapsible";
+import { GroupDisplayTextField } from "./group-display-text-field/group-display-text-field";
+import type { CommentsEditorComment } from "../comments-editor.lib";
 
-export function CommentGroupBlock({
+export const CommentGroupBlock = memo(function CommentGroupBlock({
   pageId,
-  resolved,
-  commentsById,
+  groupId,
+  commentIds,
+  ttsIds,
+  commentsLookup,
+  commentIndexById,
+  ttsIndexById,
   groupIndex,
   groupCount,
   onAddReply,
   onRemoveGroup,
   onRemoveComment,
-  onChangeCommentBody,
   onRemoveReply,
   onInsertReplyAfter,
   onSelectReply,
-  onDisplayText,
 }: {
   pageId: string;
-  resolved: ResolvedCommentGroup<TtsFormValues>;
-  commentsById: Map<string, { body: string }>;
+  groupId: string;
+  commentIds: readonly string[];
+  ttsIds: readonly string[];
+  commentsLookup: Readonly<Record<string, CommentsEditorComment>>;
+  commentIndexById: Readonly<Record<string, number>>;
+  ttsIndexById: Readonly<Record<string, number>>;
   groupIndex: number;
   groupCount: number;
-  onAddReply: () => void;
-  onRemoveGroup: () => void;
+  onAddReply: (groupId: string) => void;
+  onRemoveGroup: (groupId: string) => void;
   onRemoveComment: (commentId: string) => void;
-  onChangeCommentBody: (commentId: string, body: string) => void;
   onRemoveReply: (ttsId: string) => void;
   onInsertReplyAfter: (ttsId: string) => void;
   onSelectReply: (ttsId: string) => void;
-  onDisplayText: (value: string | null) => void;
 }) {
-  const { group, comments, replies } = resolved;
   const { ref, handleRef, isDragging } = useCommentGroupBlock({
     kind: "group",
     pageId,
-    groupId: group.id,
-    entityId: group.id,
+    groupId,
+    entityId: groupId,
   });
+  const firstCommentIndex = commentIndexById[commentIds[0] ?? ""] ?? -1;
 
   return (
     <article
@@ -58,8 +61,8 @@ export function CommentGroupBlock({
       className={cn("grid rounded-lg border border-border px-3 pt-3", isDragging && "opacity-60")}
     >
       <CommentDropSlot
-        id={`drop:merge:${group.id}`}
-        data={{ kind: "merge-group", pageId, groupId: group.id }}
+        id={`drop:merge:${groupId}`}
+        data={{ kind: "merge-group", pageId, groupId }}
         label="Merge here"
       />
       <Collapsible>
@@ -70,74 +73,88 @@ export function CommentGroupBlock({
           >
             <GripVertical className="size-4" />
           </span>
-          <Input
-            value={group.displayText ?? ""}
-            placeholder={commentGroupDisplayText(group, commentsById)}
-            onChange={(event) =>
-              onDisplayText(event.target.value === "" ? null : event.target.value)
-            }
-          />
+          <GroupDisplayTextField groupIndex={groupIndex} firstCommentIndex={firstCommentIndex} />
           <CollapsibleTrigger>
             <Button type="button" size="icon-xs" variant="outline">
-              {group.commentIds.length > 1 ? group.commentIds.length : <ChevronDown />}
+              {commentIds.length > 1 ? commentIds.length : <ChevronDown />}
             </Button>
           </CollapsibleTrigger>
-          <Button type="button" size="icon-xs" variant="destructive" onClick={onRemoveGroup}>
+          <Button
+            type="button"
+            size="icon-xs"
+            variant="destructive"
+            onClick={() => onRemoveGroup(groupId)}
+          >
             <Trash2 />
           </Button>
         </div>
         <CollapsibleContent>
-          {comments.map((comment, index) => (
-            <div key={comment.id} className="pl-3">
-              <CommentDropSlot
-                id={`drop:comment:${group.id}:${index}`}
-                data={{ kind: "comment-slot", pageId, groupId: group.id, index }}
-                label="Move comment"
-              />
-              <CommentRow
-                pageId={pageId}
-                groupId={group.id}
-                comment={comment}
-                onChangeBody={(body) => onChangeCommentBody(comment.id, body)}
-                onRemove={() => onRemoveComment(comment.id)}
-              />
-            </div>
-          ))}
+          {commentIds.map((commentId, index) => {
+            const comment = commentsLookup[commentId];
+            const commentIndex = commentIndexById[commentId];
+            if (!comment || commentIndex === undefined) {
+              return null;
+            }
+            return (
+              <div key={commentId} className="pl-3">
+                <CommentDropSlot
+                  id={`drop:comment:${groupId}:${index}`}
+                  data={{ kind: "comment-slot", pageId, groupId, index }}
+                  label="Move comment"
+                />
+                <CommentRow
+                  pageId={pageId}
+                  groupId={groupId}
+                  commentId={commentId}
+                  commentIndex={commentIndex}
+                  vposMs={comment.vposMs}
+                  onRemove={onRemoveComment}
+                />
+              </div>
+            );
+          })}
         </CollapsibleContent>
       </Collapsible>
       <CommentDropSlot
-        id={`drop:comment:${group.id}:end`}
-        data={{ kind: "comment-slot", pageId, groupId: group.id, index: comments.length }}
+        id={`drop:comment:${groupId}:end`}
+        data={{ kind: "comment-slot", pageId, groupId, index: commentIds.length }}
         label="Move comment"
       />
-      {replies.map((reply, index) => (
-        <div key={reply.id}>
-          <CommentDropSlot
-            id={`drop:reply:${group.id}:${index}`}
-            data={{ kind: "reply-slot", pageId, groupId: group.id, index }}
-            label="Move reply"
-          />
-          <ReplyRow
-            pageId={pageId}
-            groupId={group.id}
-            ttsId={reply.id}
-            onRemove={() => onRemoveReply(reply.id)}
-            onInsertAfter={() => onInsertReplyAfter(reply.id)}
-            onSelect={() => onSelectReply(reply.id)}
-          />
-        </div>
-      ))}
+      {ttsIds.map((ttsId, index) => {
+        const formIndex = ttsIndexById[ttsId];
+        if (formIndex === undefined) {
+          return null;
+        }
+        return (
+          <div key={ttsId}>
+            <CommentDropSlot
+              id={`drop:reply:${groupId}:${index}`}
+              data={{ kind: "reply-slot", pageId, groupId, index }}
+              label="Move reply"
+            />
+            <ReplyRow
+              pageId={pageId}
+              groupId={groupId}
+              ttsId={ttsId}
+              formIndex={formIndex}
+              onRemove={onRemoveReply}
+              onInsertAfter={onInsertReplyAfter}
+              onSelect={onSelectReply}
+            />
+          </div>
+        );
+      })}
       <CommentDropSlot
-        id={`drop:reply:${group.id}:end`}
-        data={{ kind: "reply-slot", pageId, groupId: group.id, index: replies.length }}
+        id={`drop:reply:${groupId}:end`}
+        data={{ kind: "reply-slot", pageId, groupId, index: ttsIds.length }}
         label="Move reply"
       />
-      <Button type="button" size="sm" variant="outline" onClick={onAddReply}>
+      <Button type="button" size="sm" variant="outline" onClick={() => onAddReply(groupId)}>
         <Plus />
         Add reply
       </Button>
       <CommentDropSlot
-        id={`drop:new:${group.id}`}
+        id={`drop:new:${groupId}`}
         data={{ kind: "new-group", pageId, index: groupIndex + 1 }}
         label="New group"
       />
@@ -156,4 +173,4 @@ export function CommentGroupBlock({
       )}
     </article>
   );
-}
+});

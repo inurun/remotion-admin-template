@@ -421,6 +421,14 @@ export function setCommentBody(
   return next;
 }
 
+export function normalizeCommentGroupDisplayText(value: string | null): string | null {
+  if (value === null) {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized === "" ? null : normalized;
+}
+
 export function setGroupDisplayText(
   page: CommentsPageFormValues,
   groupId: string,
@@ -435,8 +443,7 @@ export function setGroupDisplayText(
   if (!group) {
     return page;
   }
-  const normalized = displayText === null ? null : displayText.trim();
-  group.displayText = normalized === "" ? null : normalized;
+  group.displayText = normalizeCommentGroupDisplayText(displayText);
   return next;
 }
 

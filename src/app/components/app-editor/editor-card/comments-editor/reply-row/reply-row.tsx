@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { cn } from "@/_shared/lib/utils";
@@ -6,10 +7,11 @@ import { TtsVoiceField } from "@/app/components/app-editor/editor-card/tts-list/
 import { TtsSynthesisStatus } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-synthesis-status/tts-synthesis-status";
 import { useReplyRow } from "./use-reply-row";
 
-export function ReplyRow({
+export const ReplyRow = memo(function ReplyRow({
   pageId,
   groupId,
   ttsId,
+  formIndex,
   onRemove,
   onInsertAfter,
   onSelect,
@@ -17,21 +19,17 @@ export function ReplyRow({
   pageId: string;
   groupId: string;
   ttsId: string;
-  onRemove: () => void;
-  onInsertAfter: () => void;
-  onSelect: () => void;
+  formIndex: number;
+  onRemove: (ttsId: string) => void;
+  onInsertAfter: (ttsId: string) => void;
+  onSelect: (ttsId: string) => void;
 }) {
-  const { ref, handleRef, isDragging, isSelected, formIndex, synthesisStatus, synthesisError } =
-    useReplyRow({
-      kind: "reply",
-      pageId,
-      groupId,
-      entityId: ttsId,
-    });
-
-  if (formIndex < 0) {
-    return null;
-  }
+  const { ref, handleRef, isDragging, isSelected, synthesisStatus, synthesisError } = useReplyRow({
+    kind: "reply",
+    pageId,
+    groupId,
+    entityId: ttsId,
+  });
 
   return (
     <div
@@ -53,21 +51,27 @@ export function ReplyRow({
         <GripVertical className="size-4" />
       </span>
       <div>
-        <TtsVoiceField index={formIndex} onSelect={() => onSelect()} />
+        <TtsVoiceField index={formIndex} onSelect={() => onSelect(ttsId)} />
       </div>
       <div className="min-w-0 flex-1">
         <TtsTextField
           index={formIndex}
           ttsId={ttsId}
-          onFocus={() => onSelect()}
-          onInsertAfter={() => onInsertAfter()}
-          onRemove={onRemove}
+          onFocus={() => onSelect(ttsId)}
+          onInsertAfter={() => onInsertAfter(ttsId)}
+          onRemove={() => onRemove(ttsId)}
         />
       </div>
-      <Button type="button" size="icon-xs" variant="destructive" tabIndex={-1} onClick={onRemove}>
+      <Button
+        type="button"
+        size="icon-xs"
+        variant="destructive"
+        tabIndex={-1}
+        onClick={() => onRemove(ttsId)}
+      >
         <Trash2 />
       </Button>
       <TtsSynthesisStatus status={synthesisStatus} error={synthesisError} />
     </div>
   );
-}
+});

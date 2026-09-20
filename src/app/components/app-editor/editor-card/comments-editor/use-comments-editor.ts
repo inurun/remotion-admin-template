@@ -3,8 +3,8 @@ import type {
   PageFormValues,
 } from "@/app/features/page/model/page-form-schema";
 import type { DragEndEvent } from "@dnd-kit/react";
-import { useCallback } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import { useSelectedPage } from "@/app/features/page";
 import { useSettings } from "@/app/features/settings";
 import {
@@ -14,16 +14,54 @@ import {
   removeComment,
   removeGroup,
   removeReply,
-  setGroupDisplayText,
-  setCommentBody,
   type CommentDragData,
   type CommentDropData,
 } from "@/app/features/comments/comment-operations";
-import {
-  listPageTtsInPlaybackOrder,
-  resolveCommentGroups,
-} from "@/app/features/comments/resolve-comment-groups";
+import { listPageTtsInPlaybackOrder } from "@/app/features/comments/resolve-comment-groups";
 import { useTts, useTtsTextFocus } from "@/app/features/tts";
+import {
+  asCommentsPage,
+  commentsById,
+  commentsEditorStructureKey,
+  indexById,
+  isCommentsEditorTextField,
+  selectCommentsEditorStructure,
+} from "./comments-editor.lib";
+
+function useCommentsEditorStructure() {
+  const form = useFormContext<PageFormValues>();
+  const { pageId } = useSelectedPage();
+  const [structure, setStructure] = useState(() => selectCommentsEditorStructure(form.getValues()));
+  const keyRef = useRef(commentsEditorStructureKey(structure));
+
+  useEffect(() => {
+    const next = selectCommentsEditorStructure(form.getValues());
+    const nextKey = commentsEditorStructureKey(next);
+    if (nextKey === keyRef.current) {
+      return;
+    }
+    keyRef.current = nextKey;
+    setStructure(next);
+  }, [form, pageId]);
+
+  useEffect(() => {
+    const subscription = form.watch((_values, info) => {
+      if (isCommentsEditorTextField(info.name)) {
+        return;
+      }
+      const next = selectCommentsEditorStructure(form.getValues());
+      const nextKey = commentsEditorStructureKey(next);
+      if (nextKey === keyRef.current) {
+        return;
+      }
+      keyRef.current = nextKey;
+      setStructure(next);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  return structure;
+}
 
 export function useCommentsEditor() {
   const form = useFormContext<PageFormValues>();
@@ -31,22 +69,25 @@ export function useCommentsEditor() {
   const { options } = useSettings();
   const { selectTts, clearSelection, selectedTtsId } = useTts();
   const { requestTextFocus } = useTtsTextFocus();
-  const page = useWatch({ control: form.control }) as PageFormValues;
+  const structure = useCommentsEditorStructure();
 
-  const commentsPage = page.type === "comments" ? page : null;
-  const groups = commentsPage ? resolveCommentGroups(commentsPage) : [];
+  const commentIndexById = useMemo(
+    () => indexById(structure?.comments.map((comment) => comment.id) ?? []),
+    [structure],
+  );
+  const ttsIndexById = useMemo(() => indexById(structure?.ttsIds ?? []), [structure]);
+  const commentsLookup = useMemo(() => commentsById(structure?.comments ?? []), [structure]);
 
   const apply = useCallback(
     (next: CommentsPageFormValues) => {
-      form.setValue("comments", next.comments, { shouldDirty: true, shouldValidate: true });
-      form.setValue("commentGroups", next.commentGroups, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      form.setValue("tts", next.tts, { shouldDirty: true, shouldValidate: true });
+      form.setValue("comments", next.comments, { shouldDirty: true });
+      form.setValue("commentGroups", next.commentGroups, { shouldDirty: true });
+      form.setValue("tts", next.tts, { shouldDirty: true });
     },
     [form],
   );
+
+  const readPage = useCallback(() => asCommentsPage(form.getValues()), [form]);
 
   const focusReply = useCallback(
     (ttsId: string) => {
@@ -82,6 +123,7 @@ export function useCommentsEditor() {
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      const commentsPage = readPage();
       if (event.canceled || !commentsPage) {
         return;
       }
@@ -92,15 +134,12 @@ export function useCommentsEditor() {
       }
       apply(applyCommentDrop(commentsPage, drag, drop));
     },
-    [apply, commentsPage],
+    [apply, readPage],
   );
 
-  return {
-    pageId,
-    commentsPage,
-    groups,
-    handleDragEnd,
-    addReply: (groupId: string) => {
+  const addReplyToGroup = useCallback(
+    (groupId: string) => {
+      const commentsPage = readPage();
       if (!commentsPage) {
         return;
       }
@@ -111,7 +150,12 @@ export function useCommentsEditor() {
         focusReply(addedId);
       }
     },
-    insertReplyAfter: (ttsId: string) => {
+    [apply, focusReply, options, readPage],
+  );
+
+  const insertReplyAfterId = useCallback(
+    (ttsId: string) => {
+      const commentsPage = readPage();
       if (!commentsPage) {
         return;
       }
@@ -124,10 +168,19 @@ export function useCommentsEditor() {
         focusReply(addedId);
       }
     },
-    selectReply: (ttsId: string) => {
+    [apply, focusReply, options, readPage],
+  );
+
+  const selectReply = useCallback(
+    (ttsId: string) => {
       selectTts(ttsId);
     },
-    removeGroup: (groupId: string) => {
+    [selectTts],
+  );
+
+  const removeGroupById = useCallback(
+    (groupId: string) => {
+      const commentsPage = readPage();
       if (!commentsPage) {
         return;
       }
@@ -138,13 +191,23 @@ export function useCommentsEditor() {
         selectAfterRemovingTts(commentsPage, new Set(group.ttsIds));
       }
     },
-    removeComment: (commentId: string) => {
+    [apply, readPage, selectAfterRemovingTts],
+  );
+
+  const removeCommentById = useCallback(
+    (commentId: string) => {
+      const commentsPage = readPage();
       if (!commentsPage) {
         return;
       }
       apply(removeComment(commentsPage, commentId));
     },
-    removeReply: (ttsId: string) => {
+    [apply, readPage],
+  );
+
+  const removeReplyById = useCallback(
+    (ttsId: string) => {
+      const commentsPage = readPage();
       if (!commentsPage) {
         return;
       }
@@ -152,17 +215,21 @@ export function useCommentsEditor() {
       apply(next);
       selectAfterRemovingTts(commentsPage, new Set([ttsId]));
     },
-    setCommentBody: (commentId: string, body: string) => {
-      if (!commentsPage) {
-        return;
-      }
-      apply(setCommentBody(commentsPage, commentId, body));
-    },
-    setDisplayText: (groupId: string, value: string | null) => {
-      if (!commentsPage) {
-        return;
-      }
-      apply(setGroupDisplayText(commentsPage, groupId, value));
-    },
+    [apply, readPage, selectAfterRemovingTts],
+  );
+
+  return {
+    pageId,
+    structure,
+    commentIndexById,
+    ttsIndexById,
+    commentsLookup,
+    handleDragEnd,
+    addReply: addReplyToGroup,
+    insertReplyAfter: insertReplyAfterId,
+    selectReply,
+    removeGroup: removeGroupById,
+    removeComment: removeCommentById,
+    removeReply: removeReplyById,
   };
 }
