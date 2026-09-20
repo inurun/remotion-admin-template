@@ -11,7 +11,21 @@ export {
   insertedCommentIds,
   lastCommentMovePreview,
   mergeCommentSnapshot,
+  sortCommentGroupsByFirstCommentTime,
 } from "@/app/features/comments/comment-operations";
+export {
+  applyCommentGroupQaReplies,
+  cloneCommentQaTts,
+  commentQaDraftHasInput,
+  commentQaPosition,
+  commitCommentsQaPage,
+  filledCommentQaReplies,
+  listUnansweredCommentGroupIds,
+  moveCommentQaCursor,
+  nextCommentQaGroupId,
+  pendingCommentQaGroupIds,
+  uncommittedCommentQaGroupIds,
+} from "@/app/features/comments/comments-qa";
 export {
   applyCommentsPageSettings,
   commentsPageNeedsVideoSwitch,

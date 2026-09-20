@@ -109,6 +109,7 @@ describe("useSettingsStore", () => {
     expect(useSettingsStore.getState().hotkeys.save).toBe("ctrl+s");
     expect(useSettingsStore.getState().hotkeys.deleteTts).toBe(DEFAULT_HOTKEYS.deleteTts);
     expect(useSettingsStore.getState().hotkeys.addPage).toBe(DEFAULT_HOTKEYS.addPage);
+    expect(useSettingsStore.getState().hotkeys.commentsQaDone).toBe(DEFAULT_HOTKEYS.commentsQaDone);
     expect(useSettingsStore.persist.getOptions().name).toBe(SETTINGS_STORAGE_KEY);
   });
 
@@ -126,6 +127,7 @@ describe("useSettingsStore", () => {
         addTts: "ctrl+enter",
         deleteTts: "CTRL+SHIFT+DELETE",
         addPage: "CTRL+T",
+        commentsQaDone: "CTRL+SHIFT+ENTER",
       },
     });
 
@@ -140,6 +142,10 @@ describe("useSettingsStore", () => {
     expect(storage.setItem).toHaveBeenCalledWith(
       SETTINGS_STORAGE_KEY,
       expect.stringContaining('"addPage":"ctrl+t"'),
+    );
+    expect(storage.setItem).toHaveBeenCalledWith(
+      SETTINGS_STORAGE_KEY,
+      expect.stringContaining('"commentsQaDone":"ctrl+shift+enter"'),
     );
   });
 
@@ -157,6 +163,7 @@ describe("useSettingsStore", () => {
         addTts: "ctrl+enter",
         deleteTts: "ctrl+shift+delete",
         addPage: "ctrl+t",
+        commentsQaDone: "ctrl+shift+enter",
       },
     });
     useSettingsStore.getState().mergeFetchedVoices([voice("a", "A"), voice("c", "C")]);
@@ -191,6 +198,7 @@ describe("useSettingsStore", () => {
         addTts: "ctrl+enter",
         deleteTts: "ctrl+shift+delete",
         addPage: "ctrl+t",
+        commentsQaDone: "ctrl+shift+enter",
       },
     });
     useSettingsStore.getState().mergeFetchedVoices([{ ...selected, voiceVersion: "0.15.0" }]);

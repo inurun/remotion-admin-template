@@ -4,6 +4,7 @@ export const DEFAULT_HOTKEYS = {
   addTts: "ctrl+enter",
   deleteTts: "ctrl+shift+delete",
   addPage: "ctrl+t",
+  commentsQaDone: "ctrl+shift+enter",
 } as const;
 
 export type AppHotkeyAction = keyof typeof DEFAULT_HOTKEYS;
@@ -16,6 +17,7 @@ export const APP_HOTKEY_LABELS: Record<AppHotkeyAction, string> = {
   addTts: "Add TTS",
   deleteTts: "Delete TTS",
   addPage: "Add Page",
+  commentsQaDone: "Q&A Done",
 };
 
 type ParsedHotkey = {

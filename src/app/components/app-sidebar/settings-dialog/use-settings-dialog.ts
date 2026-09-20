@@ -47,6 +47,7 @@ const settingsFormSchema = z
       addTts: z.string(),
       deleteTts: z.string(),
       addPage: z.string(),
+      commentsQaDone: z.string(),
     }),
   })
   .superRefine((values, context) => {

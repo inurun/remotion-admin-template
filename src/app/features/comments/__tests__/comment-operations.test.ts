@@ -11,6 +11,7 @@ import {
   insertReplyAfter,
   mergeCommentSnapshot,
   mergeGroupInto,
+  sortCommentGroupsByFirstCommentTime,
   moveComment,
   moveGroup,
   moveReply,
@@ -91,6 +92,48 @@ describe("comment operations", () => {
     const next = moveGroup(page(), "g1", 1);
     expect(next.commentGroups.map((group) => group.id)).toEqual(["g2", "g1"]);
     expect(next.tts.map((item) => item.id)).toEqual(["t1", "t2"]);
+  });
+
+  it("sorts groups by the first comment time and keeps equal times stable", () => {
+    const source = page({
+      comments: [
+        { ...comment(1, "late"), vposMs: 3000 },
+        { ...comment(2, "early"), vposMs: 1000 },
+        { ...comment(3, "same-a"), vposMs: 2000 },
+        { ...comment(4, "same-b"), vposMs: 2000 },
+      ],
+      commentGroups: [
+        {
+          id: "late",
+          commentIds: ["sm1:thread:main:1", "sm1:thread:main:2"],
+          displayText: "見出し",
+          ttsIds: ["t1"],
+        },
+        {
+          id: "same-a",
+          commentIds: ["sm1:thread:main:3"],
+          displayText: null,
+          ttsIds: [],
+        },
+        {
+          id: "same-b",
+          commentIds: ["sm1:thread:main:4"],
+          displayText: null,
+          ttsIds: ["t2"],
+        },
+      ],
+    });
+    const originalIds = source.commentGroups.map((group) => group.id);
+    const next = sortCommentGroupsByFirstCommentTime(source);
+    expect(source.commentGroups.map((group) => group.id)).toEqual(originalIds);
+    expect(next.commentGroups.map((group) => group.id)).toEqual(["same-a", "same-b", "late"]);
+    expect(next.commentGroups[2]).toEqual({
+      id: "late",
+      commentIds: ["sm1:thread:main:1", "sm1:thread:main:2"],
+      displayText: "見出し",
+      ttsIds: ["t1"],
+    });
+    expect(sortCommentGroupsByFirstCommentTime(next)).toBe(next);
   });
 
   it("merges a group into another without dropping replies", () => {

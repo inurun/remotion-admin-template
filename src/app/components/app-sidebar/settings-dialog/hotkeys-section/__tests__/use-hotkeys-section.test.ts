@@ -26,6 +26,7 @@ describe("useHotkeysSection helpers", () => {
         addTts: "ctrl+enter",
         deleteTts: "ctrl+shift+delete",
         addPage: "ctrl+t",
+        commentsQaDone: "ctrl+shift+enter",
       },
     });
 

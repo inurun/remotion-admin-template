@@ -26,7 +26,10 @@ export function TtsComposer({
   const composer = useTtsComposer({ initialVoiceId, pageId, onAppend });
 
   return (
-    <div className="sticky bottom-0 z-10 rounded-xl border bg-accent-foreground/10 shadow-lg backdrop-blur-xs">
+    <div
+      data-tts-composer=""
+      className="sticky bottom-0 z-10 rounded-xl border bg-accent-foreground/10 shadow-lg backdrop-blur-xs"
+    >
       <div className="flex items-center gap-2 p-2">
         <Controller
           name="voiceId"

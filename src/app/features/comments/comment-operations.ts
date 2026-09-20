@@ -121,6 +121,37 @@ function removeGroupAt(page: CommentsPageFormValues, index: number) {
   page.commentGroups.splice(index, 1);
 }
 
+function firstCommentVposMs(page: CommentsPageFormValues, group: CommentGroup) {
+  const commentId = group.commentIds[0];
+  if (!commentId) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const comment = page.comments.find((item) => item.id === commentId);
+  return comment?.vposMs ?? Number.POSITIVE_INFINITY;
+}
+
+export function sortCommentGroupsByFirstCommentTime(
+  page: CommentsPageFormValues,
+): CommentsPageFormValues {
+  const ranked = page.commentGroups.map((group, index) => ({
+    group,
+    index,
+    vposMs: firstCommentVposMs(page, group),
+  }));
+  ranked.sort((left, right) => {
+    if (left.vposMs !== right.vposMs) {
+      return left.vposMs - right.vposMs;
+    }
+    return left.index - right.index;
+  });
+  if (ranked.every((item, index) => item.index === index)) {
+    return page;
+  }
+  const next = cloneCommentsPage(page);
+  next.commentGroups = ranked.map((item) => next.commentGroups[item.index]!);
+  return next;
+}
+
 export function moveGroup(
   page: CommentsPageFormValues,
   groupId: string,
