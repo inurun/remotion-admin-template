@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const AUTO_SAVE_DELAY = 10_000;
+export const AUTO_SAVE_DELAY = 60_000;
 
 export const VIDEO_SIZE_PRESETS = [
   {
