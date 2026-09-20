@@ -2,11 +2,13 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { FieldGroup } from "@/app/components/ui/field";
 import { useTtsList } from "@/app/components/app-editor/editor-card/tts-list/use-tts-list";
 import { TtsItem } from "@/app/components/app-editor/editor-card/tts-list/tts-item/tts-item";
-import { AddTtsButton } from "./add-tts-button/add-tts-button";
+import { TtsComposer } from "@/app/components/app-editor/editor-card/tts-list/tts-composer/tts-composer";
 
 export function TtsList() {
   const {
     fields,
+    initialVoiceId,
+    pageId,
     removeTts,
     insertTtsAfter,
     appendTts,
@@ -16,11 +18,10 @@ export function TtsList() {
   } = useTtsList();
 
   return (
-    <FieldGroup className="gap-5 grid relative min-h-10 pb-10">
-      <AddTtsButton onAppend={appendTts} />
+    <FieldGroup className="min-h-10 flex-1 gap-0">
       {fields.length === 0 ? null : (
         <DragDropProvider onDragEnd={handleDragEnd}>
-          <div className="grid gap-5">
+          <div className="grid gap-5 pb-10">
             {fields.map((field, index) => (
               <TtsItem
                 key={field.fieldKey}
@@ -35,6 +36,7 @@ export function TtsList() {
           </div>
         </DragDropProvider>
       )}
+      <TtsComposer initialVoiceId={initialVoiceId} pageId={pageId} onAppend={appendTts} />
     </FieldGroup>
   );
 }

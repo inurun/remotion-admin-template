@@ -68,8 +68,8 @@ export function EditorCard() {
   const { open, onOpenChange } = usePanelOpen("editor");
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <Card>
+    <Collapsible open={open} onOpenChange={onOpenChange} className="h-full">
+      <Card className="h-full">
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-xl">Editor</CardTitle>
@@ -79,13 +79,16 @@ export function EditorCard() {
             </div>
           </div>
         </CardHeader>
-        <CollapsibleContent>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-[minmax(50px,150px)_minmax(200px,1fr)]">
+        <CollapsibleContent className="min-h-0 flex-1">
+          <CardContent className="h-full min-h-0">
+            <div className="grid h-full min-h-0 gap-4 sm:grid-cols-[minmax(50px,150px)_minmax(200px,1fr)]">
               <PageList />
               {showPageForm && selectedPageId && selectedPageType ? (
                 <SelectedPageContextProvider pageId={selectedPageId}>
-                  <PageSwitchFade pageId={selectedPageId} className="flex flex-col gap-2">
+                  <PageSwitchFade
+                    pageId={selectedPageId}
+                    className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain"
+                  >
                     {selectedPageType === "transition" ? (
                       <>
                         <PageHeader />

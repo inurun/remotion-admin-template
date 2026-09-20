@@ -4,8 +4,14 @@ import { isSortable } from "@dnd-kit/react/sortable";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import type { PageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
+import type { AvatarSettings, VoiceOption } from "@/_schemas";
+import { getVoiceValue } from "@/app/features/editor";
+import { useSelectedPage } from "@/app/features/page";
+import { useProjectRoute } from "@/app/features/project/context/project-route-context";
 import { useSettings } from "@/app/features/settings";
 import {
+  applyTtsTextChange,
+  applyTtsVoiceChange,
   createTtsInput,
   getTtsMoveState,
   resolveTtsIndexAfterInsert,
@@ -23,6 +29,8 @@ function cloneTtsItem(item: TtsFormValues): TtsFormValues {
 
 export function useTtsList() {
   const form = useFormContext<PageFormValues>();
+  const { pageId } = useSelectedPage();
+  const { projectPath } = useProjectRoute();
   const { selectedTtsId, selectTts, clearSelection } = useTts();
   const { options } = useSettings();
   const { requestTextFocus } = useTtsTextFocus();
@@ -74,14 +82,34 @@ export function useTtsList() {
     [form, insert, options, requestTextFocus, selectTts],
   );
 
-  const appendTts = useCallback(() => {
-    const ttsBefore = form.getValues("tts") ?? [];
-    const sourceTts = selectedTtsIndex >= 0 ? ttsBefore[selectedTtsIndex] : ttsBefore.at(-1);
-    const nextTts = createTtsInput(options, sourceTts);
-    append(nextTts);
-    selectTts(nextTts.id);
-    requestTextFocus(nextTts.id);
-  }, [append, form, options, requestTextFocus, selectTts, selectedTtsIndex]);
+  const appendTts = useCallback(
+    ({ text, voice, avatar }: { text: string; voice: VoiceOption; avatar: AvatarSettings }) => {
+      const draft = createTtsInput(options, undefined);
+      const nextTts = {
+        ...applyTtsTextChange(applyTtsVoiceChange(draft, voice), text),
+        avatar,
+      };
+      append(nextTts);
+      selectTts(nextTts.id);
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-tts-id="${nextTts.id}"]`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      });
+    },
+    [append, options, selectTts],
+  );
+
+  const ttsValues = form.getValues("tts") ?? [];
+  const initialVoiceSource =
+    (selectedTtsIndex >= 0 ? ttsValues[selectedTtsIndex] : undefined) ?? ttsValues.at(-1);
+  const sourceVoiceId = initialVoiceSource ? getVoiceValue(initialVoiceSource) : "";
+  const initialVoiceId = options.some((option) => getVoiceValue(option) === sourceVoiceId)
+    ? sourceVoiceId
+    : options[0]
+      ? getVoiceValue(options[0])
+      : "";
 
   const moveTts = useCallback(
     (fromIndex: number, toIndex: number) => {
@@ -127,6 +155,8 @@ export function useTtsList() {
   return {
     selectedTtsIndex: selectedTtsIndex >= 0 ? selectedTtsIndex : null,
     fields,
+    initialVoiceId,
+    pageId: `${projectPath ?? ""}:${pageId}`,
     removeTts,
     insertTtsAfter,
     appendTts,

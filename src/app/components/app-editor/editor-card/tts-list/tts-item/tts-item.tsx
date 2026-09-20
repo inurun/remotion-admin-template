@@ -29,9 +29,10 @@ export function TtsItem({
   return (
     <article
       ref={ref}
+      data-tts-id={ttsId}
       data-dragging={isDragging}
       className={cn(
-        "flex gap-2 overflow-hidden items-center py-1 pr-3 transition data-[dragging=true]:opacity-70",
+        "flex gap-2 overflow-hidden items-center pr-3 transition data-[dragging=true]:opacity-70",
         isSelected ? "bg-muted/20" : "bg-card",
         (synthesisStatus === "analyzing" || synthesisStatus === "pending") &&
           "text-muted-foreground",

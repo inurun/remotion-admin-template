@@ -21,3 +21,8 @@ export {
   resolveTtsIndexAfterRemove,
 } from "@/app/features/tts/lib/tts-selection";
 export { useTtsFormIndex } from "@/app/features/tts/lib/use-tts-form-index";
+export {
+  getTtsComposeCommandOptions,
+  parseTtsComposeInput,
+} from "@/app/features/tts/lib/tts-compose-command";
+export { createTtsComposeCompletionSource } from "@/app/features/tts/lib/tts-compose-completion";
