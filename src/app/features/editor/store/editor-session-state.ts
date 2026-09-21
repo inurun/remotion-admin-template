@@ -546,9 +546,13 @@ export function hasDirtyChanges(state: EditorSessionState) {
 
 export function buildSaveChangeSet(
   state: EditorSessionState,
-  options?: { forceResynthesis?: boolean },
+  options?: { forceResynthesis?: boolean; extraUpsertItemIds?: readonly string[] },
 ): SaveProjectChangesInput {
-  const upsertItems = Object.keys(state.dirty.itemIds).flatMap((itemId) => {
+  const upsertItemIds = new Set([
+    ...Object.keys(state.dirty.itemIds),
+    ...(options?.extraUpsertItemIds ?? []),
+  ]);
+  const upsertItems = [...upsertItemIds].flatMap((itemId) => {
     const item = state.itemsById[itemId];
     return item ? [item] : [];
   });

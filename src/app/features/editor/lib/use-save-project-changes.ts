@@ -10,7 +10,10 @@ import {
   buildSaveChangeSet,
   captureDirtySnapshot,
 } from "@/app/features/editor/store/editor-session-state";
-import { reconstructSavedProject } from "@/app/features/editor/store/saved-project-state";
+import {
+  reconstructSavedProject,
+  selectFailedTtsItemIds,
+} from "@/app/features/editor/store/saved-project-state";
 import { useSaveStatusStore } from "@/app/features/editor/store/save-status-store";
 import { useProjectsQuery } from "@/app/features/project/swr/use-project-queries";
 import { createSerializedRunner } from "@/app/features/editor/lib/serialized-runner";
@@ -38,7 +41,10 @@ export function useSaveProjectChanges() {
       cancelScheduledAutoSave(editorStore);
       const savePromise = enqueueSave(async () => {
         const session = editorStore.getState();
-        const changeSet = buildSaveChangeSet(session, options);
+        const changeSet = buildSaveChangeSet(session, {
+          forceResynthesis: options?.forceResynthesis,
+          extraUpsertItemIds: selectFailedTtsItemIds(savedStore.getState()),
+        });
         if (isEmptyChangeSet(changeSet)) {
           return;
         }

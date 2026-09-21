@@ -485,6 +485,71 @@ describe("project use-case", () => {
     ]);
   });
 
+  it("retries previously failed tts on save without text changes", async () => {
+    readSavedProjectMock.mockResolvedValueOnce({
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          durationSec: 0.8,
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              voiceVersion: "1",
+              audio: { status: "failed", src: "/tts/project/old.wav", error: "engine exploded" },
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/retry.wav", 1.5));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "page-1",
+          title: "Page 1",
+          type: "main",
+          meta: { tags: [] },
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "tts-1",
+              provider: "voisona",
+              text: "Hello",
+              readText: "Hello",
+              voiceName: "voice",
+              voiceVersion: "1",
+              speech: { g2p: helloG2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.project.pages).tts[0]?.audio.status).toBe("pending");
+    expect(synthesizeVoisonaMock).toHaveBeenCalled();
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      durationSec: 1.6,
+    });
+  });
+
   it("updates avatar settings without regenerating unchanged tts", async () => {
     const previous = {
       pages: [
@@ -1699,6 +1764,7 @@ describe("project use-case", () => {
       ],
     };
     readSavedProjectMock.mockResolvedValueOnce(previous);
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/retry.wav", 1.5));
 
     const saved = await saveProject({}, "project", {
       meta: defaultMeta,
@@ -1729,10 +1795,7 @@ describe("project use-case", () => {
     expect(
       sequenceClips(saved.timeline).find((item) => item.id === "page-short")?.durationSec,
     ).toBe(0.8);
-    expect(contentPage(saved.project.pages).tts[0]?.audio).toMatchObject({
-      status: "failed",
-      error: "engine failed",
-    });
+    expect(contentPage(saved.project.pages).tts[0]?.audio.status).toBe("pending");
     expect(writeSavedProjectMock).toHaveBeenCalled();
   });
 
@@ -2084,6 +2147,120 @@ describe("project use-case", () => {
       comments: [{ id: "sm1:thread:main:1", body: "うぽつ" }],
     });
     expect(analyzeTextsMock).not.toHaveBeenCalled();
+  });
+
+  it("retries previously failed comments tts on save without text changes", async () => {
+    const g2p = createG2pItem("うぽつ");
+    readSavedProjectMock.mockResolvedValueOnce({
+      voicePresets: DEFAULT_VOICE_PRESETS,
+      pages: [
+        {
+          id: "comments-1",
+          title: "Comments",
+          type: "comments",
+          meta: {
+            tags: [],
+            niconico: { videoId: "sm1", fetchedAt: now },
+          },
+          comments: [
+            {
+              id: "sm1:thread:main:1",
+              threadId: "thread",
+              fork: "main",
+              no: 1,
+              body: "うぽつ",
+              vposMs: 0,
+              postedAt: now,
+            },
+          ],
+          commentGroups: [
+            {
+              id: "g1",
+              commentIds: ["sm1:thread:main:1"],
+              displayText: null,
+              ttsIds: ["r1"],
+            },
+          ],
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "r1",
+              provider: "voisona",
+              text: "うぽつ",
+              readText: "うぽつ",
+              voiceName: "zunda",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              audio: { status: "failed", src: "/tts/project/old.wav", error: "timed out" },
+              speech: { g2p },
+            },
+          ],
+        },
+      ],
+    });
+    synthesizeVoisonaMock.mockResolvedValueOnce(audio("/tts/project/retry.wav", 1.2));
+
+    const saved = await saveProject({}, "project", {
+      meta: defaultMeta,
+      bgm: [],
+      pages: [
+        {
+          id: "comments-1",
+          title: "Comments",
+          type: "comments",
+          meta: {
+            tags: [],
+            niconico: { videoId: "sm1", fetchedAt: now },
+          },
+          comments: [
+            {
+              id: "sm1:thread:main:1",
+              threadId: "thread",
+              fork: "main",
+              no: 1,
+              body: "うぽつ",
+              vposMs: 0,
+              postedAt: now,
+            },
+          ],
+          commentGroups: [
+            {
+              id: "g1",
+              commentIds: ["sm1:thread:main:1"],
+              displayText: null,
+              ttsIds: ["r1"],
+            },
+          ],
+          padBeforeSec: 0,
+          padAfterSec: 0,
+          richText: null,
+          tts: [
+            {
+              id: "r1",
+              provider: "voisona",
+              text: "うぽつ",
+              readText: "うぽつ",
+              voiceName: "zunda",
+              padBeforeSec: 0,
+              padAfterSec: 0,
+              volume: 1,
+              speech: { g2p },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(contentPage(saved.project.pages).tts[0]?.audio.status).toBe("pending");
+    expect(synthesizeVoisonaMock).toHaveBeenCalled();
+    await flushJobs();
+    expect(contentPage(lastWrittenProject().pages).tts[0]?.audio).toMatchObject({
+      status: "ready",
+      durationSec: 1.3,
+    });
   });
 
   it("rejects comments pages with broken tts references", async () => {

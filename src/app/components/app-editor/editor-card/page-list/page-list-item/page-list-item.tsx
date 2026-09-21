@@ -8,7 +8,7 @@ import {
 } from "@/app/components/app-editor/editor-card/page-list/page-list-item/use-page-list-item";
 
 const PAGE_LIST_ITEM_CLASS = cn(
-  "group/page relative rounded-lg border border-border bg-card transition data-[dragging=true]:opacity-70 data-[selected=true]:border-primary",
+  "group/page relative min-w-0 w-full max-w-50 overflow-hidden rounded-lg border border-border bg-card transition data-[dragging=true]:opacity-70 data-[selected=true]:border-primary",
 );
 
 const THUMBNAIL_BADGE_CLASS = cn(
@@ -77,7 +77,7 @@ export function PageListItem({
       data-dragging={isDragging}
       data-playing={isPlaying}
       data-selected={isSelected}
-      className={cn(PAGE_LIST_ITEM_CLASS, "grid gap-2 p-2")}
+      className={cn(PAGE_LIST_ITEM_CLASS, "grid gap-2 p-2 shrink-0")}
     >
       <button
         type="button"

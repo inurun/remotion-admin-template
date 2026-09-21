@@ -238,6 +238,21 @@ describe("editor session store", () => {
     });
   });
 
+  it("includes extra pages with failed tts even when the session is clean", () => {
+    const store = createEditorSessionStore(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({ id: "page-1" }),
+          createSavedMainPage({ id: "page-failed", tts: [createSavedTts({ id: "tts-failed" })] }),
+        ],
+      }),
+    );
+
+    expect(
+      buildSaveChangeSet(store.getState(), { extraUpsertItemIds: ["page-failed"] }).upsertItems,
+    ).toEqual([store.getState().itemsById["page-failed"]]);
+  });
+
   it("merges niconico outro urls into parent work ids and keeps existing ids", () => {
     const store = createEditorSessionStore(
       createSavedProject({

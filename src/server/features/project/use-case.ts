@@ -191,7 +191,7 @@ function comparisonInputMatches(
   );
 }
 
-type TtsReuseKind = "ready" | "pending" | "failed" | "analyzing" | "none";
+type TtsReuseKind = "ready" | "pending" | "analyzing" | "none";
 
 function requestG2pDiffersFromBaseline(item: SaveTtsItem, previous: SavedTts, readText: string) {
   const requestG2p = getUsableG2p(item.speech?.g2p, readText);
@@ -238,7 +238,7 @@ async function classifyTtsReuse(
     return "analyzing";
   }
 
-  if (forceResynthesis) {
+  if (forceResynthesis || previous.audio.status === "failed") {
     return "none";
   }
 
@@ -248,10 +248,6 @@ async function classifyTtsReuse(
 
   if (previous.audio.status === "pending") {
     return "pending";
-  }
-
-  if (previous.audio.status === "failed") {
-    return "failed";
   }
 
   if (previous.audio.status === "analyzing") {

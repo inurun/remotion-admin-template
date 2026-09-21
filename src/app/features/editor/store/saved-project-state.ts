@@ -176,3 +176,12 @@ export function selectHasUnresolvedAudio(state: SavedProjectState) {
       item.tts.some((tts) => tts.audio.status === "analyzing" || tts.audio.status === "pending"),
   );
 }
+
+export function selectFailedTtsItemIds(state: Pick<SavedProjectState, "itemsById">) {
+  return Object.values(state.itemsById).flatMap((item) => {
+    if (item.type === "transition") {
+      return [];
+    }
+    return item.tts.some((tts) => tts.audio.status === "failed") ? [item.id] : [];
+  });
+}

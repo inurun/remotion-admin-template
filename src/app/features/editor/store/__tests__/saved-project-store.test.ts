@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_TIMELINE } from "@/_schemas";
-import { reconstructSavedProject } from "@/app/features/editor/store/saved-project-state";
+import {
+  reconstructSavedProject,
+  selectFailedTtsItemIds,
+} from "@/app/features/editor/store/saved-project-state";
 import { createSavedProjectStore } from "@/app/features/editor/store/saved-project-store";
 import {
   applyUpdateTts,
@@ -230,5 +233,26 @@ describe("saved project store revisions", () => {
 
     store.getState().applyExternalProject(reconstructSavedProject(store.getState()));
     expect(store.getState().syncGeneration).toBe(2);
+  });
+
+  it("collects pages that still have failed tts", () => {
+    const store = createSavedProjectStore(
+      createSavedProject({
+        pages: [
+          createSavedMainPage({ id: "page-ready" }),
+          createSavedMainPage({
+            id: "page-failed",
+            tts: [
+              createSavedTts({
+                id: "tts-failed",
+                audio: { status: "failed", src: "/tts/a.wav", error: "timed out" },
+              }),
+            ],
+          }),
+        ],
+      }),
+    );
+
+    expect(selectFailedTtsItemIds(store.getState())).toEqual(["page-failed"]);
   });
 });
