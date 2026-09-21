@@ -37,9 +37,7 @@ describe("desktop editor layout", () => {
   });
 
   it("fills the timeline pane on desktop", () => {
-    expect(getTimelinePaneClassName(true)).toContain("h-full");
-    expect(getTimelinePaneClassName(true)).toContain("overflow-hidden");
-    expect(getTimelinePaneClassName(false)).not.toContain("h-full");
-    expect(getTimelinePaneClassName(false)).toContain("min-h-48");
+    expect(getTimelinePaneClassName()).toContain("h-full");
+    expect(getTimelinePaneClassName()).toContain("overflow-hidden");
   });
 });

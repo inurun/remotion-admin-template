@@ -106,7 +106,7 @@ export function AppEditor() {
 
   return (
     <PageEditorProviders>
-      <div className="h-full min-h-0">
+      <div className="h-full min-h-0 overflow-hidden">
         {isDesktop ? (
           <ResizablePanelGroup
             id={shellId}
@@ -136,7 +136,7 @@ export function AppEditor() {
               minSize="0%"
               className="min-h-0 overflow-hidden"
             >
-              <div className={getTimelinePaneClassName(true)}>
+              <div className={getTimelinePaneClassName()}>
                 <TimelineView />
               </div>
             </ResizablePanel>
@@ -145,9 +145,6 @@ export function AppEditor() {
           <div className="flex h-full min-h-0 flex-col gap-5 overflow-y-auto">
             <EditorColumn />
             <PreviewConfigColumn configOpen={configOpen} />
-            <div className={getTimelinePaneClassName(false)}>
-              <TimelineView />
-            </div>
           </div>
         )}
       </div>

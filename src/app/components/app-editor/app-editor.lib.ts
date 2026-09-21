@@ -16,9 +16,9 @@ export function getConfigPaneClassName(fillHeight: boolean, configOpen: boolean)
 }
 
 export function getEditorColumnClassName() {
-  return "flex h-full min-h-0 max-w-full flex-col gap-4 overflow-y-auto";
+  return "flex h-full min-h-0 max-w-full flex-col gap-4 overflow-hidden";
 }
 
-export function getTimelinePaneClassName(fillHeight: boolean) {
-  return cn("min-h-0 min-w-0", fillHeight && "h-full overflow-hidden");
+export function getTimelinePaneClassName() {
+  return "min-h-0 min-w-0 h-full overflow-hidden";
 }

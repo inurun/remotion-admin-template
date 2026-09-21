@@ -204,16 +204,20 @@
   }
 
   html {
-    @apply font-serif;
+    @apply font-serif h-full overflow-hidden;
   }
 
   body {
-    @apply bg-background font-sans text-foreground antialiased;
-    min-height: 100vh;
+    @apply bg-background font-sans text-foreground antialiased h-full overflow-hidden;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 
   button:not(:disabled),

@@ -95,7 +95,7 @@ export default function App() {
   return (
     <AppProviders>
       <AppSidebar>
-        <SidebarInset className="min-h-0 overflow-hidden">
+        <SidebarInset className="min-h-0 overflow-hidden md:max-h-[calc(100svh-1rem)]">
           <main className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col gap-2 overflow-hidden p-2">
             <AppMain />
           </main>

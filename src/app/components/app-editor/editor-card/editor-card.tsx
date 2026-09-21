@@ -68,8 +68,8 @@ export function EditorCard() {
   const { open, onOpenChange } = usePanelOpen("editor");
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange} className="h-full">
-      <Card className="h-full">
+    <Collapsible open={open} onOpenChange={onOpenChange} className="flex h-full min-h-0 flex-col">
+      <Card className="h-full min-h-0">
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle className="text-xl">Editor</CardTitle>
@@ -79,8 +79,8 @@ export function EditorCard() {
             </div>
           </div>
         </CardHeader>
-        <CollapsibleContent className="min-h-0 flex-1">
-          <CardContent className="h-full min-h-0">
+        <CollapsibleContent className="min-h-0 flex-1 overflow-hidden">
+          <CardContent className="h-full min-h-0 overflow-hidden">
             <div className="grid h-full min-h-0 gap-4 sm:grid-cols-[minmax(50px,150px)_minmax(200px,1fr)]">
               <PageList />
               {showPageForm && selectedPageId && selectedPageType ? (

@@ -8,7 +8,7 @@ export function PageList() {
     usePageList();
 
   return (
-    <aside className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-col gap-3 overflow-hidden min-h-150">
+    <aside className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-col gap-3 overflow-hidden">
       <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
         <span>Pages</span>
         <AddPageDialog />
