@@ -18,6 +18,7 @@ import {
   type CommentDropData,
 } from "@/app/features/comments/comment-operations";
 import { listPageTtsInPlaybackOrder } from "@/app/features/comments/resolve-comment-groups";
+import { listCenterCommentGroupIds } from "@/server/features/project/comments-presentation";
 import { useTts, useTtsTextFocus } from "@/app/features/tts";
 import {
   asCommentsPage,
@@ -77,11 +78,29 @@ export function useCommentsEditor() {
   );
   const ttsIndexById = useMemo(() => indexById(structure?.ttsIds ?? []), [structure]);
   const commentsLookup = useMemo(() => commentsById(structure?.comments ?? []), [structure]);
+  const groupFormIndexById = useMemo(() => indexById(structure?.groupIds ?? []), [structure]);
+  const spokenIds = useMemo(
+    () =>
+      new Set(
+        structure
+          ? listCenterCommentGroupIds(
+              structure.scenes.flatMap((scene) => scene.groups),
+              structure.scenes.map((scene) => ({
+                id: scene.id,
+                groupIds: scene.groups.map((group) => group.id),
+              })),
+              structure.presentation,
+            )
+          : [],
+      ),
+    [structure],
+  );
 
   const apply = useCallback(
     (next: CommentsPageFormValues) => {
       form.setValue("comments", next.comments, { shouldDirty: true });
       form.setValue("commentGroups", next.commentGroups, { shouldDirty: true });
+      form.setValue("commentScenes", next.commentScenes, { shouldDirty: true });
       form.setValue("tts", next.tts, { shouldDirty: true });
     },
     [form],
@@ -224,6 +243,8 @@ export function useCommentsEditor() {
     commentIndexById,
     ttsIndexById,
     commentsLookup,
+    groupFormIndexById,
+    spokenIds,
     handleDragEnd,
     addReply: addReplyToGroup,
     insertReplyAfter: insertReplyAfterId,

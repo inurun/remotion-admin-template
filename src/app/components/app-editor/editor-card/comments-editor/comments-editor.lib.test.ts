@@ -50,6 +50,7 @@ function page(overrides: Partial<CommentsPageFormValues> = {}): CommentsPageForm
     meta: {
       tags: [],
       niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+      presentation: "single",
     },
     comments: [comment(1, "うぽつ"), comment(2, "うぽつ")],
     commentGroups: [
@@ -60,6 +61,7 @@ function page(overrides: Partial<CommentsPageFormValues> = {}): CommentsPageForm
         ttsIds: ["t1"],
       },
     ],
+    commentScenes: [{ id: "s1", groupIds: ["g1"] }],
     tts: [tts("t1", "はい")],
     ...overrides,
   };
@@ -78,6 +80,7 @@ describe("comments editor structure", () => {
           ttsIds: ["t1"],
         },
       ],
+      commentScenes: [{ id: "s1", groupIds: ["g1"] }],
       tts: [tts("t1", "変更")],
     });
     expect(commentsEditorStructureKey(selectCommentsEditorStructure(source))).toBe(
@@ -96,9 +99,23 @@ describe("comments editor structure", () => {
           ttsIds: ["t1"],
         },
       ],
+      commentScenes: [{ id: "s1", groupIds: ["g1"] }],
     });
     expect(commentsEditorStructureKey(selectCommentsEditorStructure(source))).not.toBe(
       commentsEditorStructureKey(selectCommentsEditorStructure(moved)),
+    );
+  });
+
+  it("changes structure key when presentation changes", () => {
+    const source = page();
+    const triple = page({
+      meta: {
+        ...source.meta,
+        presentation: "triple",
+      },
+    });
+    expect(commentsEditorStructureKey(selectCommentsEditorStructure(source))).not.toBe(
+      commentsEditorStructureKey(selectCommentsEditorStructure(triple)),
     );
   });
 

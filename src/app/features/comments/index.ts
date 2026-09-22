@@ -4,12 +4,15 @@ export {
   resolveCommentGroups,
 } from "@/app/features/comments/resolve-comment-groups";
 export {
+  listCenterCommentGroupIds,
+  commentGroupSlot,
+} from "@/server/features/project/comments-presentation";
+export {
   applyCommentDrop,
   commentsEditFingerprint,
   commentsStructureKey,
   insertCommentsAsGroups,
   insertedCommentIds,
-  lastCommentMovePreview,
   mergeCommentSnapshot,
   sortCommentGroupsByFirstCommentTime,
 } from "@/app/features/comments/comment-operations";
@@ -18,6 +21,7 @@ export {
   cloneCommentQaTts,
   commentQaDraftHasInput,
   commentQaPosition,
+  commentQaReadLabel,
   commitCommentsQaPage,
   filledCommentQaReplies,
   listUnansweredCommentGroupIds,

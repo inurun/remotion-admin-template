@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   commentGroupSchema,
+  commentSceneSchema,
   commentsPageMetaSchema,
   niconicoCommentSchema,
   refineCommentsPageRelations,
@@ -48,6 +49,7 @@ export const savedPageSchema = z.discriminatedUnion("type", [
       meta: commentsPageMetaSchema,
       comments: z.array(niconicoCommentSchema),
       commentGroups: z.array(commentGroupSchema),
+      commentScenes: z.array(commentSceneSchema).default([]),
       tts: z.array(savedTtsSchema),
     })
     .superRefine(refineCommentsPageRelations),

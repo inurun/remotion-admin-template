@@ -3,6 +3,10 @@ import type { CommentsPageFormValues } from "@/app/features/page/model/page-form
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
 import { createTtsInput } from "@/app/features/tts";
 import type { VoiceOption } from "@/_schemas";
+import {
+  createCommentScenesFromGroupIds,
+  spokenCommentGroupId,
+} from "@/server/features/project/comments-presentation";
 
 function cloneTts(item: TtsFormValues): TtsFormValues {
   return {
@@ -17,6 +21,7 @@ export function cloneCommentsPage(page: CommentsPageFormValues): CommentsPageFor
     meta: {
       tags: [...page.meta.tags],
       niconico: page.meta.niconico ? { ...page.meta.niconico } : null,
+      presentation: page.meta.presentation,
     },
     comments: page.comments.map((comment) => ({ ...comment })),
     commentGroups: page.commentGroups.map((group) => ({
@@ -24,18 +29,26 @@ export function cloneCommentsPage(page: CommentsPageFormValues): CommentsPageFor
       commentIds: [...group.commentIds],
       ttsIds: [...group.ttsIds],
     })),
+    commentScenes: page.commentScenes.map((scene) => ({
+      ...scene,
+      groupIds: [...scene.groupIds],
+    })),
     tts: page.tts.map(cloneTts),
   };
 }
 
 export function commentsStructureKey(page: CommentsPageFormValues) {
-  return JSON.stringify(
-    page.commentGroups.map((group) => ({
+  return JSON.stringify({
+    groups: page.commentGroups.map((group) => ({
       id: group.id,
       commentIds: group.commentIds,
       ttsIds: group.ttsIds,
     })),
-  );
+    scenes: page.commentScenes.map((scene) => ({
+      id: scene.id,
+      groupIds: scene.groupIds,
+    })),
+  });
 }
 
 export function commentsEditFingerprint(page: CommentsPageFormValues) {
@@ -43,8 +56,10 @@ export function commentsEditFingerprint(page: CommentsPageFormValues) {
     title: page.title,
     tags: page.meta.tags,
     niconico: page.meta.niconico,
+    presentation: page.meta.presentation,
     comments: page.comments,
     commentGroups: page.commentGroups,
+    commentScenes: page.commentScenes,
     tts: page.tts.map(({ speech: _speech, ...rest }) => rest),
   });
 }
@@ -101,14 +116,23 @@ export function insertCommentsAsGroups(
   const next = cloneCommentsPage(page);
   const known = new Map(next.comments.map((comment) => [comment.id, comment]));
   const inserted = insertedCommentIds(next);
+  const created: CommentGroup[] = [];
   for (const commentId of commentIds) {
     const comment = known.get(commentId);
     if (inserted.has(commentId) || !comment || comment.hidden) {
       continue;
     }
-    next.commentGroups.push(createGroup([commentId]));
+    const group = createGroup([commentId]);
+    next.commentGroups.push(group);
+    created.push(group);
     inserted.add(commentId);
   }
+  next.commentScenes.push(
+    ...createCommentScenesFromGroupIds(
+      created.map((group) => group.id),
+      next.meta.presentation,
+    ),
+  );
   return next;
 }
 
@@ -119,10 +143,18 @@ function removeGroupAt(page: CommentsPageFormValues, index: number) {
   }
   dropTts(page, group.ttsIds);
   page.commentGroups.splice(index, 1);
+  page.commentScenes = page.commentScenes.flatMap((scene) => {
+    const groupIds = scene.groupIds.filter((id) => id !== group.id);
+    return groupIds.length > 0 ? [{ ...scene, groupIds }] : [];
+  });
 }
 
-function firstCommentVposMs(page: CommentsPageFormValues, group: CommentGroup) {
-  const commentId = group.commentIds[0];
+function firstCommentVposMs(page: CommentsPageFormValues, groupId: string | undefined) {
+  if (!groupId) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const group = page.commentGroups.find((item) => item.id === groupId);
+  const commentId = group?.commentIds[0];
   if (!commentId) {
     return Number.POSITIVE_INFINITY;
   }
@@ -133,10 +165,10 @@ function firstCommentVposMs(page: CommentsPageFormValues, group: CommentGroup) {
 export function sortCommentGroupsByFirstCommentTime(
   page: CommentsPageFormValues,
 ): CommentsPageFormValues {
-  const ranked = page.commentGroups.map((group, index) => ({
-    group,
+  const ranked = page.commentScenes.map((scene, index) => ({
+    scene,
     index,
-    vposMs: firstCommentVposMs(page, group),
+    vposMs: firstCommentVposMs(page, spokenCommentGroupId(scene)),
   }));
   ranked.sort((left, right) => {
     if (left.vposMs !== right.vposMs) {
@@ -148,150 +180,64 @@ export function sortCommentGroupsByFirstCommentTime(
     return page;
   }
   const next = cloneCommentsPage(page);
-  next.commentGroups = ranked.map((item) => next.commentGroups[item.index]!);
+  next.commentScenes = ranked.map((item) => next.commentScenes[item.index]!);
+  return next;
+}
+
+export function moveScene(
+  page: CommentsPageFormValues,
+  sceneId: string,
+  toIndex: number,
+): CommentsPageFormValues {
+  const fromIndex = page.commentScenes.findIndex((scene) => scene.id === sceneId);
+  if (fromIndex < 0) {
+    return page;
+  }
+  let insertAt = Math.max(0, Math.min(toIndex, page.commentScenes.length));
+  if (fromIndex === insertAt || fromIndex + 1 === insertAt) {
+    return page;
+  }
+  const next = cloneCommentsPage(page);
+  const [scene] = next.commentScenes.splice(fromIndex, 1);
+  if (!scene) {
+    return page;
+  }
+  if (fromIndex < insertAt) {
+    insertAt -= 1;
+  }
+  next.commentScenes.splice(insertAt, 0, scene);
   return next;
 }
 
 export function moveGroup(
   page: CommentsPageFormValues,
+  sceneId: string,
   groupId: string,
   toIndex: number,
 ): CommentsPageFormValues {
-  const fromIndex = page.commentGroups.findIndex((group) => group.id === groupId);
-  if (fromIndex < 0) {
+  const sceneIndex = page.commentScenes.findIndex((scene) => scene.id === sceneId);
+  const scene = page.commentScenes[sceneIndex];
+  if (!scene || !scene.groupIds.includes(groupId)) {
     return page;
   }
-  const bounded = Math.max(0, Math.min(toIndex, page.commentGroups.length - 1));
-  if (fromIndex === bounded) {
+  const fromIndex = scene.groupIds.indexOf(groupId);
+  let insertAt = Math.max(0, Math.min(toIndex, scene.groupIds.length));
+  if (fromIndex < 0 || fromIndex === insertAt || fromIndex + 1 === insertAt) {
     return page;
   }
   const next = cloneCommentsPage(page);
-  const [group] = next.commentGroups.splice(fromIndex, 1);
+  const live = next.commentScenes[sceneIndex];
+  if (!live) {
+    return page;
+  }
+  const [group] = live.groupIds.splice(fromIndex, 1);
   if (!group) {
     return page;
   }
-  next.commentGroups.splice(bounded, 0, group);
-  return next;
-}
-
-export function mergeGroupInto(
-  page: CommentsPageFormValues,
-  sourceId: string,
-  targetId: string,
-): CommentsPageFormValues {
-  if (sourceId === targetId) {
-    return page;
+  if (fromIndex < insertAt) {
+    insertAt -= 1;
   }
-  const sourceIndex = page.commentGroups.findIndex((group) => group.id === sourceId);
-  const targetIndex = page.commentGroups.findIndex((group) => group.id === targetId);
-  if (sourceIndex < 0 || targetIndex < 0) {
-    return page;
-  }
-  const next = cloneCommentsPage(page);
-  const source = next.commentGroups[sourceIndex];
-  const target = next.commentGroups[targetIndex];
-  if (!source || !target) {
-    return page;
-  }
-  target.commentIds.push(...source.commentIds);
-  target.ttsIds.push(...source.ttsIds);
-  next.commentGroups.splice(sourceIndex, 1);
-  return next;
-}
-
-export function moveComment(
-  page: CommentsPageFormValues,
-  commentId: string,
-  targetGroupId: string,
-  index: number,
-): CommentsPageFormValues {
-  const sourceIndex = findGroupIndexByComment(page, commentId);
-  const targetIndex = page.commentGroups.findIndex((group) => group.id === targetGroupId);
-  if (sourceIndex < 0 || targetIndex < 0) {
-    return page;
-  }
-  const source = page.commentGroups[sourceIndex];
-  if (!source) {
-    return page;
-  }
-  if (source.commentIds.length === 1 && source.id !== targetGroupId) {
-    const next = cloneCommentsPage(page);
-    const liveSourceIndex = next.commentGroups.findIndex((group) => group.id === source.id);
-    const liveTarget = next.commentGroups.find((group) => group.id === targetGroupId);
-    const liveSource = liveSourceIndex >= 0 ? next.commentGroups[liveSourceIndex] : undefined;
-    if (!liveSource || !liveTarget) {
-      return page;
-    }
-    const insertAt = Math.max(0, Math.min(index, liveTarget.commentIds.length));
-    liveTarget.commentIds.splice(insertAt, 0, ...liveSource.commentIds);
-    liveTarget.ttsIds.push(...liveSource.ttsIds);
-    next.commentGroups.splice(liveSourceIndex, 1);
-    return next;
-  }
-
-  if (source.id === targetGroupId) {
-    const from = source.commentIds.indexOf(commentId);
-    if (from < 0) {
-      return page;
-    }
-    let to = Math.max(0, Math.min(index, source.commentIds.length - 1));
-    if (from === to) {
-      return page;
-    }
-    const next = cloneCommentsPage(page);
-    const group = next.commentGroups[sourceIndex];
-    if (!group) {
-      return page;
-    }
-    const [moved] = group.commentIds.splice(from, 1);
-    if (!moved) {
-      return page;
-    }
-    if (from < to) {
-      to -= 1;
-    }
-    group.commentIds.splice(to, 0, moved);
-    return next;
-  }
-
-  const next = cloneCommentsPage(page);
-  const fromGroup = next.commentGroups[sourceIndex];
-  const toGroup = next.commentGroups.find((group) => group.id === targetGroupId);
-  if (!fromGroup || !toGroup) {
-    return page;
-  }
-  fromGroup.commentIds = fromGroup.commentIds.filter((id) => id !== commentId);
-  const insertAt = Math.max(0, Math.min(index, toGroup.commentIds.length));
-  toGroup.commentIds.splice(insertAt, 0, commentId);
-  return next;
-}
-
-export function detachComment(
-  page: CommentsPageFormValues,
-  commentId: string,
-  insertIndex: number,
-): CommentsPageFormValues {
-  const sourceIndex = findGroupIndexByComment(page, commentId);
-  if (sourceIndex < 0) {
-    return page;
-  }
-  const source = page.commentGroups[sourceIndex];
-  if (!source) {
-    return page;
-  }
-  if (source.commentIds.length === 1) {
-    return moveGroup(page, source.id, insertIndex);
-  }
-
-  const next = cloneCommentsPage(page);
-  const fromGroup = next.commentGroups[sourceIndex];
-  if (!fromGroup) {
-    return page;
-  }
-  fromGroup.commentIds = fromGroup.commentIds.filter((id) => id !== commentId);
-  const group = createGroup([commentId]);
-  const bounded = Math.max(0, Math.min(insertIndex, next.commentGroups.length));
-  next.commentGroups.splice(bounded, 0, group);
+  live.groupIds.splice(insertAt, 0, group);
   return next;
 }
 
@@ -316,6 +262,9 @@ export function moveReply(
     return page;
   }
   const sameGroup = fromGroup.id === toGroup.id;
+  if (!sameGroup) {
+    return page;
+  }
   let insertAt = Math.max(0, Math.min(index, toGroup.ttsIds.length));
   if (sameGroup && (from === insertAt || from + 1 === insertAt)) {
     return page;
@@ -478,19 +427,15 @@ export function setGroupDisplayText(
   return next;
 }
 
-export type CommentDragData = {
-  kind: "group" | "comment" | "reply";
-  pageId: string;
-  groupId: string;
-  entityId: string;
-};
+export type CommentDragData =
+  | { kind: "scene"; pageId: string; sceneId: string; entityId: string }
+  | { kind: "group"; pageId: string; sceneId: string; groupId: string; entityId: string }
+  | { kind: "reply"; pageId: string; sceneId: string; groupId: string; entityId: string };
 
 export type CommentDropData =
-  | { kind: "reorder-group"; pageId: string; index: number }
-  | { kind: "merge-group"; pageId: string; groupId: string }
-  | { kind: "comment-slot"; pageId: string; groupId: string; index: number }
-  | { kind: "new-group"; pageId: string; index: number }
-  | { kind: "reply-slot"; pageId: string; groupId: string; index: number };
+  | { kind: "reorder-scene"; pageId: string; index: number }
+  | { kind: "reorder-group"; pageId: string; sceneId: string; index: number }
+  | { kind: "reply-slot"; pageId: string; sceneId: string; groupId: string; index: number };
 
 export function applyCommentDrop(
   page: CommentsPageFormValues,
@@ -501,28 +446,19 @@ export function applyCommentDrop(
     return page;
   }
 
-  if (drag.kind === "group" && drop.kind === "reorder-group") {
-    return moveGroup(page, drag.groupId, drop.index);
+  if (drag.kind === "scene" && drop.kind === "reorder-scene") {
+    return moveScene(page, drag.sceneId, drop.index);
   }
-  if (drag.kind === "group" && drop.kind === "merge-group") {
-    return mergeGroupInto(page, drag.groupId, drop.groupId);
+  if (drag.kind === "group" && drop.kind === "reorder-group" && drag.sceneId === drop.sceneId) {
+    return moveGroup(page, drag.sceneId, drag.groupId, drop.index);
   }
-  if (drag.kind === "comment" && drop.kind === "comment-slot") {
-    return moveComment(page, drag.entityId, drop.groupId, drop.index);
-  }
-  if (drag.kind === "comment" && drop.kind === "new-group") {
-    return detachComment(page, drag.entityId, drop.index);
-  }
-  if (drag.kind === "reply" && drop.kind === "reply-slot") {
+  if (
+    drag.kind === "reply" &&
+    drop.kind === "reply-slot" &&
+    drag.sceneId === drop.sceneId &&
+    drag.groupId === drop.groupId
+  ) {
     return moveReply(page, drag.entityId, drop.groupId, drop.index);
   }
   return page;
-}
-
-export function lastCommentMovePreview(page: CommentsPageFormValues, commentId: string) {
-  const group = page.commentGroups.find((item) => item.commentIds.includes(commentId));
-  if (!group || group.commentIds.length !== 1) {
-    return null;
-  }
-  return { replyCount: group.ttsIds.length };
 }

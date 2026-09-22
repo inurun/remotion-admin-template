@@ -14,10 +14,17 @@ export type CommentsEditorComment = {
   vposMs: number;
 };
 
-export type CommentsEditorStructure = {
+export type CommentsEditorScene = {
+  id: string;
   groups: CommentsEditorGroup[];
+};
+
+export type CommentsEditorStructure = {
+  scenes: CommentsEditorScene[];
   comments: CommentsEditorComment[];
   ttsIds: string[];
+  groupIds: string[];
+  presentation: CommentsPageFormValues["meta"]["presentation"];
 };
 
 export function asCommentsPage(page: PageFormValues): CommentsPageFormValues | null {
@@ -30,17 +37,22 @@ export function selectCommentsEditorStructure(
   if (page.type !== "comments") {
     return null;
   }
+  const byId = new Map(page.commentGroups.map((group) => [group.id, group]));
   return {
-    groups: page.commentGroups.map((group) => ({
-      id: group.id,
-      commentIds: group.commentIds,
-      ttsIds: group.ttsIds,
+    scenes: page.commentScenes.map((scene) => ({
+      id: scene.id,
+      groups: scene.groupIds.flatMap((id) => {
+        const group = byId.get(id);
+        return group ? [{ id: group.id, commentIds: group.commentIds, ttsIds: group.ttsIds }] : [];
+      }),
     })),
     comments: page.comments.map((comment) => ({
       id: comment.id,
       vposMs: comment.vposMs,
     })),
     ttsIds: page.tts.map((item) => item.id),
+    groupIds: page.commentGroups.map((group) => group.id),
+    presentation: page.meta.presentation,
   };
 }
 

@@ -11,6 +11,7 @@ describe("page settings values", () => {
     const parsed = pageSettingsFormSchema.parse({
       title: "Page",
       tags: [{ value: " travel " }, { value: "news" }, { value: " travel " }],
+      presentation: "single",
     });
 
     expect(getPageSettingsTags(parsed)).toEqual(["travel", "news", "travel"]);
@@ -20,6 +21,7 @@ describe("page settings values", () => {
     expect(toPageSettingsFormValues({ title: "Page", tags: ["travel", "news"] })).toEqual({
       title: "Page",
       tags: [{ value: "travel" }, { value: "news" }],
+      presentation: "single",
     });
   });
 
@@ -29,14 +31,25 @@ describe("page settings values", () => {
     ).toEqual({
       title: "Page",
       tags: [{ value: "travel" }],
+      presentation: "single",
     });
-    expect(getSelectedPageSettingsFormValues(null)).toEqual({ title: "", tags: [] });
+    expect(getSelectedPageSettingsFormValues(null)).toEqual({
+      title: "",
+      tags: [],
+      presentation: "single",
+    });
   });
 
   it("rejects blank tags and accepts an empty list", () => {
-    expect(pageSettingsFormSchema.safeParse({ title: "", tags: [] }).success).toBe(true);
-    expect(pageSettingsFormSchema.safeParse({ title: "", tags: [{ value: "   " }] }).success).toBe(
-      false,
-    );
+    expect(
+      pageSettingsFormSchema.safeParse({ title: "", tags: [], presentation: "single" }).success,
+    ).toBe(true);
+    expect(
+      pageSettingsFormSchema.safeParse({
+        title: "",
+        tags: [{ value: "   " }],
+        presentation: "single",
+      }).success,
+    ).toBe(false);
   });
 });

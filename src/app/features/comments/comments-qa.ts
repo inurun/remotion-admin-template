@@ -4,6 +4,7 @@ import type {
 } from "@/app/features/page/model/page-form-schema";
 import { cloneCommentsPage } from "@/app/features/comments/comment-operations";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
+import { commentGroupSlot } from "@/server/features/project/comments-presentation";
 
 export type ApplyCommentGroupQaRepliesResult =
   | { ok: true; page: CommentsPageFormValues }
@@ -19,8 +20,34 @@ export function cloneCommentQaTts(items: readonly TtsFormValues[]): TtsFormValue
   }));
 }
 
-export function listUnansweredCommentGroupIds(page: Pick<CommentsPageFormValues, "commentGroups">) {
-  return page.commentGroups.filter((group) => group.ttsIds.length === 0).map((group) => group.id);
+export function commentQaReadLabel(
+  page: {
+    commentGroups: CommentsPageFormValues["commentGroups"];
+    commentScenes: CommentsPageFormValues["commentScenes"];
+    meta: Pick<CommentsPageFormValues["meta"], "presentation">;
+  },
+  groupId: string,
+) {
+  return commentGroupSlot(
+    page.commentGroups,
+    page.commentScenes,
+    page.meta.presentation,
+    groupId,
+  ) === "center"
+    ? "Read"
+    : "Display only";
+}
+
+export function listUnansweredCommentGroupIds(
+  page: Pick<CommentsPageFormValues, "commentGroups" | "commentScenes">,
+) {
+  const byId = new Map(page.commentGroups.map((group) => [group.id, group]));
+  return page.commentScenes.flatMap((scene) =>
+    scene.groupIds.flatMap((id) => {
+      const group = byId.get(id);
+      return group && group.ttsIds.length === 0 ? [id] : [];
+    }),
+  );
 }
 
 export function filledCommentQaReplies(replies: readonly TtsFormValues[]) {

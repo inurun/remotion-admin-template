@@ -45,7 +45,14 @@ export function CommentsQaDialog({ disabled }: { disabled: boolean }) {
         </DialogHeader>
         {dialog.status ? <p className="text-sm text-destructive">{dialog.status}</p> : null}
         <DialogMain className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-wrap gap-2 pb-5">
+          <div
+            className={
+              dialog.spoken
+                ? "flex flex-wrap gap-2 rounded-lg bg-primary/10 p-3 pb-5"
+                : "flex flex-wrap gap-2 pb-5"
+            }
+          >
+            <span className="w-full text-xs text-muted-foreground">{dialog.readLabel}</span>
             {dialog.comments.map((comment) => (
               <div key={comment.id}>{comment.body}</div>
             ))}

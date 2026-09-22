@@ -77,13 +77,17 @@ export {
 
 export {
   commentGroupSchema,
+  commentSceneSchema,
   commentsNiconicoRefSchema,
   commentsPageMetaSchema,
+  commentsPresentationSchema,
   niconicoCommentSchema,
   refineCommentsPageRelations,
   type CommentGroup,
+  type CommentScene,
   type CommentsNiconicoRef,
   type CommentsPageMeta,
+  type CommentsPresentation,
   type CommentsPageRelationInput,
   type NiconicoComment,
 } from "@/_schemas/project/comments";

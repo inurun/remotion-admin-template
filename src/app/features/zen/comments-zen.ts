@@ -1,4 +1,4 @@
-import type { CommentGroup, NiconicoComment } from "@/_schemas/project/comments";
+import type { CommentGroup, CommentScene, NiconicoComment } from "@/_schemas/project/comments";
 import type { AvatarSettings } from "@/_schemas";
 import type { CommentsPageFormValues } from "@/app/features/page/model/page-form-schema";
 import type { TtsFormValues } from "@/app/features/tts/model/tts-form-schema";
@@ -29,9 +29,14 @@ export type ZenCommentsGroupDraft = {
   replies: ZenCommentsReplyDraft[];
 };
 
+export type ZenCommentsSceneDraft = {
+  groups: ZenCommentsGroupDraft[];
+};
+
 export type ParseZenCommentsPageResult = {
   title: string;
   tags: string[];
+  scenes: ZenCommentsSceneDraft[];
   groups: ZenCommentsGroupDraft[];
   errors: ZenParseError[];
 };
@@ -87,6 +92,7 @@ export function serializeZenCommentsPage(
 ) {
   const voiceAliases = createVoiceAliasMap(aliases);
   const commentsById = new Map(page.comments.map((comment) => [comment.id, comment]));
+  const groupsById = new Map(page.commentGroups.map((group) => [group.id, group]));
   const ttsById = new Map(page.tts.map((item) => [item.id, item]));
   const lines: string[] = [];
   const title = page.title.trim();
@@ -98,33 +104,43 @@ export function serializeZenCommentsPage(
     lines.push(tags.map((tag) => `#${tag}`).join(" "));
   }
 
-  for (const [groupIndex, group] of page.commentGroups.entries()) {
-    if (lines.length > 0) {
-      lines.push("");
-    } else if (groupIndex > 0) {
-      lines.push("");
+  for (const [sceneIndex, scene] of page.commentScenes.entries()) {
+    if (sceneIndex > 0) {
+      if (lines.length > 0) {
+        lines.push("");
+      }
+      lines.push("---");
     }
-    for (const commentId of group.commentIds) {
-      const comment = commentsById.get(commentId);
-      const body = escapeCommentBody(comment?.body ?? "");
-      lines.push(`> [${commentId}] ${body}`);
-    }
-    let lastKey = "";
-    for (const ttsId of group.ttsIds) {
-      const item = ttsById.get(ttsId);
-      if (!item) {
+    for (const groupId of scene.groupIds) {
+      const group = groupsById.get(groupId);
+      if (!group) {
         continue;
       }
-      const alias = resolveAlias(item, voiceAliases);
-      const avatar = resolveAvatarSettings(getAvatarTypeForVoice(item), item.avatar);
-      const tokens = serializeAvatarTokens(avatar, aliases.get(alias)?.avatarType ?? "demo");
-      const key = `${alias}\0${JSON.stringify(avatar)}`;
-      if (key !== lastKey) {
-        const extras = [tokens, `{#tts:${item.id}}`].filter(Boolean).join(" ");
-        lines.push(`@${alias}${extras ? ` ${extras}` : ""}`);
-        lastKey = key;
+      if (lines.length > 0) {
+        lines.push("");
       }
-      lines.push(escapeSpeechLine(item.text));
+      for (const commentId of group.commentIds) {
+        const comment = commentsById.get(commentId);
+        const body = escapeCommentBody(comment?.body ?? "");
+        lines.push(`> [${commentId}] ${body}`);
+      }
+      let lastKey = "";
+      for (const ttsId of group.ttsIds) {
+        const item = ttsById.get(ttsId);
+        if (!item) {
+          continue;
+        }
+        const alias = resolveAlias(item, voiceAliases);
+        const avatar = resolveAvatarSettings(getAvatarTypeForVoice(item), item.avatar);
+        const tokens = serializeAvatarTokens(avatar, aliases.get(alias)?.avatarType ?? "demo");
+        const key = `${alias}\0${JSON.stringify(avatar)}`;
+        if (key !== lastKey) {
+          const extras = [tokens, `{#tts:${item.id}}`].filter(Boolean).join(" ");
+          lines.push(`@${alias}${extras ? ` ${extras}` : ""}`);
+          lastKey = key;
+        }
+        lines.push(escapeSpeechLine(item.text));
+      }
     }
   }
 
@@ -178,15 +194,27 @@ export function parseZenCommentsPage(
   let title = "";
   let tags: string[] = [];
   let commentsStarted = false;
+  const sceneGroups: ZenCommentsGroupDraft[][] = [[]];
+  let sceneIndex = 0;
   const groups: ZenCommentsGroupDraft[] = [];
   let current: ZenCommentsGroupDraft | null = null;
   let currentSpeaker: ZenCommentsReplyDraft | null = null;
   let pendingSpeaker = false;
   let blankPending = false;
+  let lastSceneBreakLine = 0;
 
-  const startGroup = (): ZenCommentsGroupDraft => {
+  const startGroup = (lineNumber: number): ZenCommentsGroupDraft | null => {
+    const scene = sceneGroups[sceneIndex];
+    if (!scene) {
+      return null;
+    }
+    if (scene.length >= 3) {
+      errors.push({ line: lineNumber, message: "A comment scene can have at most 3 groups." });
+      return null;
+    }
     const group: ZenCommentsGroupDraft = { commentIds: [], commentBodies: {}, replies: [] };
     groups.push(group);
+    scene.push(group);
     current = group;
     currentSpeaker = null;
     pendingSpeaker = false;
@@ -205,7 +233,19 @@ export function parseZenCommentsPage(
     }
 
     if (line.trim() === "---") {
-      errors.push({ line: lineNumber, message: "Multi-page separators are not allowed." });
+      commentsStarted = true;
+      const scene = sceneGroups[sceneIndex];
+      if (!scene || scene.length === 0) {
+        errors.push({ line: lineNumber, message: "Empty comment scene." });
+        continue;
+      }
+      sceneGroups.push([]);
+      sceneIndex += 1;
+      lastSceneBreakLine = lineNumber;
+      current = null;
+      currentSpeaker = null;
+      pendingSpeaker = false;
+      blankPending = false;
       continue;
     }
 
@@ -258,7 +298,10 @@ export function parseZenCommentsPage(
         current.replies.length > 0 ||
         (blankPending && current.commentIds.length > 0 && !pendingSpeaker)
       ) {
-        current = startGroup();
+        current = startGroup(lineNumber);
+        if (!current) {
+          continue;
+        }
       }
       blankPending = false;
       currentSpeaker = null;
@@ -395,7 +438,87 @@ export function parseZenCommentsPage(
     errors.push({ line: 0, message: "Speaker is missing speech text." });
   }
 
-  return { title, tags, groups: errors.length === 0 ? groups : [], errors };
+  const lastScene = sceneGroups[sceneIndex];
+  if (sceneGroups.length > 1 && lastScene && lastScene.length === 0) {
+    errors.push({ line: lastSceneBreakLine || 0, message: "Empty comment scene." });
+  }
+
+  const scenes: ZenCommentsSceneDraft[] =
+    errors.length === 0
+      ? sceneGroups.filter((scene) => scene.length > 0).map((scene) => ({ groups: scene }))
+      : [];
+
+  return {
+    title,
+    tags,
+    scenes,
+    groups: errors.length === 0 ? groups : [],
+    errors,
+  };
+}
+
+function groupIdSetKey(ids: readonly string[]) {
+  return [...ids].sort().join("\0");
+}
+
+function sharedGroupCount(left: readonly string[], right: readonly string[]) {
+  const ids = new Set(left);
+  return right.reduce((count, id) => count + (ids.has(id) ? 1 : 0), 0);
+}
+
+function matchScenes(
+  existing: CommentScene[],
+  nextGroupIds: string[][],
+): Array<CommentScene | undefined> {
+  const unused = existing.map((scene, index) => ({ scene, index, used: false }));
+  const matched: Array<CommentScene | undefined> = nextGroupIds.map(() => undefined);
+
+  for (const [nextIndex, ids] of nextGroupIds.entries()) {
+    const key = groupIdSetKey(ids);
+    const found = unused.find((item) => !item.used && groupIdSetKey(item.scene.groupIds) === key);
+    if (!found) {
+      continue;
+    }
+    matched[nextIndex] = found.scene;
+    found.used = true;
+  }
+
+  while (true) {
+    let best: { nextIndex: number; oldIndex: number; shared: number } | null = null;
+    for (const [nextIndex, ids] of nextGroupIds.entries()) {
+      if (matched[nextIndex]) {
+        continue;
+      }
+      for (const item of unused) {
+        if (item.used) {
+          continue;
+        }
+        const shared = sharedGroupCount(item.scene.groupIds, ids);
+        if (shared === 0) {
+          continue;
+        }
+        if (
+          !best ||
+          shared > best.shared ||
+          (shared === best.shared && item.index < best.oldIndex) ||
+          (shared === best.shared && item.index === best.oldIndex && nextIndex < best.nextIndex)
+        ) {
+          best = { nextIndex, oldIndex: item.index, shared };
+        }
+      }
+    }
+    if (!best) {
+      break;
+    }
+    const item = unused.find((entry) => entry.index === best.oldIndex);
+    if (!item) {
+      break;
+    }
+    matched[best.nextIndex] = item.scene;
+    item.used = true;
+  }
+
+  return matched;
 }
 
 function commentIdSetKey(ids: readonly string[]) {
@@ -561,5 +684,16 @@ export function applyZenCommentsPage(
 
   next.commentGroups = nextGroups;
   next.tts = nextTts;
+  let offset = 0;
+  const sceneGroupIds = parsed.scenes.map((scene) => {
+    const ids = nextGroups.slice(offset, offset + scene.groups.length).map((group) => group.id);
+    offset += scene.groups.length;
+    return ids;
+  });
+  const matchedScenes = matchScenes(existing.commentScenes, sceneGroupIds);
+  next.commentScenes = sceneGroupIds.map((groupIds, index) => ({
+    id: matchedScenes[index]?.id ?? crypto.randomUUID(),
+    groupIds,
+  }));
   return next;
 }

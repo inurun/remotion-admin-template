@@ -27,7 +27,7 @@ export function usePageSettingsDialog() {
 
   const form = useForm<PageSettingsFormValues>({
     resolver: zodResolver(pageSettingsFormSchema),
-    defaultValues: toPageSettingsFormValues({ title: "", tags: [] }),
+    defaultValues: toPageSettingsFormValues({ title: "", tags: [], presentation: "single" }),
   });
   const {
     fields: tagFields,
@@ -62,6 +62,7 @@ export function usePageSettingsDialog() {
         {
           title: values.title,
           tags: getPageSettingsTags(values),
+          presentation: values.presentation,
           videoId,
           snapshot: importer.snapshot,
           fetchedAt: importer.fetchedAt,
@@ -84,6 +85,10 @@ export function usePageSettingsDialog() {
       pageForm.setValue("meta", next.meta, { shouldDirty: true, shouldValidate: true });
       pageForm.setValue("comments", next.comments, { shouldDirty: true, shouldValidate: true });
       pageForm.setValue("commentGroups", next.commentGroups, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      pageForm.setValue("commentScenes", next.commentScenes, {
         shouldDirty: true,
         shouldValidate: true,
       });

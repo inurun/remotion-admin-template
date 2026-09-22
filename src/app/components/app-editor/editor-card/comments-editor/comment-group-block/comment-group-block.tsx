@@ -16,14 +16,15 @@ import type { CommentsEditorComment } from "../comments-editor.lib";
 
 export const CommentGroupBlock = memo(function CommentGroupBlock({
   pageId,
+  sceneId,
   groupId,
   commentIds,
   ttsIds,
   commentsLookup,
   commentIndexById,
   ttsIndexById,
-  groupIndex,
-  groupCount,
+  formIndex,
+  spoken,
   onAddReply,
   onRemoveGroup,
   onRemoveComment,
@@ -32,14 +33,15 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
   onSelectReply,
 }: {
   pageId: string;
+  sceneId: string;
   groupId: string;
   commentIds: readonly string[];
   ttsIds: readonly string[];
   commentsLookup: Readonly<Record<string, CommentsEditorComment>>;
   commentIndexById: Readonly<Record<string, number>>;
   ttsIndexById: Readonly<Record<string, number>>;
-  groupIndex: number;
-  groupCount: number;
+  formIndex: number;
+  spoken: boolean;
   onAddReply: (groupId: string) => void;
   onRemoveGroup: (groupId: string) => void;
   onRemoveComment: (commentId: string) => void;
@@ -50,6 +52,7 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
   const { ref, handleRef, isDragging } = useCommentGroupBlock({
     kind: "group",
     pageId,
+    sceneId,
     groupId,
     entityId: groupId,
   });
@@ -58,13 +61,12 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
   return (
     <article
       ref={ref}
-      className={cn("grid rounded-lg border border-border px-3 pt-3", isDragging && "opacity-60")}
+      className={cn(
+        "grid rounded-lg border border-border px-3 pt-3",
+        spoken && "bg-primary/10",
+        isDragging && "opacity-60",
+      )}
     >
-      <CommentDropSlot
-        id={`drop:merge:${groupId}`}
-        data={{ kind: "merge-group", pageId, groupId }}
-        label="Merge here"
-      />
       <Collapsible>
         <div className="flex items-center gap-2">
           <span
@@ -73,7 +75,7 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
           >
             <GripVertical className="size-4" />
           </span>
-          <GroupDisplayTextField groupIndex={groupIndex} firstCommentIndex={firstCommentIndex} />
+          <GroupDisplayTextField groupIndex={formIndex} firstCommentIndex={firstCommentIndex} />
           <CollapsibleTrigger>
             <Button type="button" size="icon-xs" variant="outline">
               {commentIds.length > 1 ? commentIds.length : <ChevronDown />}
@@ -89,7 +91,7 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
           </Button>
         </div>
         <CollapsibleContent>
-          {commentIds.map((commentId, index) => {
+          {commentIds.map((commentId) => {
             const comment = commentsLookup[commentId];
             const commentIndex = commentIndexById[commentId];
             if (!comment || commentIndex === undefined) {
@@ -97,14 +99,7 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
             }
             return (
               <div key={commentId} className="pl-3">
-                <CommentDropSlot
-                  id={`drop:comment:${groupId}:${index}`}
-                  data={{ kind: "comment-slot", pageId, groupId, index }}
-                  label="Move comment"
-                />
                 <CommentRow
-                  pageId={pageId}
-                  groupId={groupId}
                   commentId={commentId}
                   commentIndex={commentIndex}
                   vposMs={comment.vposMs}
@@ -115,28 +110,24 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
           })}
         </CollapsibleContent>
       </Collapsible>
-      <CommentDropSlot
-        id={`drop:comment:${groupId}:end`}
-        data={{ kind: "comment-slot", pageId, groupId, index: commentIds.length }}
-        label="Move comment"
-      />
       {ttsIds.map((ttsId, index) => {
-        const formIndex = ttsIndexById[ttsId];
-        if (formIndex === undefined) {
+        const ttsFormIndex = ttsIndexById[ttsId];
+        if (ttsFormIndex === undefined) {
           return null;
         }
         return (
           <div key={ttsId}>
             <CommentDropSlot
               id={`drop:reply:${groupId}:${index}`}
-              data={{ kind: "reply-slot", pageId, groupId, index }}
+              data={{ kind: "reply-slot", pageId, sceneId, groupId, index }}
               label="Move reply"
             />
             <ReplyRow
               pageId={pageId}
+              sceneId={sceneId}
               groupId={groupId}
               ttsId={ttsId}
-              formIndex={formIndex}
+              formIndex={ttsFormIndex}
               onRemove={onRemoveReply}
               onInsertAfter={onInsertReplyAfter}
               onSelect={onSelectReply}
@@ -146,31 +137,13 @@ export const CommentGroupBlock = memo(function CommentGroupBlock({
       })}
       <CommentDropSlot
         id={`drop:reply:${groupId}:end`}
-        data={{ kind: "reply-slot", pageId, groupId, index: ttsIds.length }}
+        data={{ kind: "reply-slot", pageId, sceneId, groupId, index: ttsIds.length }}
         label="Move reply"
       />
       <Button type="button" size="sm" variant="outline" onClick={() => onAddReply(groupId)}>
         <Plus />
         Add reply
       </Button>
-      <CommentDropSlot
-        id={`drop:new:${groupId}`}
-        data={{ kind: "new-group", pageId, index: groupIndex + 1 }}
-        label="New group"
-      />
-      {groupIndex === groupCount - 1 ? (
-        <CommentDropSlot
-          id={`drop:reorder:end`}
-          data={{ kind: "reorder-group", pageId, index: groupCount - 1 }}
-          label="Move group"
-        />
-      ) : (
-        <CommentDropSlot
-          id={`drop:reorder:${groupIndex + 1}`}
-          data={{ kind: "reorder-group", pageId, index: groupIndex + 1 }}
-          label="Move group"
-        />
-      )}
     </article>
   );
 });

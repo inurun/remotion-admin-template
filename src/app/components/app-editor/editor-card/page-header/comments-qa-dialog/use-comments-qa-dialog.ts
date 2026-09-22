@@ -13,6 +13,7 @@ import {
   applyCommentGroupQaReplies,
   cloneCommentQaTts,
   commentQaPosition,
+  commentQaReadLabel,
   commitCommentsQaPage,
   filledCommentQaReplies,
   listUnansweredCommentGroupIds,
@@ -52,6 +53,8 @@ export function useCommentsQaDialog() {
   const editorStore = useEditorSessionStoreApi();
   const comments = useWatch({ control, name: "comments" });
   const commentGroups = useWatch({ control, name: "commentGroups" });
+  const commentScenes = useWatch({ control, name: "commentScenes" });
+  const presentation = useWatch({ control, name: "meta.presentation" }) ?? "single";
   const draftForm = useForm<PageFormValues>({
     defaultValues: idleDraftPage(),
   });
@@ -109,6 +112,17 @@ export function useCommentsQaDialog() {
     [comments],
   );
   const displayText = currentGroup ? commentGroupDisplayText(currentGroup, commentsById) : "";
+  const readLabel =
+    currentId && commentGroups && commentScenes
+      ? commentQaReadLabel(
+          {
+            commentGroups,
+            commentScenes,
+            meta: { presentation },
+          },
+          currentId,
+        )
+      : "Read";
   const groupComments = (currentGroup?.commentIds ?? []).flatMap((id) => {
     const comment = commentsById.get(id);
     return comment ? [comment] : [];
@@ -325,6 +339,8 @@ export function useCommentsQaDialog() {
     position,
     displayText,
     comments: groupComments,
+    readLabel,
+    spoken: readLabel === "Read",
     canDone,
     canBack,
     canNext,

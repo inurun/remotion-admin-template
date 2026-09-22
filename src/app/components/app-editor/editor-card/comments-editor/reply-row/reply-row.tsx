@@ -9,6 +9,7 @@ import { useReplyRow } from "./use-reply-row";
 
 export const ReplyRow = memo(function ReplyRow({
   pageId,
+  sceneId,
   groupId,
   ttsId,
   formIndex,
@@ -17,6 +18,7 @@ export const ReplyRow = memo(function ReplyRow({
   onSelect,
 }: {
   pageId: string;
+  sceneId: string;
   groupId: string;
   ttsId: string;
   formIndex: number;
@@ -27,6 +29,7 @@ export const ReplyRow = memo(function ReplyRow({
   const { ref, handleRef, isDragging, isSelected, synthesisStatus, synthesisError } = useReplyRow({
     kind: "reply",
     pageId,
+    sceneId,
     groupId,
     entityId: ttsId,
   });

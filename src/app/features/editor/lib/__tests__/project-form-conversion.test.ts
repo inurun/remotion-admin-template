@@ -41,6 +41,7 @@ describe("page form values", () => {
       meta: {
         tags: ["niconico"],
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+        presentation: "single" as const,
       },
       comments: [
         {
@@ -62,6 +63,7 @@ describe("page form values", () => {
           ttsIds: ["r1", "t1"],
         },
       ],
+      commentScenes: [{ id: "s1", groupIds: ["g1"] }],
       padBeforeSec: 0,
       padAfterSec: 0,
       richText: null,
@@ -77,6 +79,7 @@ describe("page form values", () => {
       type: "comments",
       comments: page.comments,
       commentGroups: page.commentGroups,
+      commentScenes: page.commentScenes,
       meta: page.meta,
     });
     expect(form).not.toHaveProperty("durationSec");

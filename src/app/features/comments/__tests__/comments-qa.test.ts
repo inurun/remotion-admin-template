@@ -7,6 +7,7 @@ import {
   applyCommentGroupQaReplies,
   commentQaDraftHasInput,
   commentQaPosition,
+  commentQaReadLabel,
   commitCommentsQaPage,
   filledCommentQaReplies,
   listUnansweredCommentGroupIds,
@@ -55,12 +56,18 @@ function page(overrides: Partial<CommentsPageFormValues> = {}): CommentsPageForm
     meta: {
       tags: [],
       niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+      presentation: "single",
     },
     comments: [comment(1, "うぽつ"), comment(2, ""), comment(3, "質問")],
     commentGroups: [
       { id: "g1", commentIds: ["sm1:thread:main:1"], displayText: null, ttsIds: [] },
       { id: "g2", commentIds: ["sm1:thread:main:2"], displayText: null, ttsIds: ["t1"] },
       { id: "g3", commentIds: ["sm1:thread:main:3"], displayText: null, ttsIds: [] },
+    ],
+    commentScenes: [
+      { id: "s1", groupIds: ["g1"] },
+      { id: "s2", groupIds: ["g2"] },
+      { id: "s3", groupIds: ["g3"] },
     ],
     tts: [tts("t1", "既存返信")],
     ...overrides,
@@ -86,6 +93,10 @@ describe("comments qa", () => {
               displayText: null,
               ttsIds: [],
             },
+          ],
+          commentScenes: [
+            { id: "s1", groupIds: ["empty-body"] },
+            { id: "s2", groupIds: ["empty-replies"] },
           ],
         }),
       ),
@@ -208,8 +219,30 @@ describe("comments qa", () => {
           commentGroups: [
             { id: "g1", commentIds: ["sm1:thread:main:1"], displayText: null, ttsIds: ["t1"] },
           ],
+          commentScenes: [{ id: "s1", groupIds: ["g1"] }],
         }),
       ),
     ).toEqual([]);
+  });
+
+  it("labels read vs display from full group order, not unanswered order", () => {
+    const groups = [
+      { id: "g1", commentIds: ["sm1:thread:main:1"], displayText: null, ttsIds: [] },
+      { id: "g2", commentIds: ["sm1:thread:main:2"], displayText: null, ttsIds: ["t1"] },
+      { id: "g3", commentIds: ["sm1:thread:main:3"], displayText: null, ttsIds: [] },
+    ];
+    expect(listUnansweredCommentGroupIds(page({ commentGroups: groups }))).toEqual(["g1", "g3"]);
+    const labeled = page({
+      commentGroups: groups,
+      commentScenes: [{ id: "s1", groupIds: ["g1", "g2", "g3"] }],
+      meta: {
+        tags: [],
+        niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+        presentation: "triple",
+      },
+    });
+    expect(commentQaReadLabel(labeled, "g1")).toBe("Display only");
+    expect(commentQaReadLabel(labeled, "g2")).toBe("Read");
+    expect(commentQaReadLabel(labeled, "g3")).toBe("Display only");
   });
 });

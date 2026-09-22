@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ttsFormSchema } from "@/app/features/tts/model/tts-form-schema";
 import {
   commentGroupSchema,
+  commentSceneSchema,
   commentsPageMetaSchema,
   niconicoCommentSchema,
   refineCommentsPageRelations,
@@ -45,6 +46,7 @@ export const pageFormSchema = z.discriminatedUnion("type", [
       meta: commentsPageMetaSchema,
       comments: z.array(niconicoCommentSchema),
       commentGroups: z.array(commentGroupSchema),
+      commentScenes: z.array(commentSceneSchema).default([]),
     })
     .superRefine(refineCommentsPageRelations),
   z.object({

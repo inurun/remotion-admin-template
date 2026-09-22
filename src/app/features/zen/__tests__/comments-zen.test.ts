@@ -52,6 +52,7 @@ function commentsPage(): CommentsPageFormValues {
     meta: {
       tags: ["live"],
       niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+      presentation: "single",
     },
     comments: [
       {
@@ -100,6 +101,10 @@ function commentsPage(): CommentsPageFormValues {
       },
     ],
     tts: [tts("t1", "ありがとう", "3"), tts("t2", "Remotionだよ", "3")],
+    commentScenes: [
+      { id: "s1", groupIds: ["g1"] },
+      { id: "s2", groupIds: ["g2"] },
+    ],
   };
 }
 
@@ -202,6 +207,68 @@ describe("comments zen", () => {
     const applied = applyZenCommentsPage(page, parsed, aliases);
     expect(applied.commentGroups[0]?.ttsIds).toEqual(["t1"]);
     expect(applied.commentGroups[1]?.ttsIds).toEqual(["t2"]);
+  });
+
+  it("treats --- as a scene break and reuses scene ids by group set", () => {
+    const page = commentsPage();
+    const source = serializeZenCommentsPage(page, aliases);
+    expect(source).toContain("---");
+    const parsed = parseZenCommentsPage(source, {
+      aliases,
+      insertedComments: page.comments,
+      knownTtsIds: new Set(page.tts.map((item) => item.id)),
+    });
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.scenes.map((scene) => scene.groups.map((group) => group.commentIds))).toEqual([
+      [["sm1:thread:main:1"]],
+      [["sm1:thread:main:3"]],
+    ]);
+    const applied = applyZenCommentsPage(page, parsed, aliases);
+    expect(applied.commentScenes.map((scene) => scene.id)).toEqual(["s1", "s2"]);
+
+    const swapped = parseZenCommentsPage(
+      `> [sm1:thread:main:3] 質問\n\n@zunda {#tts:t2}\nRemotionだよ\n\n---\n> [sm1:thread:main:1] うぽつ\n\n@zunda {#tts:t1}\nありがとう\n`,
+      {
+        aliases,
+        insertedComments: page.comments,
+        knownTtsIds: new Set(["t1", "t2"]),
+      },
+    );
+    expect(
+      applyZenCommentsPage(page, swapped, aliases).commentScenes.map((scene) => scene.id),
+    ).toEqual(["s2", "s1"]);
+  });
+
+  it("rejects empty scenes and more than 3 groups", () => {
+    const page = commentsPage();
+    const empty = parseZenCommentsPage(`---\n> [sm1:thread:main:1] うぽつ\n`, {
+      aliases,
+      insertedComments: page.comments,
+      knownTtsIds: new Set(),
+    });
+    expect(empty.errors.some((error) => error.message === "Empty comment scene.")).toBe(true);
+
+    const overflow = parseZenCommentsPage(
+      `> [sm1:thread:main:1]\n\n> [sm1:thread:main:2]\n\n> [sm1:thread:main:3]\n\n> [sm1:thread:main:4]\n`,
+      {
+        aliases,
+        insertedComments: [
+          ...page.comments,
+          {
+            id: "sm1:thread:main:4",
+            threadId: "thread",
+            fork: "main",
+            no: 4,
+            body: "extra",
+            vposMs: 3000,
+            postedAt: "2026-09-16T00:00:03.000Z",
+            hidden: false,
+          },
+        ],
+        knownTtsIds: new Set(),
+      },
+    );
+    expect(overflow.errors.some((error) => error.message.includes("at most 3"))).toBe(true);
   });
 });
 

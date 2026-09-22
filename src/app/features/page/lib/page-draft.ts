@@ -50,9 +50,11 @@ export function createBlankPageInput({
       meta: {
         tags: [],
         niconico: null,
+        presentation: "single",
       },
       comments: [],
       commentGroups: [],
+      commentScenes: [],
       padBeforeSec: 0,
       padAfterSec: 0,
       richText: null,

@@ -160,6 +160,7 @@ describe("collectTtsIntervals", () => {
           meta: {
             tags: [],
             niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+            presentation: "single" as const,
           },
           richText: null,
           comments: [],
@@ -171,6 +172,7 @@ describe("collectTtsIntervals", () => {
               ttsIds: ["r1", "t1"],
             },
           ],
+          commentScenes: [{ id: "s1", groupIds: ["g1"] }],
           tts: main.tts.filter((item) => item.id !== "g1"),
         },
       ],

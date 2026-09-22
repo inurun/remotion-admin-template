@@ -23,6 +23,11 @@ export const commentGroupSchema = z.object({
   ttsIds: z.array(z.string().min(1)),
 });
 
+export const commentSceneSchema = z.object({
+  id: z.string().min(1),
+  groupIds: z.array(z.string().min(1)).min(1).max(3),
+});
+
 export const commentsNiconicoRefSchema = z
   .object({
     videoId: z.string().min(1),
@@ -30,14 +35,19 @@ export const commentsNiconicoRefSchema = z
   })
   .nullable();
 
+export const commentsPresentationSchema = z.enum(["single", "triple"]);
+
 export const commentsPageMetaSchema = z.object({
   tags: z.array(z.string().trim().min(1)).default([]),
   niconico: commentsNiconicoRefSchema,
+  presentation: commentsPresentationSchema.default("single"),
 });
 
 export type NiconicoComment = z.infer<typeof niconicoCommentSchema>;
 export type CommentGroup = z.infer<typeof commentGroupSchema>;
+export type CommentScene = z.infer<typeof commentSceneSchema>;
 export type CommentsNiconicoRef = z.infer<typeof commentsNiconicoRefSchema>;
+export type CommentsPresentation = z.infer<typeof commentsPresentationSchema>;
 export type CommentsPageMeta = z.infer<typeof commentsPageMetaSchema>;
 
 type CommentsPageRelationTts = {
@@ -50,6 +60,7 @@ export type CommentsPageRelationInput = {
   meta: CommentsPageMeta;
   comments: NiconicoComment[];
   commentGroups: CommentGroup[];
+  commentScenes: CommentScene[];
   tts: CommentsPageRelationTts[];
 };
 
@@ -93,6 +104,13 @@ export function refineCommentsPageRelations(page: CommentsPageRelationInput, ctx
         code: "custom",
         message: "commentGroups must be empty when niconico is null",
         path: ["commentGroups"],
+      });
+    }
+    if (page.commentScenes.length > 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "commentScenes must be empty when niconico is null",
+        path: ["commentScenes"],
       });
     }
     if (page.tts.length > 0) {
@@ -196,6 +214,44 @@ export function refineCommentsPageRelations(page: CommentsPageRelationInput, ctx
         code: "custom",
         message: "tts must belong to exactly one comment group",
         path: ["tts", index, "id"],
+      });
+    }
+  }
+
+  const sceneIds = new Set<string>();
+  const assignedSceneGroupIds = new Set<string>();
+  for (const [sceneIndex, scene] of page.commentScenes.entries()) {
+    addUniqueIssue(
+      ctx,
+      sceneIds,
+      scene.id,
+      ["commentScenes", sceneIndex, "id"],
+      "duplicate comment scene id",
+    );
+    for (const [groupIndex, groupId] of scene.groupIds.entries()) {
+      if (!groupIds.has(groupId)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "commentScenes reference a missing group",
+          path: ["commentScenes", sceneIndex, "groupIds", groupIndex],
+        });
+      }
+      addUniqueIssue(
+        ctx,
+        assignedSceneGroupIds,
+        groupId,
+        ["commentScenes", sceneIndex, "groupIds", groupIndex],
+        "group belongs to multiple scenes",
+      );
+    }
+  }
+
+  for (const [groupIndex, group] of page.commentGroups.entries()) {
+    if (!assignedSceneGroupIds.has(group.id)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "comment group must belong to exactly one scene",
+        path: ["commentGroups", groupIndex, "id"],
       });
     }
   }

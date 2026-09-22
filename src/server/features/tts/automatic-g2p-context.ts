@@ -89,6 +89,7 @@ export function buildAutomaticG2pContext(
         const utterances = listSavedPageTtsInPlaybackOrder({
           ...page,
           commentGroups: [group],
+          commentScenes: [{ id: group.id, groupIds: [group.id] }],
         }).map((item) => {
           const target = targetsByTtsId.get(item.id);
           if (target && target.pageId !== page.id) {

@@ -2,9 +2,24 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { SEQUENCE_TRACK_ID, savedProjectSchema } from "@/_schemas";
 import { toTimeline } from "@/server/features/project/to-timeline";
-import { PROJECT_ROOT } from "@/server/_shared/storage";
+import {
+  createCommentScenesFromGroupIds,
+  migratedCommentSceneId,
+} from "@/server/features/project/comments-presentation";
+import {
+  ADVERTISERS_PATH,
+  PROJECT_ROOT,
+  PUBLISH_STATE_PATH,
+  SCHEDULES_PATH,
+} from "@/server/_shared/storage";
 
 const DATA_DIR = path.join(PROJECT_ROOT, "data");
+const SKIP_BASENAMES = new Set([
+  path.basename(PUBLISH_STATE_PATH),
+  path.basename(SCHEDULES_PATH),
+  path.basename(ADVERTISERS_PATH),
+  "render-state.json",
+]);
 
 async function listJsonFiles(dirPath: string, nestedPath = ""): Promise<string[]> {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
@@ -18,7 +33,8 @@ async function listJsonFiles(dirPath: string, nestedPath = ""): Promise<string[]
       if (
         !entry.isFile() ||
         !entry.name.endsWith(".json") ||
-        entry.name.endsWith(".timeline.json")
+        entry.name.endsWith(".timeline.json") ||
+        SKIP_BASENAMES.has(entry.name)
       ) {
         return [];
       }
@@ -26,6 +42,50 @@ async function listJsonFiles(dirPath: string, nestedPath = ""): Promise<string[]
     }),
   );
   return files.flat();
+}
+
+function withCommentsPresentation(raw: Record<string, unknown>) {
+  const pages = Array.isArray(raw.pages) ? raw.pages : [];
+  return {
+    ...raw,
+    pages: pages.map((page) => {
+      if (!page || typeof page !== "object" || Array.isArray(page)) {
+        return page;
+      }
+      const record = page as Record<string, unknown>;
+      if (record.type !== "comments") {
+        return page;
+      }
+      const meta =
+        record.meta && typeof record.meta === "object" && !Array.isArray(record.meta)
+          ? { ...(record.meta as Record<string, unknown>) }
+          : {};
+      if (meta.presentation !== "single" && meta.presentation !== "triple") {
+        meta.presentation = "single";
+      }
+      if (Array.isArray(record.commentScenes)) {
+        return { ...record, meta };
+      }
+      const groups = Array.isArray(record.commentGroups) ? record.commentGroups : [];
+      const groupIds = groups.flatMap((group) => {
+        if (!group || typeof group !== "object" || Array.isArray(group)) {
+          return [];
+        }
+        const id = (group as { id?: unknown }).id;
+        return typeof id === "string" && id.length > 0 ? [id] : [];
+      });
+      const presentation = meta.presentation === "triple" ? "triple" : "single";
+      return {
+        ...record,
+        meta,
+        commentScenes: createCommentScenesFromGroupIds(
+          groupIds,
+          presentation,
+          migratedCommentSceneId,
+        ),
+      };
+    }),
+  };
 }
 
 function withRecordVoicePresets(raw: Record<string, unknown>) {
@@ -46,7 +106,10 @@ function withRecordVoicePresets(raw: Record<string, unknown>) {
 
 async function migrateFile(filePath: string) {
   const raw = JSON.parse(await fs.readFile(filePath, "utf8")) as Record<string, unknown>;
-  const pages = Array.isArray(raw.pages) ? raw.pages : [];
+  if (!Array.isArray(raw.pages)) {
+    return;
+  }
+  const pages = raw.pages;
   const previousItems = pages.flatMap(
     (page: { id?: string; durationSec?: number; type?: string }) => {
       if (!page?.id || typeof page.durationSec !== "number" || page.type === "transition") {
@@ -62,7 +125,9 @@ async function migrateFile(filePath: string) {
       ];
     },
   );
-  const parsed = savedProjectSchema.safeParse(withRecordVoicePresets(raw));
+  const parsed = savedProjectSchema.safeParse(
+    withCommentsPresentation(withRecordVoicePresets(raw)),
+  );
   if (!parsed.success) {
     return;
   }

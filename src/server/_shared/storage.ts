@@ -44,6 +44,7 @@ const PROJECT_LIST_EXCLUDE = new Set([
   path.basename(PUBLISH_STATE_PATH),
   path.basename(SCHEDULES_PATH),
   path.basename(ADVERTISERS_PATH),
+  "render-state.json",
 ]);
 const INVALID_PROJECT_PATH_MESSAGE = "Invalid project path";
 

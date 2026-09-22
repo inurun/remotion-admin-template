@@ -166,6 +166,7 @@ describe("automatic G2P context", () => {
       meta: {
         tags: [],
         niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+        presentation: "single" as const,
       },
       comments: [
         {
@@ -202,6 +203,10 @@ describe("automatic G2P context", () => {
           displayText: null,
           ttsIds: ["r2"],
         },
+      ],
+      commentScenes: [
+        { id: "s1", groupIds: ["g1"] },
+        { id: "s2", groupIds: ["g2"] },
       ],
       padBeforeSec: 0,
       padAfterSec: 0,

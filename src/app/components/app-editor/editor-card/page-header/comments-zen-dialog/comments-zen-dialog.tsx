@@ -59,6 +59,9 @@ export function CommentsZenRoot({ children }: { children: ReactNode }) {
             <p className="text-muted-foreground">
               {dialog.groupCount} groups / {dialog.replyCount} replies
             </p>
+            <p className="text-muted-foreground">
+              {`Blank line splits groups. --- splits scenes (1-3 groups).`}
+            </p>
             {globalErrors.length > 0 ? (
               <ul className="max-h-24 space-y-0.5 overflow-auto text-destructive">
                 {globalErrors.map((error) => (

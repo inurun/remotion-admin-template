@@ -79,7 +79,7 @@ export function useCommentsZenDialog() {
   const parsed = useMemo(() => {
     const page = getValues();
     if (page.type !== "comments") {
-      return { title: "", tags: [], groups: [], errors: aliasErrors };
+      return { title: "", tags: [], scenes: [], groups: [], errors: aliasErrors };
     }
     if (!source.trim() && source === "") {
       const empty = parseZenCommentsPage("", {
@@ -225,6 +225,7 @@ export function useCommentsZenDialog() {
     setValue("title", next.title, { shouldDirty: true, shouldValidate: true });
     setValue("meta.tags", next.meta.tags, { shouldDirty: true, shouldValidate: true });
     setValue("commentGroups", next.commentGroups, { shouldDirty: true, shouldValidate: true });
+    setValue("commentScenes", next.commentScenes, { shouldDirty: true, shouldValidate: true });
     setValue("tts", next.tts, { shouldDirty: true, shouldValidate: true });
     const target = commentsEditFingerprint(next);
     applyingRevision.current = draftRevision;

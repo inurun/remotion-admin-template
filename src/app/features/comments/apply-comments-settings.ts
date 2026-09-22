@@ -1,4 +1,4 @@
-import type { NiconicoComment } from "@/_schemas/project/comments";
+import type { CommentsPresentation, NiconicoComment } from "@/_schemas/project/comments";
 import type { CommentsPageFormValues } from "@/app/features/page/model/page-form-schema";
 import {
   cloneCommentsPage,
@@ -10,6 +10,7 @@ import {
 export type CommentsSettingsApplyInput = {
   title: string;
   tags: string[];
+  presentation: CommentsPresentation;
   videoId: string | null;
   snapshot: NiconicoComment[] | null;
   fetchedAt: string | null;
@@ -51,12 +52,14 @@ export function applyCommentsPageSettings(
   next.meta = {
     ...next.meta,
     tags: [...input.tags],
+    presentation: input.presentation,
   };
 
   if (nextVideoId === null) {
     next.meta.niconico = null;
     next.comments = [];
     next.commentGroups = [];
+    next.commentScenes = [];
     next.tts = [];
     return { ok: true, page: next };
   }
@@ -68,6 +71,7 @@ export function applyCommentsPageSettings(
   if (switching) {
     next.comments = [];
     next.commentGroups = [];
+    next.commentScenes = [];
     next.tts = [];
   }
 

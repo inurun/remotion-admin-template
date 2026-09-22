@@ -65,6 +65,7 @@ export function toPageFormValues(page: SavedPage): PageFormValues {
       meta: page.meta,
       comments: page.comments,
       commentGroups: page.commentGroups,
+      commentScenes: page.commentScenes,
       padBeforeSec: page.padBeforeSec,
       padAfterSec: page.padAfterSec,
       richText: null,

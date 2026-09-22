@@ -17,10 +17,14 @@ export function usePageHeader() {
   const commentsZen = useCommentZen();
   const { control, getValues, setValue } = useFormContext<PageFormValues>();
   const commentGroups = useWatch({ control, name: "commentGroups" });
-  const groupCount = Array.isArray(commentGroups) ? commentGroups.length : 0;
+  const commentScenes = useWatch({ control, name: "commentScenes" });
+  const groupCount = Array.isArray(commentScenes) ? commentScenes.length : 0;
   const unansweredCount =
     selectedPageType === "comments"
-      ? listUnansweredCommentGroupIds({ commentGroups: commentGroups ?? [] }).length
+      ? listUnansweredCommentGroupIds({
+          commentGroups: commentGroups ?? [],
+          commentScenes: commentScenes ?? [],
+        }).length
       : 0;
 
   const sortByTime = useCallback(() => {
@@ -30,6 +34,7 @@ export function usePageHeader() {
     }
     const next = sortCommentGroupsByFirstCommentTime(current);
     setValue("commentGroups", next.commentGroups, { shouldDirty: true, shouldValidate: true });
+    setValue("commentScenes", next.commentScenes, { shouldDirty: true, shouldValidate: true });
   }, [getValues, setValue]);
 
   return {

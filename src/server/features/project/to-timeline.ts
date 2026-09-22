@@ -9,6 +9,7 @@ import type {
   TransitionVariant,
 } from "@/_schemas";
 import { SEQUENCE_TRACK_ID, savedTimelineSchema } from "@/_schemas";
+import { listPlaybackCommentGroups } from "@/server/features/project/comments-presentation";
 import {
   ENDCARD_DURATION_SEC,
   EYECATCH_TEXT_MIN_DURATION_SEC,
@@ -129,7 +130,12 @@ function createCommentsTimeline(page: SavedCommentsPage) {
   let visualEnd = 0;
   let isFirstVisible = true;
 
-  for (const group of page.commentGroups) {
+  for (const group of listPlaybackCommentGroups(
+    page.commentGroups,
+    page.commentScenes,
+    page.meta.presentation,
+    new Set(ttsById.keys()),
+  )) {
     const ttsIds = group.ttsIds.filter((ttsId) => ttsById.has(ttsId));
     if (ttsIds.length === 0) {
       continue;

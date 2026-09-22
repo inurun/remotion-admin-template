@@ -1,4 +1,5 @@
 import { Plus, Settings, Trash2 } from "lucide-react";
+import { Controller } from "react-hook-form";
 import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -53,6 +54,29 @@ export function PageSettingsDialog() {
               </label>
               <FieldError errors={[dialog.form.formState.errors.title]} />
             </Field>
+            {isComments ? (
+              <Field>
+                <label className="grid gap-2 text-sm font-medium">
+                  Presentation
+                  <Controller
+                    control={dialog.form.control}
+                    name="presentation"
+                    render={({ field }) => (
+                      <select
+                        className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none"
+                        value={field.value}
+                        onChange={(event) =>
+                          field.onChange(event.target.value as typeof field.value)
+                        }
+                      >
+                        <option value="single">Single</option>
+                        <option value="triple">Triple</option>
+                      </select>
+                    )}
+                  />
+                </label>
+              </Field>
+            ) : null}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Tags</span>

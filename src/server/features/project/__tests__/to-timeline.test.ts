@@ -312,6 +312,10 @@ describe("toTimeline", () => {
           ttsIds: ["r2"],
         },
       ],
+      commentScenes: [
+        { id: "s1", groupIds: ["g1"] },
+        { id: "s2", groupIds: ["g2"] },
+      ],
       padBeforeSec: 1,
       padAfterSec: 1,
       richText: null,
@@ -336,6 +340,60 @@ describe("toTimeline", () => {
       { id: "g2", startSec: 5, durationSec: 1 },
     ]);
     expect(page).not.toHaveProperty("durationSec");
+  });
+
+  it("lays out only center tts for triple comments and skips empty centers", () => {
+    const comments = [1, 2, 3, 4, 5, 6].map((no) => ({
+      id: `sm1:thread:main:${no}`,
+      threadId: "thread",
+      fork: "main" as const,
+      no,
+      body: `c${no}`,
+      vposMs: no,
+      postedAt: "2026-09-16T00:00:00.000Z",
+    }));
+    const page = savedPageSchema.parse({
+      id: "comments",
+      title: "Comments",
+      type: "comments",
+      meta: {
+        tags: [],
+        niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+        presentation: "triple",
+      },
+      comments,
+      commentGroups: [
+        { id: "g1", commentIds: [comments[0]!.id], displayText: null, ttsIds: ["s1"] },
+        { id: "g2", commentIds: [comments[1]!.id], displayText: null, ttsIds: [] },
+        { id: "g3", commentIds: [comments[2]!.id], displayText: null, ttsIds: ["s3"] },
+        { id: "g4", commentIds: [comments[3]!.id], displayText: null, ttsIds: ["s4"] },
+        { id: "g5", commentIds: [comments[4]!.id], displayText: null, ttsIds: ["c5"] },
+        { id: "g6", commentIds: [comments[5]!.id], displayText: null, ttsIds: ["s6"] },
+      ],
+      commentScenes: [
+        { id: "s1", groupIds: ["g1", "g2", "g3"] },
+        { id: "s2", groupIds: ["g4", "g5", "g6"] },
+      ],
+      padBeforeSec: 1,
+      padAfterSec: 1,
+      richText: null,
+      tts: [
+        tts("s1", 4, "side"),
+        tts("s3", 4, "side"),
+        tts("s4", 4, "side"),
+        tts("c5", 2, "center"),
+        tts("s6", 4, "side"),
+      ],
+    });
+
+    const clip = toTimeline(project([page])).tracks[0]?.clips[0];
+    expect(clip?.durationSec).toBe(4);
+    expect(
+      clip?.clips.map(({ id, startSec, durationSec }) => ({ id, startSec, durationSec })),
+    ).toEqual([
+      { id: "c5", startSec: 1, durationSec: 2 },
+      { id: "g5", startSec: 0, durationSec: 3 },
+    ]);
   });
 
   it("skips comments groups that have no tts", () => {
@@ -380,6 +438,10 @@ describe("toTimeline", () => {
           displayText: null,
           ttsIds: [],
         },
+      ],
+      commentScenes: [
+        { id: "s1", groupIds: ["g1"] },
+        { id: "s2", groupIds: ["g2"] },
       ],
       padBeforeSec: 1,
       padAfterSec: 1,
@@ -426,6 +488,7 @@ describe("toTimeline", () => {
           ttsIds: ["r1"],
         },
       ],
+      commentScenes: [{ id: "s1", groupIds: ["g1"] }],
       padBeforeSec: 1,
       padAfterSec: 1,
       richText: null,

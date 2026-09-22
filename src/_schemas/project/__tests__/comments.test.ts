@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { savedPageSchema } from "@/_schemas/project/page";
 import { pageFormSchema } from "@/app/features/page/model/page-form-schema";
 import { savePageItemSchema } from "@/server/features/project/contract";
+import { commentSceneSchema } from "@/_schemas/project/comments";
 
 const comment = {
   id: "sm1:thread:main:1",
@@ -42,6 +43,7 @@ function commentsPage(overrides: Record<string, unknown> = {}) {
         ttsIds: ["t1"],
       },
     ],
+    commentScenes: [{ id: "s1", groupIds: ["g1"] }],
     tts: [reply],
     ...overrides,
   };
@@ -158,6 +160,41 @@ describe("comments page schema", () => {
         }),
       ).success,
     ).toBe(false);
+  });
+
+  it("defaults presentation to single and accepts triple", () => {
+    const parsed = savedPageSchema.parse({
+      ...commentsPage(),
+      tts: [savedTts(reply)],
+    });
+    if (parsed.type !== "comments") {
+      throw new Error("expected comments page");
+    }
+    expect(parsed.meta.presentation).toBe("single");
+
+    const triple = savedPageSchema.parse({
+      ...commentsPage(),
+      meta: {
+        tags: [],
+        niconico: { videoId: "sm1", fetchedAt: "2026-09-16T00:00:00.000Z" },
+        presentation: "triple",
+      },
+      tts: [savedTts(reply)],
+    });
+    if (triple.type !== "comments") {
+      throw new Error("expected comments page");
+    }
+    expect(triple.meta.presentation).toBe("triple");
+  });
+
+  it("rejects groups that are not assigned to a scene", () => {
+    expect(pageFormSchema.safeParse(commentsPage({ commentScenes: [] })).success).toBe(false);
+  });
+
+  it("rejects a scene with more than 3 groups", () => {
+    expect(commentSceneSchema.safeParse({ id: "s", groupIds: ["a", "b", "c", "d"] }).success).toBe(
+      false,
+    );
   });
 
   it("does not persist page durationSec", () => {

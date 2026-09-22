@@ -1,8 +1,14 @@
-import type { CommentGroup, NiconicoComment } from "@/_schemas/project/comments";
+import type {
+  CommentGroup,
+  CommentsPresentation,
+  NiconicoComment,
+} from "@/_schemas/project/comments";
+import { listCommentGroupPlaybackTts } from "@/server/features/project/comments-presentation";
 
 export type CommentPageLookup = {
   comments: NiconicoComment[];
   commentGroups: CommentGroup[];
+  commentScenes?: Array<{ id: string; groupIds: readonly string[] }>;
 };
 
 export type ResolvedCommentGroup<Tts extends { id: string }> = {
@@ -41,15 +47,18 @@ export function resolveCommentGroups<Tts extends { id: string }>(
 }
 
 export function listPageTtsInPlaybackOrder<Tts extends { id: string }>(
-  page: { type: string; tts: Tts[] } & Partial<CommentPageLookup>,
+  page: { type: string; tts: Tts[] } & Partial<CommentPageLookup> & {
+      meta?: { presentation?: CommentsPresentation };
+    },
 ): Tts[] {
   if (page.type !== "comments" || !page.commentGroups || !page.comments) {
     return page.tts;
   }
 
-  return resolveCommentGroups({
-    comments: page.comments,
-    commentGroups: page.commentGroups,
-    tts: page.tts,
-  }).flatMap((resolved) => resolved.replies);
+  return listCommentGroupPlaybackTts(
+    page.commentGroups,
+    page.commentScenes ?? [],
+    page.tts,
+    page.meta?.presentation ?? "single",
+  );
 }

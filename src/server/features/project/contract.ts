@@ -4,6 +4,7 @@ import { storedG2pItemSchema } from "@/_schemas/g2p";
 import { savedTimelineSchema } from "@/_schemas/timeline";
 import {
   commentGroupSchema,
+  commentSceneSchema,
   commentsPageMetaSchema,
   niconicoCommentSchema,
   refineCommentsPageRelations,
@@ -111,6 +112,7 @@ export const savePageItemSchema = z.discriminatedUnion("type", [
       meta: commentsPageMetaSchema,
       comments: z.array(niconicoCommentSchema),
       commentGroups: z.array(commentGroupSchema),
+      commentScenes: z.array(commentSceneSchema).default([]),
     })
     .superRefine(refineCommentsPageRelations),
   z.object({

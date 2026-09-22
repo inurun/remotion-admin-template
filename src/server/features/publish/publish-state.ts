@@ -19,6 +19,7 @@ import {
   subscribePublishPrepJob,
   type PublishPrepJob,
 } from "./publish-codex";
+import { publishSnapshotSchema } from "./contract";
 
 type PublishStatus = "idle" | "running" | "success" | "error";
 
@@ -104,7 +105,7 @@ export function subscribePublish(listener: (snapshot: PublishSnapshot) => void) 
 export async function readPublishSnapshot() {
   try {
     const content = await fs.readFile(PUBLISH_STATE_PATH, "utf8");
-    return JSON.parse(content) as PublishSnapshot;
+    return publishSnapshotSchema.parse(JSON.parse(content));
   } catch {
     return getPublishSnapshot();
   }
