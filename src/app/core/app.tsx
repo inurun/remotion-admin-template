@@ -16,7 +16,7 @@ import { isDictionaryRoute, isSchedulesRoute } from "@/app/features/project/lib/
 import { AppDictionary } from "@/app/components/app-dictionary/app-dictionary";
 import { AppHeader } from "../components/app-header/app-header";
 import { AppSchedule } from "../components/app-schedule/app-schedule";
-import { RemotionPlayerControlProvider } from "@/app/features/remotion/context/remotion-player-control-context";
+import { VideoPlayerControlProvider } from "@/app/features/video-player/context/video-player-control-context";
 
 function ProjectSync() {
   useAutoSaveProject();
@@ -80,14 +80,14 @@ function AppMain() {
   }
 
   return (
-    <RemotionPlayerControlProvider>
+    <VideoPlayerControlProvider>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         <AppHeader />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <AppEditor />
         </div>
       </div>
-    </RemotionPlayerControlProvider>
+    </VideoPlayerControlProvider>
   );
 }
 

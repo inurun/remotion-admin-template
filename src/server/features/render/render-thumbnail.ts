@@ -1,5 +1,5 @@
 import { VIDEO_FPS } from "@/constants";
-import { msToFrame } from "@/remotion/utils/timing/frame-utils";
+import { msToFrame } from "@/video-host/frame-utils";
 
 const THUMBNAIL_TIME_PATTERN = /^(\d{2}):([0-5]\d)\.(\d{3})$/;
 

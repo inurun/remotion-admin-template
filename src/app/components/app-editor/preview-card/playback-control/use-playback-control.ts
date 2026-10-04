@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 
 export function usePlaybackControl() {
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {

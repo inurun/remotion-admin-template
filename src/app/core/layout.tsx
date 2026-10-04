@@ -7,7 +7,7 @@ export const layoutHtml = (
       <meta content="width=device-width, initial-scale=1" name="viewport" />
       <title>Remotion Admin Template</title>
       <meta
-        content="Template app for VoiSona-driven video editing and Remotion rendering"
+        content="Template app for VoiSona-driven video editing and HyperFrames rendering"
         name="description"
       />
       <link href="/favicon.svg" rel="icon" type="image/svg+xml" />

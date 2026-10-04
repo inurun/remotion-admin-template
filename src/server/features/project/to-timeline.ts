@@ -1,4 +1,5 @@
 import type {
+  BgmTrack,
   SavedCommentsPage,
   SavedPage,
   SavedProject,
@@ -8,7 +9,7 @@ import type {
   SavedTts,
   TransitionVariant,
 } from "@/_schemas";
-import { SEQUENCE_TRACK_ID, savedTimelineSchema } from "@/_schemas";
+import { BGM_TRACK_ID, SEQUENCE_TRACK_ID, savedTimelineSchema } from "@/_schemas";
 import { listPlaybackCommentGroups } from "@/server/features/project/comments-presentation";
 import {
   ENDCARD_DURATION_SEC,
@@ -274,7 +275,43 @@ function getPageDurationSec(input: {
   return Math.max(getReadyPageDurationSec(input.page), adjacentTransitionSec);
 }
 
-export function toTimeline(project: SavedProject, previous?: SavedTimeline): SavedTimeline {
+/** BGM file name → measured length in seconds. */
+export type BgmDurations = Record<string, number>;
+
+/**
+ * Loops to the video end when `endSec` is null, else plays once until `endSec`. Each play of
+ * the file is a nested clip; an unmeasured file plays once over the whole span.
+ */
+function createBgmClip(
+  track: BgmTrack,
+  index: number,
+  videoDurationSec: number,
+  bgmDurations: BgmDurations,
+): SavedTimelineClip {
+  const startSec = track.startSec ?? 0;
+  const durationSec = Math.max(0, (track.endSec ?? videoDurationSec) - startSec);
+  const measured = bgmDurations[track.src];
+  const fileSec = measured !== undefined && measured > 0 ? measured : durationSec;
+  const playCount =
+    durationSec === 0 ? 0 : track.endSec === null ? Math.ceil(durationSec / fileSec - 1e-9) : 1;
+  return {
+    id: `bgm-${index}`,
+    startSec,
+    durationSec,
+    clips: Array.from({ length: playCount }, (_, play) => ({
+      id: `bgm-${index}-${play}`,
+      startSec: play * fileSec,
+      durationSec: Math.min(fileSec, durationSec - play * fileSec),
+      clips: [],
+    })),
+  };
+}
+
+export function toTimeline(
+  project: SavedProject,
+  previous?: SavedTimeline,
+  bgmDurations: BgmDurations = {},
+): SavedTimeline {
   const previousById = new Map(sequenceClips(previous).map((clip) => [clip.id, clip]));
   const clips: SavedTimelineClip[] = [];
   let pageDurSum = 0;
@@ -310,8 +347,15 @@ export function toTimeline(project: SavedProject, previous?: SavedTimeline): Sav
     transitionDurSum += durationSec;
   }
 
+  const durationSec = Math.max(0, pageDurSum - transitionDurSum);
+  const bgmClips = project.bgm.map((track, index) =>
+    createBgmClip(track, index, durationSec, bgmDurations),
+  );
   return savedTimelineSchema.parse({
-    durationSec: Math.max(0, pageDurSum - transitionDurSum),
-    tracks: [{ id: SEQUENCE_TRACK_ID, clips }],
+    durationSec,
+    tracks: [
+      { id: SEQUENCE_TRACK_ID, clips },
+      ...(bgmClips.length > 0 ? [{ id: BGM_TRACK_ID, clips: bgmClips }] : []),
+    ],
   });
 }

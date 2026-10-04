@@ -22,11 +22,12 @@ import {
   type ProjectFileSummary,
 } from "@/server/features/project/contract";
 import { toTimeline } from "@/server/features/project/to-timeline";
+import { measureBgmDurations } from "@/server/features/bgm/bgm-durations";
 import { normalizeProjectMeta } from "@/server/features/project/normalize-project-meta";
 
 export const PROJECT_ROOT = process.cwd();
 const DATA_DIR = path.join(PROJECT_ROOT, "data");
-const PUBLIC_DIR = path.join(PROJECT_ROOT, "public");
+export const PUBLIC_DIR = path.join(PROJECT_ROOT, "public");
 export const TTS_DIR = path.join(PUBLIC_DIR, "tts");
 export const UPLOADS_DIR = path.join(PUBLIC_DIR, "uploads");
 export const MUSICS_DIR = path.join(PUBLIC_DIR, "bgm");
@@ -66,7 +67,7 @@ function createInitialSavedProject() {
         padBeforeSec: 0,
         padAfterSec: 0,
         richText:
-          "<h1>Remotion + VoiSona Template</h1><p>このテンプレをベースに本文と読み上げを編集できる。</p>",
+          "<h1>HyperFrames + VoiSona Template</h1><p>このテンプレをベースに本文と読み上げを編集できる。</p>",
         tts: [
           {
             id: "tts-1",
@@ -418,7 +419,11 @@ export async function readSavedProjectDocument(projectPath: string) {
       }),
     });
     const existing = await readTimelineFile(projectPath);
-    const timeline = toTimeline(project, existing ?? legacyPreviousTimeline(raw));
+    const timeline = toTimeline(
+      project,
+      existing ?? legacyPreviousTimeline(raw),
+      await measureBgmDurations(project.bgm, MUSICS_DIR),
+    );
     if (didProjectMetaChange(parsed.meta, project.meta)) {
       await writeJsonAtomic(filePath, project);
     }
@@ -470,7 +475,11 @@ export async function writeSavedProject(
   previousTimeline?: SavedTimeline,
 ) {
   await ensureProjectDirs();
-  const timeline = toTimeline(project, previousTimeline);
+  const timeline = toTimeline(
+    project,
+    previousTimeline,
+    await measureBgmDurations(project.bgm, MUSICS_DIR),
+  );
   await writeJsonAtomic(createProjectFilePath(projectPath), project);
   await writeJsonAtomic(createTimelineFilePath(projectPath), timeline);
   return { project, timeline };

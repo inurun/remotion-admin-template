@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SavedPage, SavedProject } from "@/_schemas";
-import { EMPTY_TIMELINE, SEQUENCE_TRACK_ID, savedPageSchema } from "@/_schemas";
+import { BGM_TRACK_ID, EMPTY_TIMELINE, SEQUENCE_TRACK_ID, savedPageSchema } from "@/_schemas";
 import { EYECATCH_TEXT_MIN_DURATION_SEC, MIN_TTS_DURATION_SECONDS } from "@/constants";
 import { toTimeline } from "../to-timeline";
 
@@ -526,5 +526,91 @@ describe("toTimeline", () => {
       },
       { id: "g1", startSec: 0, durationSec: 1 + MIN_TTS_DURATION_SECONDS, clips: [] },
     ]);
+  });
+
+  describe("bgm track", () => {
+    const track = (overrides: Partial<SavedProject["bgm"][number]> = {}) => ({
+      src: "a.mp3",
+      startSec: null,
+      endSec: null,
+      fadeIn: false,
+      fadeOut: false,
+      volume: 1,
+      ...overrides,
+    });
+    const withBgm = (bgm: SavedProject["bgm"]) => ({
+      ...project([mainPage({ padAfterSec: 10 - 1.1 })]),
+      bgm,
+    });
+    const bgmTrack = (timeline: ReturnType<typeof toTimeline>) =>
+      timeline.tracks.find((item) => item.id === BGM_TRACK_ID);
+
+    it("is absent without bgm", () => {
+      expect(bgmTrack(toTimeline(project([mainPage()])))).toBeUndefined();
+    });
+
+    it("nests one clip per play of a looping file, the last one cut at the video end", () => {
+      const timeline = toTimeline(withBgm([track({ startSec: 1 })]), undefined, { "a.mp3": 4 });
+
+      expect(timeline.durationSec).toBeCloseTo(10);
+      expect(bgmTrack(timeline)?.clips).toEqual([
+        {
+          id: "bgm-0",
+          startSec: 1,
+          durationSec: expect.closeTo(9),
+          clips: [
+            { id: "bgm-0-0", startSec: 0, durationSec: 4, clips: [] },
+            { id: "bgm-0-1", startSec: 4, durationSec: 4, clips: [] },
+            { id: "bgm-0-2", startSec: 8, durationSec: expect.closeTo(1), clips: [] },
+          ],
+        },
+      ]);
+    });
+
+    it("adds no empty play when the span is an exact multiple of the file", () => {
+      const timeline = toTimeline(withBgm([track()]), undefined, { "a.mp3": 10 / 3 });
+
+      expect(bgmTrack(timeline)?.clips[0]?.clips.map((clip) => clip.id)).toEqual([
+        "bgm-0-0",
+        "bgm-0-1",
+        "bgm-0-2",
+      ]);
+    });
+
+    it("plays a file with an end once, up to its length", () => {
+      const timeline = toTimeline(
+        withBgm([
+          track({ startSec: 2, endSec: 8 }),
+          track({ src: "b.mp3", startSec: 0, endSec: 3 }),
+          track({ startSec: 5, endSec: 4 }),
+        ]),
+        undefined,
+        { "a.mp3": 4, "b.mp3": 9 },
+      );
+
+      expect(bgmTrack(timeline)?.clips).toEqual([
+        {
+          id: "bgm-0",
+          startSec: 2,
+          durationSec: 6,
+          clips: [{ id: "bgm-0-0", startSec: 0, durationSec: 4, clips: [] }],
+        },
+        {
+          id: "bgm-1",
+          startSec: 0,
+          durationSec: 3,
+          clips: [{ id: "bgm-1-0", startSec: 0, durationSec: 3, clips: [] }],
+        },
+        { id: "bgm-2", startSec: 5, durationSec: 0, clips: [] },
+      ]);
+    });
+
+    it("plays an unmeasured file once over the whole span", () => {
+      const timeline = toTimeline(withBgm([track()]));
+
+      expect(bgmTrack(timeline)?.clips[0]?.clips).toEqual([
+        { id: "bgm-0-0", startSec: 0, durationSec: expect.closeTo(10), clips: [] },
+      ]);
+    });
   });
 });

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const SEQUENCE_TRACK_ID = "sequence";
+/** One clip per `project.bgm` track (`bgm-{index}`), nesting one clip per play of the file. */
+export const BGM_TRACK_ID = "bgm";
 
 export type SavedTimelineClip = {
   id: string;

@@ -7,6 +7,7 @@ export {
   type SavedSchedules,
 } from "./schedule";
 export {
+  BGM_TRACK_ID,
   EMPTY_TIMELINE,
   SEQUENCE_TRACK_ID,
   savedTimelineClipSchema,

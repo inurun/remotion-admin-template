@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import {
   LATEST_THUMBNAIL_PATH,
@@ -12,6 +13,13 @@ import {
 } from "@/server/_shared/storage";
 import { parseRenderProgress, stripAnsi } from "./parse-render-progress";
 import { thumbnailTimeToFrame } from "./render-thumbnail";
+import { HF_BIN, frameToSnapshotSeconds, hfEnv, hfRenderArgs, hfSnapshotArgs } from "./hf-cli";
+import {
+  ensureHfBundle,
+  prepareHfRenderProject,
+  type PrepareHfRenderProjectInput,
+} from "./hf-project";
+import { VIDEO_FPS } from "@/constants";
 import { enqueueProjectMutation } from "@/server/features/project/project-mutation-queue";
 
 type RenderStatus = "idle" | "running" | "success" | "error" | "canceled";
@@ -25,7 +33,14 @@ export type RenderSnapshot = {
 };
 
 const KILL_TIMEOUT_MS = 5_000;
-const REMOTION_BIN = path.join(PROJECT_ROOT, "node_modules", ".bin", "remotion");
+/**
+ * Prepared HF project and in-progress MP4 of the current render (one render at a time). Under
+ * the system temp dir because HF puts its work dir next to the output file (audio mix, video
+ * frames), so TMPDIR can keep that off the internal disk; only the finished MP4 lands in out/.
+ */
+const HF_RENDER_DIR = path.join(os.tmpdir(), "diary-hf-render");
+const HF_RENDER_OUTPUT_DIR = path.join(os.tmpdir(), "diary-hf-render-output");
+const SNAPSHOT_FILE = /^frame-\d+-at-.*\.png$/;
 
 const state: RenderSnapshot = {
   status: "idle",
@@ -227,106 +242,17 @@ export async function startRender(projectPath: string) {
         };
       }
 
-      await fs.mkdir(OUT_DIR, { recursive: true });
-      await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
-      const outputPath = getProjectOutputVideoPath(projectPath);
-      const inputProps = JSON.stringify({ project, timeline, schedules });
       resetRenderState();
       cancelRequested = false;
       state.status = "running";
       emit();
       console.info("[render]", `Starting render for ${projectPath}...`);
-
-      const child = spawn(
-        REMOTION_BIN,
-        ["render", "src/remotion/core/runtime.ts", "Video", outputPath, "--props", inputProps],
-        {
-          cwd: PROJECT_ROOT,
-          detached: true,
-          env: process.env,
-          stdio: ["ignore", "pipe", "pipe"],
-        },
-      );
-      activeChild = child;
-
-      pipeOutput(child.stdout, (line) => handleOutputLine(line, 0.9));
-      pipeOutput(child.stderr, (line) => handleOutputLine(line, 0.9));
-
-      child.on("error", (error) => {
-        if (state.status !== "running") {
-          return;
-        }
-
-        state.status = "error";
-        state.lastError = error.message;
-        console.info("[render]", `Render process error: ${error.message}`);
-        emit();
-      });
-
-      child.on("close", async (code) => {
-        clearKillTimer();
+      // Outside the project queue: building the bundle and rendering must not block saves.
+      void runRender(projectPath, { project, timeline, schedules }).catch((error: unknown) => {
         activeChild = null;
-
-        if (cancelRequested) {
-          finishCanceledRender();
-          return;
+        if (state.status === "running") {
+          finishFailedRender(error instanceof Error ? error.message : String(error));
         }
-
-        if (code === 0) {
-          let thumbnailFrame: number;
-          try {
-            thumbnailFrame = thumbnailTimeToFrame(project.meta.niconico.thumbnailTime);
-          } catch (error) {
-            finishFailedRender(error instanceof Error ? error.message : String(error));
-            return;
-          }
-          setProgress(95);
-          console.info("[render]", `Rendering thumbnail.png at frame ${thumbnailFrame}...`);
-          const thumbnailChild = spawn(
-            REMOTION_BIN,
-            [
-              "still",
-              "src/remotion/core/runtime.ts",
-              "Video",
-              LATEST_THUMBNAIL_PATH,
-              "--frame",
-              String(thumbnailFrame),
-              "--props",
-              inputProps,
-              "--overwrite",
-            ],
-            {
-              cwd: PROJECT_ROOT,
-              detached: true,
-              env: process.env,
-              stdio: ["ignore", "pipe", "pipe"],
-            },
-          );
-          activeChild = thumbnailChild;
-          pipeOutput(thumbnailChild.stdout, handleOutputLine);
-          pipeOutput(thumbnailChild.stderr, handleOutputLine);
-          thumbnailChild.on("error", (error) => {
-            if (state.status === "running") {
-              finishFailedRender(`Thumbnail process error: ${error.message}`);
-            }
-          });
-          thumbnailChild.on("close", async (thumbnailCode) => {
-            clearKillTimer();
-            activeChild = null;
-            if (cancelRequested) {
-              finishCanceledRender();
-            } else if (state.status !== "running") {
-              return;
-            } else if (thumbnailCode === 0) {
-              await finishSuccessfulRender(outputPath);
-            } else {
-              finishFailedRender(`Thumbnail render exited with code ${thumbnailCode ?? "unknown"}`);
-            }
-          });
-          return;
-        }
-
-        finishFailedRender(`Render exited with code ${code ?? "unknown"}`);
       });
 
       return {
@@ -338,14 +264,92 @@ export async function startRender(projectPath: string) {
   });
 }
 
+/** Runs the CLI as a process group (Chrome / ffmpeg children); resolves with the exit code. */
+function runHf(args: string[], progressScale = 1) {
+  return new Promise<number | null>((resolve, reject) => {
+    const child = spawn(HF_BIN, args, {
+      cwd: PROJECT_ROOT,
+      detached: true,
+      env: hfEnv(),
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    activeChild = child;
+    pipeOutput(child.stdout, (line) => handleOutputLine(line, progressScale));
+    pipeOutput(child.stderr, (line) => handleOutputLine(line, progressScale));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      clearKillTimer();
+      activeChild = null;
+      resolve(code);
+    });
+  });
+}
+
+async function runRender(
+  projectPath: string,
+  input: Omit<PrepareHfRenderProjectInput, "dir" | "bundleDir">,
+) {
+  const thumbnailFrame = thumbnailTimeToFrame(input.project.meta.niconico.thumbnailTime);
+  await fs.mkdir(OUT_DIR, { recursive: true });
+  await fs.rm(LATEST_THUMBNAIL_PATH, { force: true });
+  const outputPath = getProjectOutputVideoPath(projectPath);
+  const renderOutputPath = path.join(HF_RENDER_OUTPUT_DIR, path.basename(outputPath));
+  await fs.rm(HF_RENDER_OUTPUT_DIR, { recursive: true, force: true });
+  await fs.mkdir(HF_RENDER_OUTPUT_DIR, { recursive: true });
+  const dir = await prepareHfRenderProject({
+    ...input,
+    dir: HF_RENDER_DIR,
+    bundleDir: await ensureHfBundle(),
+  });
+  if (cancelRequested) {
+    finishCanceledRender();
+    return;
+  }
+
+  const renderCode = await runHf(hfRenderArgs(dir, renderOutputPath), 0.9);
+  if (cancelRequested) {
+    finishCanceledRender();
+    return;
+  }
+  if (renderCode !== 0) {
+    finishFailedRender(`Render exited with code ${renderCode ?? "unknown"}`);
+    return;
+  }
+
+  setProgress(95);
+  console.info("[render]", `Rendering thumbnail.png at frame ${thumbnailFrame}...`);
+  const snapshotDir = path.join(dir, "snapshots");
+  const seconds = frameToSnapshotSeconds(thumbnailFrame, VIDEO_FPS);
+  const thumbnailCode = await runHf(hfSnapshotArgs(dir, seconds, snapshotDir));
+  if (cancelRequested) {
+    finishCanceledRender();
+    return;
+  }
+  if (thumbnailCode !== 0) {
+    finishFailedRender(`Thumbnail render exited with code ${thumbnailCode ?? "unknown"}`);
+    return;
+  }
+  const snapshot = (await fs.readdir(snapshotDir)).find((file) => SNAPSHOT_FILE.test(file));
+  if (!snapshot) {
+    finishFailedRender("Thumbnail snapshot missing");
+    return;
+  }
+  await fs.copyFile(path.join(snapshotDir, snapshot), LATEST_THUMBNAIL_PATH);
+  // Temp may be another volume: copy, then drop the temp file.
+  await fs.copyFile(renderOutputPath, outputPath);
+  await fs.rm(HF_RENDER_OUTPUT_DIR, { recursive: true, force: true });
+  await finishSuccessfulRender(outputPath);
+}
+
 export function cancelRender() {
-  if (state.status !== "running" || !activeChild?.pid) {
+  if (state.status !== "running") {
     return {
       canceled: false as const,
       reason: "not_running",
     };
   }
 
+  // Between processes (bundle build), `runRender` stops at its next step.
   cancelRequested = true;
   stopChild("SIGTERM");
   clearKillTimer();

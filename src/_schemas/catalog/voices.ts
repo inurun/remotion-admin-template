@@ -97,7 +97,7 @@ export const DEFAULT_VOICE_PRESETS = {
     },
   },
   "coeiroink::272c0178-a248-11f1-82fa-0242ac1c000c::1295160681::0.0.1": {
-    provider: "coeiroink",
+    provider: "coeiroink" as const,
     speakerUuid: "272c0178-a248-11f1-82fa-0242ac1c000c",
     styleId: 1295160681,
     modelVersion: "0.0.1",

@@ -1,7 +1,9 @@
-import fs from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+import { pipeline, Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import type { Connect, Plugin } from "vite";
+import { serveFile } from "../../src/server/_shared/serve-file";
 
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
 const RUNTIME_PREFIXES = ["/uploads/", "/tts/"];
@@ -43,23 +45,43 @@ export function resolveRuntimePublicFile(pathname: string) {
   return path.join(PUBLIC_DIR, relativePath);
 }
 
+function toRequestHeaders(req: IncomingMessage) {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (value !== undefined) {
+      headers.set(name, Array.isArray(value) ? value.join(", ") : value);
+    }
+  }
+  return headers;
+}
+
 async function sendRuntimePublicFile(
   filePath: string,
+  req: IncomingMessage,
   res: ServerResponse<IncomingMessage>,
   next: Connect.NextFunction,
 ) {
+  let response: Response;
   try {
-    const file = await fs.readFile(filePath);
     const contentType = CONTENT_TYPES.get(path.extname(filePath).toLowerCase());
-
-    res.statusCode = 200;
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Content-Type", contentType ?? "application/octet-stream");
-    res.setHeader("Content-Length", file.byteLength);
-    res.end(file);
+    response = await serveFile(
+      filePath,
+      { headers: toRequestHeaders(req), method: req.method ?? "GET" },
+      contentType ?? "application/octet-stream",
+    );
   } catch {
     next();
+    return;
   }
+
+  res.writeHead(response.status, Object.fromEntries(response.headers));
+  if (!response.body) {
+    res.end();
+    return;
+  }
+
+  // Client aborts during seeks are expected; ignore stream errors.
+  pipeline(Readable.fromWeb(response.body as NodeReadableStream), res, () => {});
 }
 
 export const serveRuntimePublicAssetsPlugin = (): Plugin => ({
@@ -78,7 +100,7 @@ export const serveRuntimePublicAssetsPlugin = (): Plugin => ({
         return;
       }
 
-      void sendRuntimePublicFile(filePath, res, next);
+      void sendRuntimePublicFile(filePath, req, res, next);
     });
   },
 });

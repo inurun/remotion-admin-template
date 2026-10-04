@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 import { clampFrame } from "@/app/components/app-editor/preview-card/preview-card.lib";
 import { stepFrame, xToFrame } from "@/app/components/app-editor/timeline-view/timeline-view.lib";
 
@@ -9,7 +9,7 @@ type UseTimelinePlayheadParams = {
 };
 
 export function useTimelinePlayhead({ contentWidth, durationInFrames }: UseTimelinePlayheadParams) {
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const [dragFrame, setDragFrame] = useState<number | null>(null);
   const wasPlayingBeforeSeekRef = useRef(false);
   const isSeekingRef = useRef(false);

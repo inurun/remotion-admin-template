@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SEQUENCE_TRACK_ID, type SavedSequenceItem, type SavedTimeline } from "@/_schemas";
+import {
+  BGM_TRACK_ID,
+  SEQUENCE_TRACK_ID,
+  type SavedSequenceItem,
+  type SavedTimeline,
+} from "@/_schemas";
 import {
   TIMELINE_MIN_PIXELS_PER_SECOND,
   buildTimelineLanes,
@@ -50,7 +55,7 @@ describe("timeline view", () => {
     ).toEqual([["a", "c"], ["b"]]);
   });
 
-  it("builds sequence lanes from timeline tracks", () => {
+  it("builds sequence lanes from timeline tracks, leaving out BGM plays", () => {
     const timeline: SavedTimeline = {
       durationSec: 5,
       tracks: [
@@ -62,6 +67,17 @@ describe("timeline view", () => {
               startSec: 0,
               durationSec: 5,
               clips: [{ id: "tts-1", startSec: 1, durationSec: 2, clips: [] }],
+            },
+          ],
+        },
+        {
+          id: BGM_TRACK_ID,
+          clips: [
+            {
+              id: "bgm-0",
+              startSec: 0,
+              durationSec: 5,
+              clips: [{ id: "bgm-0-0", startSec: 0, durationSec: 5, clips: [] }],
             },
           ],
         },

@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { VIDEO_FPS } from "@/constants";
 import { useEditor, useEditorSession } from "@/app/features/editor";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 import { formatFrameTime } from "@/app/components/app-editor/preview-card/preview-card.lib";
 import {
   fromNiconicoFormValues,
@@ -19,7 +19,7 @@ export function useNiconicoDialog() {
   const updateProjectSettings = useEditorSession((state) => state.updateProjectSettings);
   const niconico = projectSettings.meta.niconico;
   const { isPending, save } = useEditor();
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const [open, setOpen] = useState(false);
   const form = useForm<NiconicoFormValues>({
     resolver: zodResolver(niconicoFormSchema),

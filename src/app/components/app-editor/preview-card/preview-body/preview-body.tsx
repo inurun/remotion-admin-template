@@ -7,9 +7,9 @@ import {
 } from "@/app/components/app-editor/preview-card/use-preview-card";
 
 function PreviewPlayerArea({
-  component,
   durationInFrames,
   project,
+  projectPath,
   timeline,
   schedules,
 }: PreviewPlayerAreaProps) {
@@ -18,10 +18,10 @@ function PreviewPlayerArea({
   return (
     <>
       <PreviewPlayer
-        component={component}
         durationInFrames={durationInFrames}
         playbackRate={playbackRate}
         project={project}
+        projectPath={projectPath}
         timeline={timeline}
         schedules={schedules}
       />

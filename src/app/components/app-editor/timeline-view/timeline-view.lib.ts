@@ -1,4 +1,10 @@
-import type { PageType, SavedSequenceItem, SavedTimeline, SavedTimelineClip } from "@/_schemas";
+import {
+  BGM_TRACK_ID,
+  type PageType,
+  type SavedSequenceItem,
+  type SavedTimeline,
+  type SavedTimelineClip,
+} from "@/_schemas";
 import { PAGE_TYPE_THUMBNAIL_GRADIENT } from "@/app/components/app-editor/editor-card/page-list/page-list.lib";
 import { clampFrame } from "@/app/components/app-editor/preview-card/preview-card.lib";
 
@@ -118,7 +124,11 @@ export function buildTimelineLanes(
 ): TimelineLane[] {
   const labels = buildClipLabelIndex(itemsById);
 
+  // BGM plays are audio-manifest input, not something the editor timeline shows.
   return timeline.tracks.flatMap((track) => {
+    if (track.id === BGM_TRACK_ID) {
+      return [];
+    }
     const rootLane: TimelineLane = {
       id: `${track.id}:root`,
       label: track.id,

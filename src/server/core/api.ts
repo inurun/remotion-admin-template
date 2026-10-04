@@ -1,7 +1,7 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import { Hono } from "hono";
 import { renderToString } from "react-dom/server";
+import { serveFile } from "@/server/_shared/serve-file";
 import { layoutHtml } from "@/app/core/layout";
 import { getProjectRootHref, parseProjectRoute } from "@/app/features/project/lib/project-route";
 import {
@@ -13,6 +13,7 @@ import {
   readSavedProject,
 } from "@/server/_shared/storage";
 import { bgmApp } from "@/server/features/bgm";
+import { hfPreviewApp } from "@/server/features/hf-preview";
 import { nicoadApp } from "@/server/features/nicoad";
 import { niconicoCommentsApp } from "@/server/features/niconico-comments";
 import { ogpApp } from "@/server/features/ogp";
@@ -43,16 +44,10 @@ const CONTENT_TYPES = new Map([
   [".webm", "video/webm"],
 ]);
 
-async function servePublicAsset(publicPath: string) {
+async function servePublicAsset(publicPath: string, request: Request) {
   const filePath = getPublicFilePath(publicPath);
-  const file = await fs.readFile(filePath);
   const ext = path.extname(filePath).toLowerCase();
-  return new Response(file, {
-    headers: {
-      "Cache-Control": "no-store",
-      "Content-Type": CONTENT_TYPES.get(ext) ?? "application/octet-stream",
-    },
-  });
+  return serveFile(filePath, request, CONTENT_TYPES.get(ext) ?? "application/octet-stream");
 }
 
 async function resolveRootProjectPath() {
@@ -100,10 +95,11 @@ export type ApiApp = ReturnType<typeof createApi>;
 export const createApp = () => {
   const app = new Hono()
     .route("/api", createApi())
+    .route("/", hfPreviewApp)
     .get("/uploads/*", async (c) => {
       try {
         await ensureProjectDirs();
-        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""));
+        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""), c.req.raw);
       } catch {
         return new Response("Not found", { status: 404 });
       }
@@ -111,7 +107,7 @@ export const createApp = () => {
     .get("/tts/*", async (c) => {
       try {
         await ensureProjectDirs();
-        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""));
+        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""), c.req.raw);
       } catch {
         return new Response("Not found", { status: 404 });
       }
@@ -119,14 +115,14 @@ export const createApp = () => {
     .get("/bgm/*", async (c) => {
       try {
         await ensureProjectDirs();
-        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""));
+        return await servePublicAsset(c.req.path.replace(/^\/+/u, ""), c.req.raw);
       } catch {
         return new Response("Not found", { status: 404 });
       }
     })
-    .get("/favicon.svg", async () => {
+    .get("/favicon.svg", async (c) => {
       try {
-        return await servePublicAsset("favicon.svg");
+        return await servePublicAsset("favicon.svg", c.req.raw);
       } catch {
         return new Response("Not found", { status: 404 });
       }

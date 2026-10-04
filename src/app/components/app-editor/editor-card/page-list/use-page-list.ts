@@ -2,7 +2,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 import type { DragEndEvent } from "@dnd-kit/react";
 import { isSortable } from "@dnd-kit/react/sortable";
 import { VIDEO_FPS } from "@/constants";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 import {
   getPageMoveState,
   getPlayingPageId,
@@ -26,7 +26,7 @@ export function usePageList() {
   const selectedPageIndex = selectedPageId ? sequenceOrder.indexOf(selectedPageId) : -1;
   const timeline = useSavedProject((state) => state.timeline);
   const pageTimings = useMemo(() => getProjectPageTimings(timeline), [timeline]);
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const playingPageId = useSyncExternalStore(
     useCallback(
       (onStoreChange) => {

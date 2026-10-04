@@ -1,6 +1,6 @@
 # Remotion Admin Template
 
-- 管理サイトを用いた動画データの作成と、動画データからRemotionを利用した動画を作成するテンプレ用PJ
+- 管理サイトを用いた動画データの作成と、動画データからHyperFramesを利用した動画を作成するテンプレ用PJ
 - このプロジェクトはまだ始まったばかり、既存データ形式などの考慮は一切不要
 - 個人が利用する想定、不特定多数の利用はない
 
@@ -13,11 +13,11 @@
 
 ### データ配置
 
-- 尺は `{stem}.timeline.json`。計算は server の `toTimeline` のみ
+- 尺は `{stem}.timeline.json`。計算は server の `toTimeline` のみ（BGM のループ再生区間も含む）
 - `project.json` は編集する事実だけ持つ。`page.durationSec` / sequence start は持たない
 - `_schemas` は永続化契約（Zod・infer 型・定数データ）だけ。ヘルパー・DTO・parse 時 transform は置かない
 - `_schemas/catalog` だけ例外: この動画プロダクトのインスタンス定数（アバター・天気地点・voice presets）と自明な lookup。parse transform / DTO は置かない
-- `_shared` は app / server / remotion の2層以上が使う、ドメイン知識のないユーティリティだけ
+- `_shared` は app / server / video の2層以上が使う、ドメイン知識のないユーティリティだけ
 
 ### src/app
 
@@ -41,9 +41,27 @@
 - 管理サイトバックエンド
 - 必ず周辺実装を確認する
 
-### src/remotion
+### @inurun/vite-plugin-hyperframes-jsx
 
-- Remotion本体
+- HyperFrames 上の JSX ランタイムと Vite プラグイン。別リポジトリ（`inurun/vite-plugin-hyperframes-jsx`）の外部パッケージ `@inurun/vite-plugin-hyperframes-jsx`（GitHub Packages、現状 private）で、このリポジトリには置かない
+- API は `@inurun/vite-plugin-hyperframes-jsx/runtime`、プラグインは `vite.hf.config.ts` の `hyperframes()`。server から使うのは副作用のない `@inurun/vite-plugin-hyperframes-jsx/static-file` だけ
+- Remotion 由来のコード・Easing / interpolate / spring などのアニメーション関数は持たない。easing は `d3-ease` など外部ライブラリを使う
+- コンポーネントは一度だけ実行される。React の hooks・再レンダは無い
+- フレーム依存の値は `Frame` / `registerUpdater` などの updater 関数の中だけで扱う
+- 音声は静的マニフェストで出す。実行時に `<audio>` を作らない
+- 日付に `Date` サブクラス（`TZDate` 等）を使わない。HF render の Date shim で壊れる
+
+### src/video-host
+
+- preview / render 共通の汎用ホスト（entry、preview contract・定数、静的音声マニフェスト、ダッキング計算）
+- `src/video` から import するのは `index.ts` の定義と、server 用の `config.ts`（データのみ）だけ
+- server が import するモジュールに DOM / GSAP を持ち込まない
+
+### src/video
+
+- 動画 composition（テンプレではサンプル、派生では本番）
+- `index.ts` が定義（`Composition`・TTS を鳴らすページ種別・BGM fade/duck・任意の `onMode`）を export する
+- `.tsx` は先頭に `/** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */`。React ではない
 - 基本的に触らない
 
 ### テスト方針

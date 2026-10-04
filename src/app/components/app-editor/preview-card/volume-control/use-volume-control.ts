@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 import { PREVIEW_INITIAL_VOLUME } from "@/app/components/app-editor/preview-card/preview-player/preview-player";
 
 function clampVolume(volume: number) {
@@ -7,7 +7,7 @@ function clampVolume(volume: number) {
 }
 
 export function useVolumeControl() {
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const [volume, setVolumeState] = useState(PREVIEW_INITIAL_VOLUME);
 
   const setVolume = useCallback(

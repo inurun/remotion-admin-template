@@ -7,8 +7,5 @@
     }
   },
   "runtime_coverage_findings": [],
-  "target_keys": [
-    "src/remotion/utils/timing/timing-helpers.ts:dead code",
-    "src/remotion/utils/timing/frame-utils.ts:dead code"
-  ]
+  "target_keys": ["src/video-host/frame-utils.ts:dead code"]
 }

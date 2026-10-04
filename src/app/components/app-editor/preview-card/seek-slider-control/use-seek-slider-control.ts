@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { VIDEO_FPS } from "@/constants";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
+import { useVideoPlayerControl } from "@/app/features/video-player/context/video-player-control-context";
 import {
   clampFrame,
   formatFrameTime,
@@ -16,7 +16,7 @@ function getSliderNumber(value: number | readonly number[]) {
 }
 
 export function useSeekSliderControl({ durationInFrames }: UseSeekSliderControlParams) {
-  const playerControl = useRemotionPlayerControl();
+  const playerControl = useVideoPlayerControl();
   const [dragFrame, setDragFrame] = useState<number | null>(null);
   const wasPlayingBeforeSeekRef = useRef(false);
   const isSeekingRef = useRef(false);

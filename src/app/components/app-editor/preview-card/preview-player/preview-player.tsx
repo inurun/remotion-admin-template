@@ -1,17 +1,13 @@
-import { Player } from "@remotion/player";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import type { SavedProject, SavedSchedules, SavedTimeline } from "@/_schemas";
-import { VIDEO_FPS } from "@/constants";
-import { useRemotionPlayerControl } from "@/app/features/remotion/context/remotion-player-control-context";
 import type { PreviewPlaybackRate } from "@/app/components/app-editor/preview-card/preview-card.lib";
-import { buildRemotionInputProps } from "@/app/features/remotion/lib/composition-input";
-import type { RemotionCompositionComponent } from "@/app/features/remotion/hook/remotion-composition-loader";
+import { usePreviewPlayer } from "@/app/components/app-editor/preview-card/preview-player/use-preview-player";
 
 type PreviewPlayerProps = {
-  component: RemotionCompositionComponent;
   durationInFrames: number;
   playbackRate: PreviewPlaybackRate;
   project: SavedProject;
+  projectPath: string;
   timeline: SavedTimeline;
   schedules: SavedSchedules;
 };
@@ -19,37 +15,19 @@ type PreviewPlayerProps = {
 export const PREVIEW_INITIAL_VOLUME = 1;
 
 export const PreviewPlayer = memo(function PreviewPlayer({
-  component,
-  durationInFrames,
   playbackRate,
-  project,
-  timeline,
-  schedules,
+  ...props
 }: PreviewPlayerProps) {
-  const { setPlayerRef } = useRemotionPlayerControl();
-  const inputProps = useMemo(
-    () => buildRemotionInputProps({ project, timeline, schedules }),
-    [project, timeline, schedules],
-  );
-  const aspectRatio = `${project.meta.width} / ${project.meta.height}`;
+  const { aspectRatio, playerRef, src } = usePreviewPlayer(props);
 
   return (
-    <div className="remotion-surface overflow-hidden bg-muted/40" style={{ aspectRatio }}>
-      <Player
-        ref={setPlayerRef}
-        acknowledgeRemotionLicense
-        component={component}
-        inputProps={inputProps}
-        durationInFrames={durationInFrames}
-        fps={VIDEO_FPS}
-        compositionWidth={project.meta.width}
-        compositionHeight={project.meta.height}
-        style={{ width: "100%" }}
-        controls={false}
-        loop={false}
-        autoPlay={false}
-        initialVolume={PREVIEW_INITIAL_VOLUME}
-        playbackRate={playbackRate}
+    <div className="overflow-hidden bg-muted/40" style={{ aspectRatio }}>
+      <hyperframes-player
+        ref={playerRef}
+        src={src}
+        playback-rate={String(playbackRate)}
+        disable-click-to-play=""
+        style={{ display: "block", width: "100%", height: "100%" }}
       />
     </div>
   );

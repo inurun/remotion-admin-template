@@ -10,13 +10,7 @@
   "duplicates": {
     "ignore": ["**/*.tsx", "src/server/generated/**", "scripts/**"]
   },
-  "dynamicallyLoaded": ["src/app/core/client.tsx"],
+  "dynamicallyLoaded": ["src/app/core/client.tsx", "src/video-host/entry.tsx"],
   "ignorePatterns": ["**/*.test.*", "**/__test__/**", "**/__tests__/**", "src/server/generated/**"],
-  "ignoreDependencies": [
-    "@hono/node-server",
-    "@remotion/cli",
-    "@remotion/studio",
-    "@remotion/tailwind-v4",
-    "agent-browser"
-  ]
+  "ignoreDependencies": ["@hono/node-server", "agent-browser", "hyperframes"]
 }

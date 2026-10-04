@@ -7,7 +7,7 @@ import { usePanelOpen } from "@/app/components/app-editor/use-panel-open";
 import { usePreviewCard } from "@/app/components/app-editor/preview-card/use-preview-card";
 
 export function PreviewCard() {
-  const { component, durationInFrames, previewProject, timeline, schedules } = usePreviewCard();
+  const { durationInFrames, previewProject, projectPath, timeline, schedules } = usePreviewCard();
   const { open, onOpenChange } = usePanelOpen("preview");
 
   return (
@@ -21,11 +21,11 @@ export function PreviewCard() {
         </CardHeader>
         <CollapsibleContent>
           <CardContent>
-            {component ? (
+            {projectPath ? (
               <PreviewBody
-                component={component}
                 durationInFrames={durationInFrames}
                 project={previewProject}
+                projectPath={projectPath}
                 timeline={timeline}
                 schedules={schedules}
               />
