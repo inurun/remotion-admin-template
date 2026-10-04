@@ -4,7 +4,7 @@
     "description": "Admin + Remotion stub template",
     "width": 1920,
     "height": 1080,
-    "updatedAt": "2026-09-18T05:00:16.522Z",
+    "updatedAt": "2026-09-21T05:44:50.444Z",
     "weather": {},
     "niconico": {
       "title": "HTML説明文テスト",
@@ -231,6 +231,293 @@
             "status": "ready",
             "src": "/tts/project/ee357009a78d781742057ce26913854b.wav",
             "durationSec": 1.1636281179138324
+          }
+        }
+      ]
+    },
+    {
+      "id": "dc0d43e0-dbe9-4601-b78e-e83b8f20b309",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "13abc733-bfbb-47b0-a7d3-18df35c84787",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "b9abfcfe-41bc-45dc-8d56-6c226212050d",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "0fc68457-c327-4da3-8e1e-76521bfff0dc",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "35d9f2e0-6da2-4ff2-a7cf-07e760eea888",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "b12592e8-93e7-44b4-85e1-e6527fcd2c58",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "0ae62c55-c3b2-41f3-9d4d-f80f98c57d7a",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "52049047-8e9b-4d8d-bcd6-12e2a023fed5",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "250eac19-3a1e-44df-ab9a-70f7e859d7b7",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "1bbf27de-e56f-4634-9223-bbb39dff9cdd",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "ac0d24d1-944f-444d-9196-966e2ce2bd95",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "d5578f8c-2e07-4ec1-9b4e-5e97643adc7e",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
+          }
+        }
+      ]
+    },
+    {
+      "id": "09d5f67d-c8e0-4264-99d7-ebbf7baddda7",
+      "title": "",
+      "padBeforeSec": 0,
+      "padAfterSec": 0,
+      "richText": null,
+      "type": "main",
+      "meta": {
+        "tags": []
+      },
+      "tts": [
+        {
+          "id": "608dd2d7-64ca-4bf3-bd07-8e7273d535bb",
+          "text": "テスト",
+          "readText": "テスト",
+          "padBeforeSec": 0,
+          "padAfterSec": 0,
+          "volume": 1,
+          "speech": {
+            "g2p": {
+              "text": "テスト",
+              "kana": "テ'スト",
+              "warnings": [],
+              "dictionary_words": []
+            }
+          },
+          "avatar": {
+            "base": "normal",
+            "eyes": "opened",
+            "mouth": "opened"
+          },
+          "provider": "voicevox",
+          "voiceName": "3",
+          "audio": {
+            "status": "ready",
+            "src": "/tts/project/3a247f1817a572dfa81e67cd7b98f1ef.wav",
+            "durationSec": 0.548
           }
         }
       ]

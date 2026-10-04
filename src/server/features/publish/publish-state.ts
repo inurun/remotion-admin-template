@@ -18,7 +18,7 @@ import {
   runPublishPrep,
   subscribePublishPrepJob,
   type PublishPrepJob,
-} from "./publish-codex";
+} from "./publish-claude";
 import { publishSnapshotSchema } from "./contract";
 
 type PublishStatus = "idle" | "running" | "success" | "error";

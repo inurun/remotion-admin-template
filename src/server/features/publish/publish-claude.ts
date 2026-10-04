@@ -5,7 +5,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { Codex, type CodexOptions, type ThreadEvent, type ThreadOptions } from "@openai/codex-sdk";
+import { type Options, query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { z } from "zod";
 import { nowIso, toIso } from "@/_shared/lib/date/date";
 import { PROJECT_ROOT } from "@/server/_shared/storage";
@@ -53,7 +53,7 @@ export type PublishPrepJob = {
 type PublishPrepJobRuntime = {
   controller: AbortController;
   lastLogByKey: Map<string, string>;
-  threadId?: string;
+  sessionId?: string;
 };
 
 type VideoMeta = {
@@ -68,13 +68,6 @@ type ParentWork = {
   url: string;
 };
 
-type PublishCodexRuntime = {
-  hostHomeDir: string;
-  homeDir: string;
-  codexHomeDir: string;
-  workspaceDir: string;
-};
-
 const STORE_KEY = "__niconicoPublishPrepJobs";
 const RUNTIME_STORE_KEY = "__niconicoPublishPrepJobRuntimes";
 const JOB_LISTENERS_KEY = "__niconicoPublishPrepJobListeners";
@@ -86,9 +79,11 @@ const DEFAULT_HARD_TIMEOUT_MS = 1_200_000;
 const DEFAULT_INACTIVITY_TIMEOUT_MS = 180_000;
 const DEFAULT_MAX_PUBLISH_LOG_FILES = 50;
 const THUMBNAIL_TIME_PATTERN = /^\d{2}:[0-5]\d\.\d{3}$/;
-const SKILLS_CONTEXT_WARNING =
-  "Skill descriptions were shortened to fit the skills context budget.";
-// agent-browser 0.35.1 exposes upload only through `all`; Codex sees only this allowlist.
+const PUBLISH_MODEL = "claude-sonnet-5-5";
+const PUBLISH_EFFORT = "low";
+const AGENT_BROWSER_MCP_SERVER = "agent_browser";
+const AGENT_BROWSER_TOOL_PREFIX = `mcp__${AGENT_BROWSER_MCP_SERVER}__`;
+// agent-browser 0.35.1 exposes upload only through `all`; Claude may call only this allowlist.
 const AGENT_BROWSER_ENABLED_TOOLS = [
   "agent_browser_open",
   "agent_browser_snapshot",
@@ -135,7 +130,7 @@ const publishResultSchema = z.object({
   registeredParentWorkIds: z.array(z.string()),
   registeredTags: z.array(z.string()),
 });
-type CodexPublishResult = z.infer<typeof publishResultSchema>;
+type ClaudePublishResult = z.infer<typeof publishResultSchema>;
 
 export const PUBLISH_RESULT_SCHEMA = z.toJSONSchema(publishResultSchema);
 
@@ -269,32 +264,9 @@ function getAgentBrowserStateDir(): string {
   return path.join(os.homedir(), ".agent-browser");
 }
 
-export function createPublishCodexRuntime(realHome = os.homedir()): PublishCodexRuntime {
-  const baseDir = path.join(realHome, ".cache/niconico-publish-codex");
-  return {
-    hostHomeDir: realHome,
-    homeDir: path.join(baseDir, "home"),
-    codexHomeDir: path.join(baseDir, "codex-home"),
-    workspaceDir: path.join(baseDir, "workspace"),
-  };
-}
-
-async function preparePublishCodexRuntime(runtime: PublishCodexRuntime) {
-  const runtimeDirs = [runtime.homeDir, runtime.codexHomeDir, runtime.workspaceDir];
-  await Promise.all(runtimeDirs.map((dir) => fs.mkdir(dir, { recursive: true, mode: 0o700 })));
-  await Promise.all(runtimeDirs.map((dir) => fs.chmod(dir, 0o700)));
-  const authSource = path.join(runtime.hostHomeDir, ".codex/auth.json");
-  const authTarget = path.join(runtime.codexHomeDir, "auth.json");
-  await fs.copyFile(authSource, authTarget);
-  await fs.chmod(authTarget, 0o600);
-}
-
-function processEnv(): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(process.env).filter(
-      (entry): entry is [string, string] => entry[1] !== undefined,
-    ),
-  );
+// Empty cwd so the agent never picks up project files such as CLAUDE.md.
+export function getPublishWorkspaceDir(realHome = os.homedir()): string {
+  return path.join(realHome, ".cache/niconico-publish-claude/workspace");
 }
 
 function isCdpPortListening(port: number): Promise<boolean> {
@@ -395,16 +367,10 @@ function assertVideoMeta(value: unknown): VideoMeta {
   };
 }
 
-export function parsePublishResult(text: string): CodexPublishResult {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch (error) {
-    throw new Error(`Codex returned invalid JSON: ${stringifyForLog(error)}`);
-  }
+export function parsePublishResult(value: unknown): ClaudePublishResult {
   const result = publishResultSchema.safeParse(value);
   if (!result.success) {
-    throw new Error(`Codex returned an invalid publish result: ${result.error.message}`);
+    throw new Error(`Claude returned an invalid publish result: ${result.error.message}`);
   }
   return result.data;
 }
@@ -419,178 +385,174 @@ export function createPublishAbortGuard(
   inactivityTimeoutMs: number,
 ) {
   const controller = new AbortController();
+  const abortFromParent = () => controller.abort(parentSignal.reason);
+  if (parentSignal.aborted) abortFromParent();
+  else parentSignal.addEventListener("abort", abortFromParent, { once: true });
   const hardTimeout = setTimeout(
-    () => controller.abort(new Error(`Codex hard timeout after ${hardTimeoutMs}ms`)),
+    () => controller.abort(new Error(`Claude hard timeout after ${hardTimeoutMs}ms`)),
     hardTimeoutMs,
   );
   let inactivityTimeout: ReturnType<typeof setTimeout>;
   const activity = () => {
     clearTimeout(inactivityTimeout);
     inactivityTimeout = setTimeout(
-      () => controller.abort(new Error(`Codex had no activity for ${inactivityTimeoutMs}ms`)),
+      () => controller.abort(new Error(`Claude had no activity for ${inactivityTimeoutMs}ms`)),
       inactivityTimeoutMs,
     );
   };
   activity();
 
   return {
-    signal: AbortSignal.any([parentSignal, controller.signal]),
+    controller,
+    signal: controller.signal,
     activity,
     stop() {
       clearTimeout(hardTimeout);
       clearTimeout(inactivityTimeout);
+      parentSignal.removeEventListener("abort", abortFromParent);
     },
   };
 }
 
-export function createPublishCodexOptions(
+export function createPublishQueryOptions(
   rootDir = PROJECT_ROOT,
-  runtime = createPublishCodexRuntime(),
-): CodexOptions {
+  workspaceDir = getPublishWorkspaceDir(),
+): Options {
   return {
-    env: {
-      ...processEnv(),
-      HOME: runtime.homeDir,
-      CODEX_HOME: runtime.codexHomeDir,
-      XDG_CONFIG_HOME: path.join(runtime.homeDir, ".config"),
-      XDG_CACHE_HOME: path.join(runtime.homeDir, ".cache"),
-    },
-    config: {
-      agents: {
-        enabled: false,
-      },
-      apps: {
-        _default: {
-          enabled: false,
-        },
-      },
-      features: {
-        shell_tool: false,
-      },
-      mcp_servers: {
-        agent_browser: {
-          command: "pnpm",
-          args: [
-            "--dir",
-            rootDir,
-            "exec",
-            "agent-browser",
-            "--session",
-            AGENT_BROWSER_SESSION,
-            "--cdp",
-            String(NICONICO_CHROME_CDP_PORT),
-            "mcp",
-            "--tools",
-            "all",
-          ],
-          default_tools_approval_mode: "approve",
-          enabled_tools: AGENT_BROWSER_ENABLED_TOOLS,
-          env: {
-            HOME: runtime.hostHomeDir,
-            XDG_CONFIG_HOME:
-              process.env.XDG_CONFIG_HOME ?? path.join(runtime.hostHomeDir, ".config"),
-            XDG_CACHE_HOME: process.env.XDG_CACHE_HOME ?? path.join(runtime.hostHomeDir, ".cache"),
-          },
-          startup_timeout_sec: 30,
-          tool_timeout_sec: 180,
-        },
+    model: PUBLISH_MODEL,
+    effort: PUBLISH_EFFORT,
+    cwd: workspaceDir,
+    tools: [],
+    allowedTools: AGENT_BROWSER_ENABLED_TOOLS.map((tool) => `${AGENT_BROWSER_TOOL_PREFIX}${tool}`),
+    permissionMode: "dontAsk",
+    settingSources: [],
+    strictMcpConfig: true,
+    outputFormat: { type: "json_schema", schema: PUBLISH_RESULT_SCHEMA },
+    mcpServers: {
+      [AGENT_BROWSER_MCP_SERVER]: {
+        type: "stdio",
+        command: "pnpm",
+        args: [
+          "--dir",
+          rootDir,
+          "exec",
+          "agent-browser",
+          "--session",
+          AGENT_BROWSER_SESSION,
+          "--cdp",
+          String(NICONICO_CHROME_CDP_PORT),
+          "mcp",
+          "--tools",
+          "all",
+        ],
+        timeout: 180_000,
+        alwaysLoad: true,
       },
     },
   };
 }
 
-export function createPublishThreadOptions(
-  workspaceDir = createPublishCodexRuntime().workspaceDir,
-): ThreadOptions {
-  return {
-    model: "gpt-5.6-luna",
-    modelReasoningEffort: "low",
-    sandboxMode: "read-only",
-    approvalPolicy: "never",
-    workingDirectory: workspaceDir,
-    skipGitRepoCheck: true,
-    networkAccessEnabled: false,
-    webSearchMode: "disabled",
-  };
-}
+export type ClaudeTurnResult = {
+  output: unknown;
+  mcpAttempts: number;
+};
 
-function logCodexItem(job: PublishPrepJob, event: ThreadEvent): string | undefined {
-  if (
-    event.type !== "item.started" &&
-    event.type !== "item.updated" &&
-    event.type !== "item.completed"
-  ) {
-    return undefined;
-  }
-
-  const item = event.item;
-  if (item.type === "command_execution" || item.type === "file_change") {
-    throw new Error(`Codex attempted forbidden ${item.type}`);
-  }
-  if (item.type === "error") {
-    if (item.message.includes(SKILLS_CONTEXT_WARNING)) {
-      pushLog(job, `Codex advisory: ${item.message}`, { level: "WARN" });
-      return undefined;
-    }
-    throw new Error(`Codex item error: ${item.message}`);
-  }
-  if (item.type === "agent_message") {
-    return event.type === "item.completed" ? item.text : undefined;
-  }
-  if (item.type !== "mcp_tool_call") return undefined;
-  if (item.server !== "agent_browser") {
-    throw new Error(`Codex attempted forbidden MCP server: ${item.server}`);
-  }
-
-  const errorMessage =
-    item.status === "failed"
-      ? (item.error?.message ?? ("result" in item ? stringifyForLog(item.result) : "unknown error"))
-      : undefined;
-  pushLog(
-    job,
-    `Codex MCP ${item.tool}: ${item.status}${errorMessage ? ` (${errorMessage})` : ""}`,
-    {
-      dedupeKey: `mcp:${item.id}:${item.status}`,
-      level: item.status === "failed" ? "WARN" : "INFO",
-    },
-  );
-  return undefined;
-}
-
-export async function consumeCodexEvents(
+function logAssistantToolUses(
   job: PublishPrepJob,
-  events: AsyncIterable<ThreadEvent>,
-  onActivity: (event: ThreadEvent) => void = () => undefined,
-): Promise<string> {
-  let finalResponse: string | undefined;
-  let completed = false;
+  message: Extract<SDKMessage, { type: "assistant" }>,
+  toolNames: Map<string, string>,
+) {
+  for (const block of message.message.content) {
+    if (block.type !== "tool_use" || !block.name.startsWith("mcp__")) continue;
+    if (!block.name.startsWith(AGENT_BROWSER_TOOL_PREFIX)) {
+      throw new Error(`Claude attempted forbidden MCP tool: ${block.name}`);
+    }
+    const tool = block.name.slice(AGENT_BROWSER_TOOL_PREFIX.length);
+    toolNames.set(block.id, tool);
+    pushLog(job, `Claude MCP ${tool}: started`, { dedupeKey: `mcp:${block.id}:started` });
+  }
+}
 
-  for await (const event of events) {
-    onActivity(event);
-    if (event.type === "thread.started") {
+function logToolResults(
+  job: PublishPrepJob,
+  message: Extract<SDKMessage, { type: "user" }>,
+  toolNames: Map<string, string>,
+): number {
+  const content = message.message.content;
+  if (typeof content === "string") return 0;
+  let results = 0;
+  for (const block of content) {
+    if (block.type !== "tool_result") continue;
+    const tool = toolNames.get(block.tool_use_id);
+    if (!tool) continue;
+    results += 1;
+    const failed = block.is_error === true;
+    pushLog(
+      job,
+      `Claude MCP ${tool}: ${failed ? `failed (${stringifyForLog(block.content)})` : "completed"}`,
+      {
+        dedupeKey: `mcp:${block.tool_use_id}:result`,
+        level: failed ? "WARN" : "INFO",
+      },
+    );
+  }
+  return results;
+}
+
+export async function consumeClaudeMessages(
+  job: PublishPrepJob,
+  messages: AsyncIterable<SDKMessage>,
+  onActivity: (message: SDKMessage) => void = () => undefined,
+): Promise<ClaudeTurnResult> {
+  const toolNames = new Map<string, string>();
+  let mcpAttempts = 0;
+
+  for await (const message of messages) {
+    onActivity(message);
+    if (message.type === "system" && message.subtype === "init") {
       const runtime = getJobRuntimeStore().get(job.id);
-      if (runtime) runtime.threadId = event.thread_id;
-      pushLog(job, `Codex thread started: ${event.thread_id}`);
+      if (runtime) runtime.sessionId = message.session_id;
+      pushLog(job, `Claude session started: ${message.session_id} model=${message.model}`);
+      const server = message.mcp_servers.find((s) => s.name === AGENT_BROWSER_MCP_SERVER);
+      if (server?.status !== "connected") {
+        pushLog(job, `agent_browser MCP status: ${server?.status ?? "missing"}`, {
+          level: "WARN",
+        });
+      }
       continue;
     }
-    if (event.type === "turn.failed") throw new Error(`Codex turn failed: ${event.error.message}`);
-    if (event.type === "error") throw new Error(`Codex stream failed: ${event.message}`);
-    if (event.type === "turn.completed") {
-      completed = true;
-      pushLog(
-        job,
-        `Codex turn completed: inputTokens=${event.usage.input_tokens} outputTokens=${event.usage.output_tokens} reasoningTokens=${event.usage.reasoning_output_tokens}`,
-      );
+    if (message.type === "system" && message.subtype === "permission_denied") {
+      pushLog(job, `Claude tool denied: ${message.tool_name}`, { level: "WARN" });
       continue;
     }
+    if (message.type === "assistant") {
+      logAssistantToolUses(job, message, toolNames);
+      continue;
+    }
+    if (message.type === "user") {
+      mcpAttempts += logToolResults(job, message, toolNames);
+      continue;
+    }
+    if (message.type !== "result") continue;
 
-    const response = logCodexItem(job, event);
-    if (response !== undefined) finalResponse = response;
+    if (message.subtype !== "success" || message.is_error) {
+      const reason =
+        message.subtype === "success"
+          ? message.result
+          : message.errors.join("; ") || message.subtype;
+      throw new Error(`Claude turn failed: ${reason}`);
+    }
+    pushLog(
+      job,
+      `Claude turn completed: turns=${message.num_turns} inputTokens=${message.usage.input_tokens} outputTokens=${message.usage.output_tokens} costUsd=${message.total_cost_usd.toFixed(4)}`,
+    );
+    if (message.structured_output === undefined) {
+      throw new Error("Claude completed without a structured output");
+    }
+    return { output: message.structured_output, mcpAttempts };
   }
 
-  if (!completed) throw new Error("Codex stream ended before turn completion");
-  if (!finalResponse) throw new Error("Codex completed without a final response");
-  return finalResponse;
+  throw new Error("Claude stream ended before turn completion");
 }
 
 export function createPublishPrompt(
@@ -614,7 +576,7 @@ ${procedure}
 - MCP操作が失敗しても停止しない。snapshotで現在状態を確認し、同じ引数を盲目的に繰り返さず別のref・selector・入力方法で続行する。
 - UIを変えるclickの直後は、依存するevalや入力より先にwaitまたはsnapshotを実行する。
 - blockedを返せるのは、現在URLとsnapshotを確認し、複数の代替手段を試しても続行不能な場合だけ。単発のMCP失敗はblockedではない。
-- ALL_TOOLSやツール説明を出力・列挙しない。手順書に記載した既知のagent-browser MCPを直接使う。
+- ツール説明を出力・列挙しない。手順書に記載した既知のagent-browser MCPを直接使う。
 - agent_browser_wait_ms の待機時間は ms で渡す。timeMs ではない。
 
 ## 作業入力
@@ -635,7 +597,7 @@ ${procedure}
 `.trim();
 }
 
-async function runCodexPublishPrep(
+async function runClaudePublishPrep(
   job: PublishPrepJob,
   videoPath: string,
   thumbnailPath: string,
@@ -679,16 +641,14 @@ async function runCodexPublishPrep(
   );
 
   try {
-    pushLog(job, "Starting Codex SDK publish thread");
+    pushLog(job, "Starting Claude Agent SDK publish session");
     pushLog(
       job,
-      `Codex config: model=gpt-5.6-luna reasoning=low sandbox=read-only MCP=agent_browser`,
+      `Claude config: model=${PUBLISH_MODEL} effort=${PUBLISH_EFFORT} tools=none MCP=${AGENT_BROWSER_MCP_SERVER}`,
     );
-    const codexRuntime = createPublishCodexRuntime();
-    await preparePublishCodexRuntime(codexRuntime);
-    pushLog(job, `Codex isolated runtime: ${codexRuntime.codexHomeDir}`);
-    const codex = new Codex(createPublishCodexOptions(PROJECT_ROOT, codexRuntime));
-    const thread = codex.startThread(createPublishThreadOptions(codexRuntime.workspaceDir));
+    const workspaceDir = getPublishWorkspaceDir();
+    await fs.mkdir(workspaceDir, { recursive: true, mode: 0o700 });
+    const options = createPublishQueryOptions(PROJECT_ROOT, workspaceDir);
     const tags = videoMeta.tags;
     pushLog(job, `Niconico tags: ${JSON.stringify(tags)}`);
     let prompt = createPublishPrompt(
@@ -702,35 +662,31 @@ async function runCodexPublishPrep(
     );
     let rejectedBlockedResults = 0;
     for (;;) {
-      const { events } = await thread.runStreamed(prompt, {
-        outputSchema: PUBLISH_RESULT_SCHEMA,
-        signal: guard.signal,
+      const messages = query({
+        prompt,
+        options: {
+          ...options,
+          abortController: guard.controller,
+          resume: getJobRuntimeStore().get(job.id)?.sessionId,
+        },
       });
-      let mcpAttempts = 0;
-      const finalResponse = await consumeCodexEvents(job, events, (event) => {
-        guard.activity();
-        if (
-          event.type === "item.completed" &&
-          event.item.type === "mcp_tool_call" &&
-          (event.item.status === "completed" || event.item.status === "failed")
-        ) {
-          mcpAttempts += 1;
-        }
-      });
+      const { output, mcpAttempts } = await consumeClaudeMessages(job, messages, () =>
+        guard.activity(),
+      );
       try {
-        const result = parsePublishResult(finalResponse);
+        const result = parsePublishResult(output);
         if (result.outcome === "blocked") {
           if (!result.blockingReason?.trim()) {
             throw new Error("Blocked result requires a blocking reason");
           }
           if (shouldRetryBlockedResult(rejectedBlockedResults, mcpAttempts)) {
             rejectedBlockedResults += 1;
-            const message = `Codex blocked result rejected: ${result.blockingReason}`;
+            const message = `Claude blocked result rejected: ${result.blockingReason}`;
             pushLog(job, `${message}; continuing recovery`, { level: "WARN" });
             prompt = `${message}\nまだ未実行の作業があり、blockedは受理しない。最新snapshotを取得し、少なくとも1つ別のMCP操作で回復を試して作業を続行する。同じ説明だけでblockedを繰り返さない。`;
             continue;
           }
-          throw new Error(`Codex reported publish prep blocked: ${result.blockingReason}`);
+          throw new Error(`Claude reported publish prep blocked: ${result.blockingReason}`);
         }
         rejectedBlockedResults = 0;
         const validationErrors = validatePublishPrepResult(result, {
@@ -762,12 +718,12 @@ async function runCodexPublishPrep(
       } catch (error) {
         if (
           error instanceof Error &&
-          error.message.startsWith("Codex reported publish prep blocked:")
+          error.message.startsWith("Claude reported publish prep blocked:")
         ) {
           throw error;
         }
         const message = stringifyForLog(error);
-        pushLog(job, `Codex result needs recovery: ${message}`, { level: "WARN" });
+        pushLog(job, `Claude result needs recovery: ${message}`, { level: "WARN" });
         prompt = `前のターンの最終結果は受理できなかった: ${message}\n現在のブラウザー状態をsnapshotで確認し、必要な作業を続行して、JSON Schemaどおりに再回答する。`;
       }
     }
@@ -832,7 +788,7 @@ export async function runPublishPrep(
   }
 
   const startedAt = Date.now();
-  const result = await runCodexPublishPrep(job, videoPath, thumbnailPath, videoMeta, parentWorks);
+  const result = await runClaudePublishPrep(job, videoPath, thumbnailPath, videoMeta, parentWorks);
   pushLog(job, `Niconico browser phase completed in ${Date.now() - startedAt}ms`);
   if (getJobRuntimeStore().get(job.id)?.controller.signal.aborted) {
     throw new Error("Job was canceled");
