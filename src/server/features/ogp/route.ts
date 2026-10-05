@@ -11,7 +11,7 @@ export const ogpApp = new Hono().post("/ogp", async (c) => {
     const response = await fetch(url, {
       headers: {
         Accept: "text/html,application/xhtml+xml",
-        "User-Agent": "remotion-admin-template-ogp/1.0",
+        "User-Agent": "video-admin-template-ogp/1.0",
       },
       redirect: "follow",
       signal: AbortSignal.timeout(10_000),

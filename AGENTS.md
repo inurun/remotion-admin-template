@@ -1,4 +1,4 @@
-# Remotion Admin Template
+# Video Admin Template
 
 - 管理サイトを用いた動画データの作成と、動画データからHyperFramesを利用した動画を作成するテンプレ用PJ
 - このプロジェクトはまだ始まったばかり、既存データ形式などの考慮は一切不要

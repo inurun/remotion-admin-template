@@ -5,7 +5,7 @@ export const layoutHtml = (
     <head>
       <meta charSet="utf-8" />
       <meta content="width=device-width, initial-scale=1" name="viewport" />
-      <title>Remotion Admin Template</title>
+      <title>Video Admin Template</title>
       <meta
         content="Template app for VoiSona-driven video editing and HyperFrames rendering"
         name="description"

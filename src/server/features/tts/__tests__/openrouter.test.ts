@@ -101,7 +101,7 @@ describe("requestOpenRouterCorrections", () => {
     const body = JSON.parse(String(request.body));
     expect(request.headers).toMatchObject({
       Authorization: "Bearer secret",
-      "HTTP-Referer": "https://github.com/inurun/remotion-admin-template",
+      "HTTP-Referer": "https://github.com/inurun/video-admin-template",
       "X-OpenRouter-Title": "Remotion Admin",
     });
     expect(body).toMatchObject({

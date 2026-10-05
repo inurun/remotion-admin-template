@@ -1,4 +1,4 @@
-# remotion-admin-template
+# video-admin-template
 
 管理画面で `page + TTS` を編集し、HyperFrames で動画にするテンプレート。映像側は intro / main / outro の TTS テキスト表示だけの stub。
 
@@ -30,7 +30,7 @@ pnpm migrate:project
 ### 1. remote を分ける
 
 ```bash
-git clone git@github.com:inurun/remotion-admin-template.git my-series
+git clone git@github.com:inurun/video-admin-template.git my-series
 cd my-series
 git remote rename origin template
 git remote add origin git@github.com:<you>/<my-series>.git
