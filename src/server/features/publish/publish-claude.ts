@@ -132,7 +132,8 @@ const publishResultSchema = z.object({
 });
 type ClaudePublishResult = z.infer<typeof publishResultSchema>;
 
-export const PUBLISH_RESULT_SCHEMA = z.toJSONSchema(publishResultSchema);
+// Claude Code CLI の --json-schema 検証は draft 2020-12 のメタスキーマを持たない
+export const PUBLISH_RESULT_SCHEMA = z.toJSONSchema(publishResultSchema, { target: "draft-07" });
 
 function getJobStore(): Map<string, PublishPrepJob> {
   const globalStore = globalThis as typeof globalThis & {

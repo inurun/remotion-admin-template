@@ -104,6 +104,10 @@ describe("publish Claude configuration", () => {
     expect(prompt).not.toContain("直近に投稿した動画を選んで情報を引き継ぐ");
   });
 
+  it("emits a draft-07 output schema that the Claude Code CLI can validate", () => {
+    expect(PUBLISH_RESULT_SCHEMA.$schema).toBe("http://json-schema.org/draft-07/schema#");
+  });
+
   it("pins the model, effort, tool allowlist, and agent-browser MCP", () => {
     const workspaceDir = getPublishWorkspaceDir("/real-home");
     expect(workspaceDir).toBe("/real-home/.cache/niconico-publish-claude/workspace");
