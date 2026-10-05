@@ -414,7 +414,7 @@ export async function requestOpenRouterCorrections(
       Authorization: `Bearer ${config.apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://github.com/inurun/video-admin-template",
-      "X-OpenRouter-Title": "Remotion Admin",
+      "X-OpenRouter-Title": "Video Admin",
     },
     body: JSON.stringify({
       model: profile.model,

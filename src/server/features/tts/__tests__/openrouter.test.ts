@@ -102,7 +102,7 @@ describe("requestOpenRouterCorrections", () => {
     expect(request.headers).toMatchObject({
       Authorization: "Bearer secret",
       "HTTP-Referer": "https://github.com/inurun/video-admin-template",
-      "X-OpenRouter-Title": "Remotion Admin",
+      "X-OpenRouter-Title": "Video Admin",
     });
     expect(body).toMatchObject({
       model: "google/gemini-3.8-flash",
