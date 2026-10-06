@@ -12,7 +12,7 @@ export const layoutHtml = (
       />
       <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       <ReactRefresh />
-      <Link href="/src/app/globals.css" rel="stylesheet" />
+      <Link href="/src/app/app.css" rel="stylesheet" />
       <Script src="/src/app/core/client.tsx" />
     </head>
     <body>

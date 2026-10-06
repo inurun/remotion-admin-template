@@ -1,3 +1,6 @@
 @import "../app/globals.css";
 @source "../video";
 @source "../_shared";
+/* Admin-only code: scanning it would full-reload the preview on every admin edit. */
+@source not "../app";
+@source not "../server";

@@ -1,0 +1,9 @@
+@import "./globals.css";
+
+/*
+ * The video bundle has its own Tailwind (`src/video-host/styles.css`). If the admin scanned it
+ * too, @tailwindcss/vite would full-reload the admin on every video edit, because those files
+ * are scanned but not in the admin module graph.
+ */
+@source not "../video";
+@source not "../video-host";
