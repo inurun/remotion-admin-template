@@ -1,5 +1,5 @@
 import type { TransitionVariant } from "@/_schemas";
-import type { TransitionAnimation } from "@/video/lib/transition";
+import type { TransitionAnimation } from "@inurun/frame-animation/hyperframes";
 import { getTransitionVariantDef, type SlideDirection } from "./variants";
 
 /** Where the entering scene starts, in percent of its own size. */

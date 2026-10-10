@@ -1,7 +1,7 @@
 /** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */
 import { Clip } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import { Layer } from "@/video/components/layter";
-import { Timeline } from "@/video/lib/timeline";
+import { Timeline } from "@inurun/frame-animation/hyperframes";
 import { useLayerTts } from "./use-layer-tts";
 
 export function TtsLayer() {
