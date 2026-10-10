@@ -27,11 +27,10 @@ export function useCommentsPage(page: SavedCommentsPage) {
     const group = groupsById.get(clip.id);
     return group ? [{ ...group, startSec: clip.startSec }] : [];
   });
-  const groupRanges = groupClips.flatMap((item, index) => {
+  const groupRanges = groupClips.map((item, index) => {
     const startSec = index === 0 ? 0 : item.startSec;
     const next = groupClips[index + 1];
-    const durationSec = next ? next.startSec - startSec : undefined;
-    return durationSec === undefined || durationSec > 0 ? [{ ...item, startSec, durationSec }] : [];
+    return { ...item, startSec, durationSec: next ? next.startSec - startSec : undefined };
   });
 
   return { ttsSegments, groupRanges };

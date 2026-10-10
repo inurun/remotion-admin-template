@@ -38,7 +38,7 @@ export function Composition(props: HfData) {
         {project.pages.map((item, index) => {
           // The timeline already places every page and transition, in absolute seconds.
           const timing = timings.get(item.id);
-          if (!timing || timing.durationSec <= 0) {
+          if (!timing) {
             return null;
           }
 

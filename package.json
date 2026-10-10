@@ -37,7 +37,7 @@
     "@hyperframes/core": "0.8.114",
     "@hyperframes/player": "0.8.114",
     "@ikg-systems/moyo": "0.1.2",
-    "@inurun/vite-plugin-hyperframes-jsx": "0.2.0",
+    "@inurun/vite-plugin-hyperframes-jsx": "0.2.1",
     "@lezer/highlight": "1.2.3",
     "@tiptap/extension-file-handler": "3.27.2",
     "@tiptap/react": "3.27.2",

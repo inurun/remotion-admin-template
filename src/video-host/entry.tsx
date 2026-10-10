@@ -52,28 +52,12 @@ function main() {
   const syncAudio = createAudioSync(audioContainer, manifestOf(embedded));
   let current: MountedComposition | null = null;
 
-  // An update mounts next to the current tree, invisible until ready, then replaces it, so it
-  // never flashes blank. Opacity, not visibility: a visible clip would show through.
+  // An update replaces the tree once the new one is ready, so it never flashes blank.
   const mountData = async (data: HfData) => {
-    let wrapper: HTMLDivElement | undefined;
-    try {
-      const next = await mountComposition(
-        HF_COMPOSITION_ID,
-        <div
-          ref={(el) => (wrapper = el)}
-          className="absolute inset-0"
-          style={current ? { opacity: 0 } : undefined}
-        >
-          <video.Composition {...data} />
-        </div>,
-      );
-      wrapper?.style.removeProperty("opacity");
-      current?.dispose();
-      current = next;
-    } catch (error) {
-      wrapper?.remove();
-      throw error;
-    }
+    const tree = <video.Composition {...data} />;
+    current = current
+      ? await current.replace(tree)
+      : await mountComposition(HF_COMPOSITION_ID, tree);
     syncAudio(manifestOf(data));
   };
 

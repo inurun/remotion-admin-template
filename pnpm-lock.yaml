@@ -51,8 +51,8 @@ importers:
         specifier: 0.1.2
         version: 0.1.2
       '@inurun/vite-plugin-hyperframes-jsx':
-        specifier: 0.2.0
-        version: 0.2.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
+        specifier: 0.2.1
+        version: 0.2.1(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
       '@lezer/highlight':
         specifier: 1.2.3
         version: 1.2.3
@@ -1265,14 +1265,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@inurun/vite-plugin-hyperframes-jsx@0.2.0':
-    resolution: {integrity: sha512-lF4zFvi7cQ6IFgBHduR+2TNeUp0fNtS/1i2ikk6dQRNuloehfF21/vdu+qlSJqh9MbUSZnxJvz76riKmc7522A==, tarball: https://npm.pkg.github.com/download/@inurun/vite-plugin-hyperframes-jsx/0.2.0/b0de33a74091fe25acdda6b2ca6d59bcc3741570}
+  '@inurun/vite-plugin-hyperframes-jsx@0.2.1':
+    resolution: {integrity: sha512-/s/bYzmWDA8NwPvRl+tjmtjLZ2rkP6UICtrjgm9eCGL+fh7JJBn5loZBT3rhBObET10XMPDEahpjhWGYbroUdA==, tarball: https://npm.pkg.github.com/download/@inurun/vite-plugin-hyperframes-jsx/0.2.1/59174dc9a1710bd789cd7b1d97b4b6b34da71ea0}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: '>=8'
-    peerDependenciesMeta:
-      vite:
-        optional: true
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==, tarball: https://registry.npmjs.org/@isaacs/fs-minipass/-/fs-minipass-4.0.1.tgz}
@@ -5624,10 +5621,9 @@ snapshots:
   '@img/sharp-win32-x64@0.35.4':
     optional: true
 
-  '@inurun/vite-plugin-hyperframes-jsx@0.2.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))':
+  '@inurun/vite-plugin-hyperframes-jsx@0.2.1(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))':
     dependencies:
       csstype: 3.2.3
-    optionalDependencies:
       vite: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)
 
   '@isaacs/fs-minipass@4.0.1':
