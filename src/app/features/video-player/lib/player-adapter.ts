@@ -53,7 +53,7 @@ const browserScheduler: FrameScheduler = {
   cancel: (id) => cancelAnimationFrame(id),
 };
 
-/** `FRAME_EPSILON` of the HF clock (`@inurun/vite-plugin-hyperframes-jsx/runtime`), so both agree on the frame. */
+/** Absorbs float error so `n / fps` maps back to frame `n`, as HyperFrames seeks exact frame times. */
 const FRAME_EPSILON = 1e-3;
 
 export function secondsToFrame(seconds: number, fps: number) {

@@ -1,7 +1,7 @@
 /** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */
 import {
   createContext,
-  useContext,
+  readContext,
   type HfNode,
 } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { SavedPage } from "@/_schemas";
@@ -27,7 +27,7 @@ export function OutroPageContextProvider({
 }
 
 export function useOutroPageContext() {
-  const context = useContext(OutroPageContext);
+  const context = readContext(OutroPageContext);
   if (!context) {
     throw new Error("OutroPageContext is missing");
   }

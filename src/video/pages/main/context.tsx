@@ -1,7 +1,7 @@
 /** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */
 import {
   createContext,
-  useContext,
+  readContext,
   type HfNode,
 } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import { SavedPage } from "@/_schemas";
@@ -29,7 +29,7 @@ export function MainPageContextProvider({
 }
 
 export function useMainPageContext() {
-  const context = useContext(MainPageContext);
+  const context = readContext(MainPageContext);
   if (!context) {
     throw new Error("MainPageContext is missing");
   }

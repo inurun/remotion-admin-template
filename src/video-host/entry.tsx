@@ -2,9 +2,7 @@
 import "./styles.css";
 import {
   mountComposition,
-  registerClock,
-  type Clock,
-  type VideoConfig,
+  type MountedComposition,
 } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import { video } from "@/video";
 import { HF_AUDIO_CONTAINER_ID } from "./audio/audio-attributes";
@@ -25,19 +23,13 @@ declare global {
   }
 }
 
+/** `mountComposition` reads the rest of the root's `data-*`; the host needs fps and mode. */
 function getStage() {
   const stage = document.querySelector<HTMLElement>(`[data-composition-id="${HF_COMPOSITION_ID}"]`);
   if (!stage) {
     throw new Error("composition root missing");
   }
-  const fps = Number(stage.dataset["fps"]);
-  const config: VideoConfig = {
-    fps,
-    width: Number(stage.dataset["width"]),
-    height: Number(stage.dataset["height"]),
-    durationInFrames: Math.round(Number(stage.dataset["duration"]) * fps),
-  };
-  return { stage, config };
+  return { fps: Number(stage.dataset["fps"]), mode: stage.dataset["mode"] as HfMode };
 }
 
 function readEmbeddedData() {
@@ -49,42 +41,39 @@ function readEmbeddedData() {
 }
 
 function main() {
-  const { stage, config } = getStage();
-  video.onMode?.(stage.dataset["mode"] as HfMode);
+  const { fps, mode } = getStage();
+  video.onMode?.(mode);
   const embedded = readEmbeddedData();
   const audioContainer = document.getElementById(HF_AUDIO_CONTAINER_ID);
   if (!audioContainer) {
     throw new Error(`#${HF_AUDIO_CONTAINER_ID} missing`);
   }
-  const manifestOf = (data: HfData) =>
-    createAudioManifest(data.project, data.timeline, config.fps, video);
+  const manifestOf = (data: HfData) => createAudioManifest(data.project, data.timeline, fps, video);
   const syncAudio = createAudioSync(audioContainer, manifestOf(embedded));
-  let clock: Clock | null = null;
-  let current: HTMLElement | null = null;
+  let current: MountedComposition | null = null;
 
-  // Mount into a hidden container and swap it in once ready, so an update never flashes blank.
+  // An update mounts next to the current tree, invisible until ready, then replaces it, so it
+  // never flashes blank. Opacity, not visibility: a visible clip would show through.
   const mountData = async (data: HfData) => {
-    const container = document.createElement("div");
-    container.style.cssText = "position:absolute;inset:0;visibility:hidden";
-    stage.appendChild(container);
+    let wrapper: HTMLDivElement | undefined;
     try {
-      const composition = await mountComposition(
-        <video.Composition {...data} />,
-        container,
-        config,
+      const next = await mountComposition(
+        HF_COMPOSITION_ID,
+        <div
+          ref={(el) => (wrapper = el)}
+          className="absolute inset-0"
+          style={current ? { opacity: 0 } : undefined}
+        >
+          <video.Composition {...data} />
+        </div>,
       );
-      if (clock) {
-        clock.setComposition(composition);
-      } else {
-        clock = registerClock(HF_COMPOSITION_ID, composition, config.fps, config.durationInFrames);
-      }
+      wrapper?.style.removeProperty("opacity");
+      current?.dispose();
+      current = next;
     } catch (error) {
-      container.remove();
+      wrapper?.remove();
       throw error;
     }
-    container.style.visibility = "";
-    current?.remove();
-    current = container;
     syncAudio(manifestOf(data));
   };
 

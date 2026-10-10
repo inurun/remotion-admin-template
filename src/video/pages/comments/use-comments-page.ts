@@ -1,12 +1,9 @@
-import { useVideoConfig } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { SavedCommentsPage } from "@/_schemas";
-import { secondsToFrames } from "@/video-host/frame-utils";
 import { getPageClip } from "@/video-host/sequence-clips";
 import { useTimeline } from "@/video/core/context";
 import { usePageTtsSegments } from "@/video/pages/use-page-tts-segments";
 
 export function useCommentsPage(page: SavedCommentsPage) {
-  const { fps } = useVideoConfig();
   const timeline = useTimeline();
   const { ttsSegments } = usePageTtsSegments(page);
   const commentsById = new Map(page.comments.map((comment) => [comment.id, comment]));
@@ -24,15 +21,17 @@ export function useCommentsPage(page: SavedCommentsPage) {
   );
 
   // Group clips are contiguous from the page start: each group shows until the next one
-  // starts, the first one from frame 0 and the last one to the page end.
+  // starts, the first one from the page start and the last one to the page end (seconds,
+  // page-relative; an undefined duration runs to the end of the page).
   const groupClips = (getPageClip(timeline, page.id)?.clips ?? []).flatMap((clip) => {
     const group = groupsById.get(clip.id);
-    return group ? [{ ...group, start: secondsToFrames(clip.startSec, fps) }] : [];
+    return group ? [{ ...group, startSec: clip.startSec }] : [];
   });
-  const groupRanges = groupClips.map((item, index) => {
-    const from = index === 0 ? 0 : item.start;
+  const groupRanges = groupClips.flatMap((item, index) => {
+    const startSec = index === 0 ? 0 : item.startSec;
     const next = groupClips[index + 1];
-    return { ...item, from, durationInFrames: next ? next.start - from : undefined };
+    const durationSec = next ? next.startSec - startSec : undefined;
+    return durationSec === undefined || durationSec > 0 ? [{ ...item, startSec, durationSec }] : [];
   });
 
   return { ttsSegments, groupRanges };
