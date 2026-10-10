@@ -51,8 +51,8 @@ importers:
         specifier: 0.1.2
         version: 0.1.2
       '@inurun/vite-plugin-hyperframes-jsx':
-        specifier: 0.1.0
-        version: 0.1.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
+        specifier: 0.2.1
+        version: 0.2.1(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
       '@lezer/highlight':
         specifier: 1.2.3
         version: 1.2.3
@@ -80,15 +80,15 @@ importers:
       clsx:
         specifier: 2.1.1
         version: 2.1.1
-      d3-ease:
-        specifier: 3.0.1
-        version: 3.0.1
       date-fns:
         specifier: 4.4.0
         version: 4.4.0
       fresh:
         specifier: 2.0.0
         version: 2.0.0
+      gsap:
+        specifier: 3.15.0
+        version: 3.15.0
       hono:
         specifier: 4.12.25
         version: 4.12.25
@@ -264,9 +264,6 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.3.1
         version: 4.3.1(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
-      '@types/d3-ease':
-        specifier: 3.0.2
-        version: 3.0.2
       '@types/fresh':
         specifier: 0.5.3
         version: 0.5.3
@@ -1268,8 +1265,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@inurun/vite-plugin-hyperframes-jsx@0.1.0':
-    resolution: {integrity: sha512-5EZhfGSi6I5u6hNukCUvYWx3jKsjiBVUUbPVwqMrte07yC8E/I3rwHtmAAf/KVYRhlnK4qUV4efqa0crgJi+fw==, tarball: https://npm.pkg.github.com/download/@inurun/vite-plugin-hyperframes-jsx/0.1.0/ada764547368dbb61cfdcf97bbc07ed0d1f13896}
+  '@inurun/vite-plugin-hyperframes-jsx@0.2.1':
+    resolution: {integrity: sha512-/s/bYzmWDA8NwPvRl+tjmtjLZ2rkP6UICtrjgm9eCGL+fh7JJBn5loZBT3rhBObET10XMPDEahpjhWGYbroUdA==, tarball: https://npm.pkg.github.com/download/@inurun/vite-plugin-hyperframes-jsx/0.2.1/59174dc9a1710bd789cd7b1d97b4b6b34da71ea0}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: '>=8'
@@ -2039,9 +2036,6 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==, tarball: https://registry.npmjs.org/@types/chai/-/chai-5.2.3.tgz}
 
-  '@types/d3-ease@3.0.2':
-    resolution: {integrity: sha512-NcV1JjO5oDzoK26oMzbILE6HW7uVXOHLQvHshBUW4UMdZGfiY6v5BeQwh9a9tCzv+CeefZQHJt5SRgK154RtiA==, tarball: https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz}
-
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==, tarball: https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz}
 
@@ -2513,10 +2507,6 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==, tarball: https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz}
-
-  d3-ease@3.0.1:
-    resolution: {integrity: sha512-wR/XK3D3XcLIZwpbvQwQ5fK+8Ykds1ip7A2Txe0yxncXSdq1L9skcG7blcedkOX+ZcgxGAmLX1FrRGbADwzi0w==, tarball: https://registry.npmjs.org/d3-ease/-/d3-ease-3.0.1.tgz}
-    engines: {node: '>=12'}
 
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==, tarball: https://registry.npmjs.org/data-uri-to-buffer/-/data-uri-to-buffer-4.0.1.tgz}
@@ -5631,9 +5621,9 @@ snapshots:
   '@img/sharp-win32-x64@0.35.4':
     optional: true
 
-  '@inurun/vite-plugin-hyperframes-jsx@0.1.0(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))':
+  '@inurun/vite-plugin-hyperframes-jsx@0.2.1(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))':
     dependencies:
-      gsap: 3.15.0
+      csstype: 3.2.3
       vite: 8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)
 
   '@isaacs/fs-minipass@4.0.1':
@@ -6321,8 +6311,6 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
-  '@types/d3-ease@3.0.2': {}
-
   '@types/deep-eql@4.0.2': {}
 
   '@types/dom-mediacapture-transform@0.1.11':
@@ -6793,8 +6781,6 @@ snapshots:
   cssom@0.5.0: {}
 
   csstype@3.2.3: {}
-
-  d3-ease@3.0.1: {}
 
   data-uri-to-buffer@4.0.1: {}
 

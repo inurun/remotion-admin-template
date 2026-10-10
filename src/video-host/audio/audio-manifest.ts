@@ -2,7 +2,7 @@
 // so the server and the preview entry both build it from this list.
 // Imports stay DOM-free: the server builds the HTML from this module.
 import { BGM_TRACK_ID, type BgmTrack, type SavedProject, type SavedTimeline } from "@/_schemas";
-import { staticFile } from "@inurun/vite-plugin-hyperframes-jsx/static-file";
+import { staticFile } from "../static-file";
 import type { VideoAudioConfig } from "../contract";
 import { secondsRangeToFrames, secondsToFrames } from "../frame-utils";
 import { getSequenceClips } from "../sequence-clips";
@@ -32,9 +32,9 @@ function toFrames(startSec: number, durationSec: number, fps: number) {
 }
 
 /**
- * Placed from the timeline's absolute seconds. The composition nests the TTS Sequence in the
- * page Sequence (rounded separately) and lays pages out with frame-rounded TransitionSeries
- * durations, so a clip can land ±1 frame from the on-screen TTS timing.
+ * Placed from the timeline's absolute seconds. The composition nests the TTS `Clip` in the
+ * page `Clip`, which snaps the page start to a frame first, so a clip can land ±1 frame from
+ * the on-screen TTS timing.
  */
 function collectTtsClips(
   project: SavedProject,

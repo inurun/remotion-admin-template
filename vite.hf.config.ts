@@ -1,7 +1,7 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, type InlineConfig } from "vite";
-import { hyperframes } from "@inurun/vite-plugin-hyperframes-jsx";
+import { hyperframesJsx } from "@inurun/vite-plugin-hyperframes-jsx";
 import { HF_BUNDLE_BASE, HF_ENTRY } from "./src/video-host/constants";
 
 /**
@@ -16,7 +16,7 @@ export function createHfViteConfig(): InlineConfig {
     base: HF_BUNDLE_BASE,
     envDir: __dirname,
     publicDir: false,
-    plugins: [tailwindcss(), hyperframes()],
+    plugins: [tailwindcss(), hyperframesJsx()],
     // lottie-web is UMD: pre-bundle it for dev; everything else is served as ESM.
     optimizeDeps: { noDiscovery: true, include: ["lottie-web"] },
     resolve: { alias: { "@": path.resolve(__dirname, "src") } },

@@ -44,10 +44,11 @@
 ### @inurun/vite-plugin-hyperframes-jsx
 
 - HyperFrames 上の JSX ランタイムと Vite プラグイン。別リポジトリ（`inurun/vite-plugin-hyperframes-jsx`）の外部パッケージ `@inurun/vite-plugin-hyperframes-jsx`（GitHub Packages、現状 private）で、このリポジトリには置かない
-- API は `@inurun/vite-plugin-hyperframes-jsx/runtime`、プラグインは `vite.hf.config.ts` の `hyperframes()`。server から使うのは副作用のない `@inurun/vite-plugin-hyperframes-jsx/static-file` だけ
-- Remotion 由来のコード・Easing / interpolate / spring などのアニメーション関数は持たない。easing は `d3-ease` など外部ライブラリを使う
+- API は `@inurun/vite-plugin-hyperframes-jsx/runtime`、プラグインは `vite.hf.config.ts` の `hyperframesJsx()`
+- 時間は秒。`<Clip start duration>` が HyperFrames の clip（`data-start` / `data-duration`）になり、表示・非表示は HyperFrames が持つ。親 Clip からの相対秒で入れ子にできる
 - コンポーネントは一度だけ実行される。React の hooks・再レンダは無い
-- フレーム依存の値は `Frame` / `registerUpdater` などの updater 関数の中だけで扱う
+- アニメーションは GSAP。`src/video/lib/timeline.tsx` の `<Timeline animate={(tl, q) => …}>`（`tl` の 0 秒 = 囲む Clip の開始）と、シーン間の `src/video/lib/transition.ts` の `<Transition>` を使う。タイムラインは `CompositionTimeline` が 1 本にまとめて HyperFrames に登録する
+- HyperFrames は隠れた clip を `visibility: hidden` にする（レイアウト上の場所は残る）。Clip は absolute に重ねて使い、flex などの流れの中に置かない
 - 音声は静的マニフェストで出す。実行時に `<audio>` を作らない
 - 日付に `Date` サブクラス（`TZDate` 等）を使わない。HF render の Date shim で壊れる
 

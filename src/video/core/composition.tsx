@@ -1,16 +1,16 @@
 /** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */
 import type { SavedPage } from "@/_schemas";
-import { linearTiming, TransitionSeries } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
+import { Clip } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { HfData } from "@/video-host/contract";
-import { secondsRangeToFrames } from "@/video-host/frame-utils";
 import { getSequenceClips } from "@/video-host/sequence-clips";
+import { CompositionTimeline } from "@/video/lib/timeline";
+import { Transition } from "@/video/lib/transition";
 import { ProjectProvider } from "./context";
 import { IntroPage } from "../pages/intro/intro-page";
 import { MainPage } from "../pages/main/main-page";
 import { OutroPage } from "../pages/outro/outro-page";
 import { CommentsPage } from "../pages/comments/comments-page";
-import { getTransitionPresentation } from "../transitions/registry";
-import { getTransitionEasing } from "../transitions/variants";
+import { getTransitionAnimation } from "../transitions/registry";
 
 function PageByType({ page }: { page: SavedPage }) {
   switch (page.type) {
@@ -34,34 +34,37 @@ export function Composition(props: HfData) {
 
   return (
     <ProjectProvider value={props}>
-      <TransitionSeries>
-        {project.pages.map((item) => {
+      <CompositionTimeline>
+        {project.pages.map((item, index) => {
+          // The timeline already places every page and transition, in absolute seconds.
           const timing = timings.get(item.id);
-          const durationInFrames = secondsRangeToFrames(
-            timing?.startSec ?? 0,
-            timing?.durationSec ?? 0,
-          ).duration;
+          if (!timing) {
+            return null;
+          }
 
           if (item.type === "transition") {
-            return (
-              <TransitionSeries.Transition
-                key={item.id}
-                timing={linearTiming({
-                  durationInFrames,
-                  easing: getTransitionEasing(item.variant),
-                })}
-                presentation={getTransitionPresentation(item.variant)}
+            const from = project.pages[index - 1];
+            const to = project.pages[index + 1];
+            return from && to ? (
+              <Transition
+                from={from.id}
+                to={to.id}
+                start={timing.startSec}
+                duration={timing.durationSec}
+                animation={getTransitionAnimation(item.variant)}
               />
-            );
+            ) : null;
           }
 
           return (
-            <TransitionSeries.Sequence key={item.id} durationInFrames={durationInFrames}>
-              <PageByType page={item} />
-            </TransitionSeries.Sequence>
+            <Clip start={timing.startSec} duration={timing.durationSec}>
+              <div data-scene={item.id} className="absolute inset-0">
+                <PageByType page={item} />
+              </div>
+            </Clip>
           );
         })}
-      </TransitionSeries>
+      </CompositionTimeline>
     </ProjectProvider>
   );
 }

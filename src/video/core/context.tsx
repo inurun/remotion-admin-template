@@ -1,7 +1,7 @@
 /** @jsxImportSource @inurun/vite-plugin-hyperframes-jsx */
 import {
   createContext,
-  useContext,
+  readContext,
   type HfNode,
 } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { HfData } from "@/video-host/contract";
@@ -13,7 +13,7 @@ export const ProjectProvider = ({ children, value }: { children?: HfNode; value:
 };
 
 export const useProject = () => {
-  const context = useContext(ProjectContext);
+  const context = readContext(ProjectContext);
 
   if (!context) {
     throw new Error("useProject must be used within ProjectProvider.");
@@ -23,7 +23,7 @@ export const useProject = () => {
 };
 
 export const useTimeline = () => {
-  const context = useContext(ProjectContext);
+  const context = readContext(ProjectContext);
 
   if (!context) {
     throw new Error("useTimeline must be used within ProjectProvider.");
@@ -33,7 +33,7 @@ export const useTimeline = () => {
 };
 
 export const useSchedules = () => {
-  const context = useContext(ProjectContext);
+  const context = readContext(ProjectContext);
 
   if (!context) {
     throw new Error("useSchedules must be used within ProjectProvider.");
