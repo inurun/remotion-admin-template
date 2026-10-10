@@ -50,11 +50,9 @@ export const CompositionTimeline = defineMount<{ children?: HfNode }>(({ childre
   let query: Query = () => [];
   const scope: Scope = { timeline, query: (selector) => query(selector) };
   onMounted(() => {
-    const hfWindow = window as unknown as {
-      gsap?: typeof gsap;
-      __timelines?: Record<string, unknown>;
-    };
-    hfWindow.gsap = gsap;
+    // Only the registry: assigning `window.gsap` would let HyperFrames' render shim wrap
+    // `gsap.timeline()` in a deferred proxy, which `timeline.add()` cannot take.
+    const hfWindow = window as unknown as { __timelines?: Record<string, unknown> };
     (hfWindow.__timelines ??= {})[HF_COMPOSITION_ID] = timeline;
   });
   query = mountScoped(<ScopeContext.Provider value={scope}>{children}</ScopeContext.Provider>, ctx);

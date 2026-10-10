@@ -2,6 +2,7 @@
 import { Clip } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { SavedCommentsPage } from "@/_schemas";
 import { Layer } from "@/video/components/layter";
+import { Timeline } from "@/video/lib/timeline";
 import { useCommentsPage } from "@/video/pages/comments/use-comments-page";
 
 // HyperFrames hides a clip with `visibility: hidden`, which keeps its layout box: clips are
@@ -22,14 +23,21 @@ export function CommentsPage({ page }: { page: SavedCommentsPage }) {
             duration={durationSec}
             className="flex flex-col justify-center gap-6 p-16"
           >
-            <p className="text-2xl text-white/70">{`${comments.length} comments`}</p>
-            <div className="space-y-3 text-5xl font-semibold leading-tight">
-              {group.displayText ? (
-                <p>{group.displayText}</p>
-              ) : (
-                comments.map((comment) => <p>{comment.body}</p>)
-              )}
-            </div>
+            {/* The lines of a group come in one after another once it shows. */}
+            <Timeline
+              animate={(tl, q) =>
+                tl.from(q("[data-line]"), { opacity: 0, x: -30, duration: 0.25, stagger: 0.1 })
+              }
+            >
+              <p className="text-2xl text-white/70">{`${comments.length} comments`}</p>
+              <div className="space-y-3 text-5xl font-semibold leading-tight">
+                {group.displayText ? (
+                  <p data-line>{group.displayText}</p>
+                ) : (
+                  comments.map((comment) => <p data-line>{comment.body}</p>)
+                )}
+              </div>
+            </Timeline>
           </Clip>
         ))
       )}
