@@ -47,7 +47,8 @@
 - API は `@inurun/vite-plugin-hyperframes-jsx/runtime`、プラグインは `vite.hf.config.ts` の `hyperframesJsx()`
 - 時間は秒。`<Clip start duration>` が HyperFrames の clip（`data-start` / `data-duration`）になり、表示・非表示は HyperFrames が持つ。親 Clip からの相対秒で入れ子にできる
 - コンポーネントは一度だけ実行される。React の hooks・再レンダは無い
-- アニメーションは GSAP。`src/video/lib/timeline.tsx` の `<Timeline animate={(tl, q) => …}>`（`tl` の 0 秒 = 囲む Clip の開始）と、シーン間の `src/video/lib/transition.ts` の `<Transition>` を使う。タイムラインは `CompositionTimeline` が 1 本にまとめて HyperFrames に登録する
+- アニメーションは GSAP。ヘルパーは外部パッケージ `@inurun/frame-animation`（GitHub Packages）の `/hyperframes`: `<Timeline animate={(tl, q) => …}>`（`tl` の 0 秒 = 囲む Clip の開始）、時刻から直接描く `onTime((time) => …)`、シーン間の `<Transition>`、時刻をずらす `<TimeOffset>`、値を組み合わせる `tweenValues`。タイムラインは `CompositionTimeline` が 1 本にまとめて HyperFrames に登録する
+- `window.gsap` に代入しない（HyperFrames のレンダー環境が `gsap.timeline()` を差し替え、入れ子のタイムラインが壊れる）
 - HyperFrames は隠れた clip を `visibility: hidden` にする（レイアウト上の場所は残る）。Clip は absolute に重ねて使い、flex などの流れの中に置かない
 - 音声は静的マニフェストで出す。実行時に `<audio>` を作らない
 - 日付に `Date` サブクラス（`TZDate` 等）を使わない。HF render の Date shim で壊れる

@@ -2,7 +2,7 @@
 import { Clip } from "@inurun/vite-plugin-hyperframes-jsx/runtime";
 import type { SavedCommentsPage } from "@/_schemas";
 import { Layer } from "@/video/components/layter";
-import { Timeline } from "@/video/lib/timeline";
+import { Timeline } from "@inurun/frame-animation/hyperframes";
 import { useCommentsPage } from "@/video/pages/comments/use-comments-page";
 
 // HyperFrames hides a clip with `visibility: hidden`, which keeps its layout box: clips are
